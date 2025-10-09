@@ -23,7 +23,7 @@ const Sidebar = ({ collapsed, mobileOpen, onCloseMobile }) => {
           role="dialog"
           aria-modal="true"
         >
-          <SidebarContent collapsed={false} />
+          <SidebarContent collapsed={false} onCloseMobile={onCloseMobile} />
         </aside>
       </div>
     </>

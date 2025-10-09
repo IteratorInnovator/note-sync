@@ -11,8 +11,8 @@ export const getVideosByUserId = (uid) => {
     
 }
 
-export const createVideo = (url, uid) => {
-
+export const addVideo = (videoId, uid) => {
+    
 }
 
 export const deleteVideo = (videoId, uid) => {

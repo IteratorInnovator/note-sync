@@ -1,7 +1,7 @@
 // components/ui/Searchbar.jsx
 import { useRef, useState } from "react";
 import { Search, Loader2 } from "lucide-react";
-import searchVideos from "../../services/utils/youtube.js";
+import { searchVideos } from "../../services/utils/youtube.js";
 
 const Searchbar = ({ onResults }) => {
   const [queryTerm, setQueryTerm] = useState("");
@@ -61,7 +61,7 @@ const Searchbar = ({ onResults }) => {
           if (e.key === "Enter") e.currentTarget.form?.requestSubmit();
         }}
         placeholder="Search videos…"
-        className="w-full h-10 pl-10 pr-10 rounded-full border border-slate-300 bg-white text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200 focus:border-transparent transition-all"
+        className="w-full h-10 pl-10 pr-10 rounded-full border border-slate-300 bg-white text-sm text-slate-900 placeholder:text-slate-500 focus:shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-transparent transition-all"
         autoComplete="off"
         disabled={loading}
       />
