@@ -2,9 +2,9 @@ import { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "../components/ui/sidebar/Sidebar";
 import MainHeader from "../components/MainHeader";
-import MyVideosView from "../components/MyVideosView";
-import SearchView from "../components/SearchView";
-import PlaylistsView from "../components/PlaylistsView";
+import MyVideosView from "../components/views/MyVideosView";
+import SearchView from "../components/views/SearchView";
+import PlaylistsView from "../components/views/PlaylistsView";
 import { useIsMdUp } from "../services/utils/breakpoint";
 
 const VALID_PATHS = new Set(["videos", "search", "playlists"]);
