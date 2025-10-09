@@ -28,16 +28,66 @@ export const createUser = async (user) => {
   }
 };
 
-export const getVideosByUserId = (uid) => {
-    
-}
+export const getVideosByUserId = async (uid) => {
+  try {
+    const videosRef = collection(db, "videos");
+    const q = query(
+      videosRef,
+      where("uid", "==", uid),
+      orderBy("createdAt", "desc")
+    );
 
-export const createVideo = (url, uid) => {
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+  } catch (error) {
+    console.error("Error fetching videos:", error);
+    return [];
+  }
+};
 
-}
 
-export const deleteVideo = (videoId, uid) => {
+export const createVideo = async (videoData, uid) => {
+  try {
+    // videoData = { title, channelTitle, thumbnail, duration, url? }
+    const videosRef = collection(db, "videos");
+    const docRef = await addDoc(videosRef, {
+      uid,
+      title: videoData.title,
+      channelTitle: videoData.channelTitle,
+      thumbnail: videoData.thumbnail,
+      duration: videoData.duration,
+      url: videoData.url || "",
+      createdAt: serverTimestamp(),
+    });
 
-}
+    console.log("Video created:", docRef.id);
+    return docRef.id;
+  } catch (error) {
+    console.error("Error creating video:", error);
+  }
+};
 
 
+export const deleteVideo = async (videoId, uid) => {
+  try {
+    const videoRef = doc(db, "videos", videoId);
+    const snapshot = await getDoc(videoRef);
+
+    if (!snapshot.exists()) {
+      throw new Error("Video not found.");
+    }
+
+    const data = snapshot.data();
+    if (data.uid !== uid) {
+      throw new Error("You do not have permission to delete this video.");
+    }
+
+    await deleteDoc(videoRef);
+    console.log("Video deleted:", videoId);
+  } catch (error) {
+    console.error("Error deleting video:", error);
+  }
+};
