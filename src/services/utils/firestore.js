@@ -3,7 +3,8 @@ import { app } from "../..";
 
 const db = getFirestore(app);
 
-export const createUser = () => {
+export const createUser = async (user) => {
+e
 
 }
 
@@ -18,3 +19,5 @@ export const createVideo = (url, uid) => {
 export const deleteVideo = (videoId, uid) => {
 
 }
+
+
