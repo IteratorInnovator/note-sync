@@ -8,7 +8,7 @@ const FacebookButton = ({ text }) => {
 
     const signUpOrLoginWithFacebook = async () => {
         signInWithPopup(auth, FacebookProvider).then((userCredential) => {
-            navigate("/main");
+            navigate("/videos");
             return userCredential.user;
         });
     };

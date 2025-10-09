@@ -24,22 +24,32 @@ function App() {
     return (
         <BrowserRouter>
             <Routes>
-                {/* Root route. If signed in, redirect to /main. Else show landing page. */}
+                {/* Root route. If signed in, redirect to /videos. Else show landing page. */}
                 <Route
                     path="/"
-                    element={user ? <Navigate to="/main" replace /> : <Index />}
+                    element={
+                        user ? <Navigate to="/videos" replace /> : <Index />
+                    }
                 />
 
-                {/* Private route. Only for signed-in users. Otherwise send to root. */}
+                {/* Private routes. Only for signed-in users. Otherwise send to root. */}
                 <Route
-                    path="/main"
+                    path="/videos"
+                    element={user ? <Main /> : <Navigate to="/" replace />}
+                />
+                <Route
+                    path="/search"
+                    element={user ? <Main /> : <Navigate to="/" replace />}
+                />
+                <Route
+                    path="/playlists"
                     element={user ? <Main /> : <Navigate to="/" replace />}
                 />
 
                 {/* Catch-all. Redirect unknown paths based on auth state. */}
                 <Route
                     path="*"
-                    element={<Navigate replace to={user ? "/main" : "/"} />}
+                    element={<Navigate replace to={user ? "/videos" : "/"} />}
                 />
             </Routes>
         </BrowserRouter>

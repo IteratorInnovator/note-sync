@@ -7,7 +7,7 @@ const GoogleButton = ({ text }) => {
     const navigate = useNavigate();
     const signUpOrLoginWithGoogle = async () => {
         signInWithPopup(auth, GoogleProvider).then((userCredential) => {
-            navigate("/main");
+            navigate("/videos");
             return userCredential.user;
         });
     };

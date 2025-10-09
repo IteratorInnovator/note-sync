@@ -10,9 +10,9 @@ import { signOut } from "firebase/auth";
 import { auth } from "../../..";
 
 const navItems = [
-    { label: "My Videos", to: "/video", icon: Clapperboard },
+    { label: "My Videos", to: "/videos", icon: Clapperboard },
     { label: "Search Videos", to: "/search", icon: Search },
-    { label: "My Playlists", to: "/playlist", icon: ListVideo },
+    { label: "My Playlists", to: "/playlists", icon: ListVideo },
     { label: "Settings", to: "/settings", icon: Settings },
 ];
 

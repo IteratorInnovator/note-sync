@@ -36,7 +36,7 @@ const LoginModal = ({ switchToSignUpView }) => {
                 password.trim()
             );
             // success: redirect to main page
-            navigate("/main");
+            navigate("/videos");
         } catch (err) {
             fetchSignInMethodsForEmail(auth, email).then((methods) => {
                 if (methods.includes("google.com")) {
@@ -46,7 +46,6 @@ const LoginModal = ({ switchToSignUpView }) => {
                     });
                     return;
                 }
-                console.log(methods);
                 setError(AUTH_ERRORS[err.code] || fallbackError);
             });
         }
