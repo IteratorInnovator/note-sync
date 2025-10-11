@@ -1,15 +1,27 @@
 import React from "react";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { signInWithPopup, signInWithRedirect } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { auth, GoogleProvider } from "../..";
 
 const GoogleButton = ({ text }) => {
     const navigate = useNavigate();
     const signUpOrLoginWithGoogle = async () => {
-        signInWithPopup(auth, GoogleProvider).then((userCredential) => {
+        try {
+            await signInWithPopup(auth, GoogleProvider);
             navigate("/videos");
-            return userCredential.user;
-        });
+        } catch (err) {
+            if (
+                err.code === "auth/popup-closed-by-user" ||
+                err?.code === "auth/cancelled-popup-request"
+            ) {
+                return;
+            }
+            if (err.code === "auth/popup-blocked") {
+                // if sign in with pop, trigger sign in with redirect instead
+                await signInWithRedirect(auth, GoogleProvider); 
+                return;
+            }
+        }
     };
     return (
         <button
