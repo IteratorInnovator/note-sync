@@ -19,7 +19,7 @@ const navItems = [
 
 const SidebarContent = ({ collapsed, onCloseMobile }) => {
     const itemBase =
-        "grid items-center h-10 rounded-xl text-slate-900 text-sm transition-colors hover:bg-slate-100";
+        "grid items-center h-10 rounded-xl text-slate-900 text-sm transition-colors hover:bg-neutral-200";
     const cols = "grid-cols-[28px_var(--label-col)]";
     const pad = collapsed ? "px-1.5" : "px-2";
     const gap = collapsed ? "gap-x-0" : "gap-x-3";
