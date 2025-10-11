@@ -12,7 +12,7 @@ const MainHeader = ({ title, sidebarVisible, onToggle }) => {
         >
           {sidebarVisible ? <PanelLeft className="size-5 group-hover:text-white" /> : <PanelRight className="size-5 group-hover:text-white" />}
         </button>
-        <h1 className="text-xl font-semibold">{title}</h1>
+        <h1 className="text-xl text-slate-900 font-semibold">{title}</h1>
       </div>
     </header>
   );
