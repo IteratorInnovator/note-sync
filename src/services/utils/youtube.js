@@ -6,7 +6,7 @@ export const searchVideos = async (searchTerm, { signal }) => {
         part: "snippet",
         type: "video",
         q: String(searchTerm),
-        maxResults: "30",
+        maxResults: "48",
         key: YOUTUBE_API_KEY,
     });
 
