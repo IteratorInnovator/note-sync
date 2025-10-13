@@ -1,6 +1,8 @@
+import SavedVideoList from "../SavedVideoList";
+
 const MyVideosView = () => {
     return (
-        <div>My Videos View</div>
+        <SavedVideoList />
     );
 }
 
