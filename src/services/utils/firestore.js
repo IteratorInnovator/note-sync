@@ -3,7 +3,11 @@ import {
     collection,
     query,
     orderBy,
+    doc,
+    getDoc,
     getDocs,
+    setDoc,
+    serverTimestamp,
 } from "firebase/firestore";
 import { app } from "../..";
 
@@ -25,6 +29,22 @@ export const getVideosByUserId = async (uid) => {
     return videos;
 };
 
-export const addVideo = (videoId, uid) => {};
+export const addVideo = async (
+    uid,
+    videoId,
+    title,
+    channelTitle,
+    thumbnail
+) => {
+    const ref = doc(db, "users", uid, "videos", videoId);
+    if ((await getDoc(ref)).exists()) return;
+    await setDoc(ref, {
+        title: title,
+        channelTitle: channelTitle,
+        thumbnailUrl: thumbnail,
+        progresSec: 0,
+        addedAt: serverTimestamp(),
+    });
+};
 
 export const deleteVideo = (videoId, uid) => {};
