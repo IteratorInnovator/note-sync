@@ -17,9 +17,9 @@ const navItems = [
 ];
 
 
-const SidebarContent = ({ collapsed }) => {
+const SidebarContent = ({ collapsed, onCloseMobile }) => {
     const itemBase =
-        "grid items-center h-10 rounded-md text-slate-900 text-sm transition-colors hover:bg-slate-100";
+        "grid items-center h-10 rounded-xl text-slate-900 text-sm transition-colors hover:bg-neutral-200";
     const cols = "grid-cols-[28px_var(--label-col)]";
     const pad = collapsed ? "px-1.5" : "px-2";
     const gap = collapsed ? "gap-x-0" : "gap-x-3";
@@ -75,6 +75,7 @@ const SidebarContent = ({ collapsed }) => {
                         className={`${itemBase} ${cols} ${gap} ${pad}`}
                         aria-label={label}
                         title={collapsed ? label : undefined}
+                        onClick={onCloseMobile}
                     >
                         {/* Icon: perfectly centered vertically and horizontally */}
                         <Icon className="size-4 place-self-center" />

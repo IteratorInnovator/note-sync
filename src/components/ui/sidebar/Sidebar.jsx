@@ -7,7 +7,7 @@ const Sidebar = ({ collapsed, mobileOpen, onCloseMobile }) => {
     <>
       {/* Desktop fixed */}
       <aside className={`hidden md:block fixed top-0 left-0 h-screen ${deskWidth} z-30 overflow-hidden transition-[width] duration-300`}>
-        <div className="h-full bg-white border-r border-r-slate-200">
+        <div className="h-full bg-neutral-50 border-r border-r-slate-200">
           <SidebarContent collapsed={collapsed} />
         </div>
       </aside>
@@ -19,11 +19,11 @@ const Sidebar = ({ collapsed, mobileOpen, onCloseMobile }) => {
           className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 ${mobileOpen ? "opacity-100" : "pointer-events-none opacity-0"}`}
         />
         <aside
-          className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-r-slate-200 transition-transform duration-300 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
+          className={`fixed inset-y-0 left-0 z-50 w-64 bg-neutral-50 border-r border-r-slate-200 transition-transform duration-300 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
           role="dialog"
           aria-modal="true"
         >
-          <SidebarContent collapsed={false} />
+          <SidebarContent collapsed={false} onCloseMobile={onCloseMobile} />
         </aside>
       </div>
     </>

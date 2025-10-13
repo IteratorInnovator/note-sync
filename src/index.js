@@ -3,6 +3,8 @@ import {
     getAuth,
     GoogleAuthProvider,
     FacebookAuthProvider,
+    setPersistence,
+    browserLocalPersistence
 } from "firebase/auth";
 
 const firebaseConfig = {
@@ -15,9 +17,11 @@ const firebaseConfig = {
     measurementId: "G-M03J250RMZ",
 };
 
+
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 auth.languageCode = "en";
+await setPersistence(auth, browserLocalPersistence);
 
 export const GoogleProvider = new GoogleAuthProvider();
 export const FacebookProvider = new FacebookAuthProvider();

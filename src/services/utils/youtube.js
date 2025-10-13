@@ -1,12 +1,12 @@
 const YOUTUBE_API_KEY = import.meta.env.VITE_APP_YOUTUBE_API_KEY;
 const YOUTUBE_API_ENDPOINT = import.meta.env.VITE_APP_YOUTUBE_API_ENDPOINT;
 
-const searchVideos = async (searchTerm, { signal }) => {
+export const searchVideos = async (searchTerm, { signal }) => {
     const params = new URLSearchParams({
         part: "snippet",
         type: "video",
         q: String(searchTerm),
-        maxResults: "30",
+        maxResults: "48",
         key: YOUTUBE_API_KEY,
     });
 
@@ -31,4 +31,6 @@ const searchVideos = async (searchTerm, { signal }) => {
     }));
 };
 
-export default searchVideos;
+export const getVideoById = (videoId) => {
+    
+}

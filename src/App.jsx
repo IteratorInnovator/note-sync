@@ -18,6 +18,8 @@ function App() {
             }),
         []
     );
+    
+    
 
     if (loading) return null;
 
@@ -27,23 +29,21 @@ function App() {
                 {/* Root route. If signed in, redirect to /videos. Else show landing page. */}
                 <Route
                     path="/"
-                    element={
-                        user ? <Navigate to="/videos" replace /> : <Index />
-                    }
+                    element={user ? <Navigate to="/videos" /> : <Index />}
                 />
 
                 {/* Private routes. Only for signed-in users. Otherwise send to root. */}
                 <Route
                     path="/videos"
-                    element={user ? <Main /> : <Navigate to="/" replace />}
+                    element={user ? <Main /> : <Navigate to="/" />}
                 />
                 <Route
                     path="/search"
-                    element={user ? <Main /> : <Navigate to="/" replace />}
+                    element={user ? <Main /> : <Navigate to="/" />}
                 />
                 <Route
                     path="/playlists"
-                    element={user ? <Main /> : <Navigate to="/" replace />}
+                    element={user ? <Main /> : <Navigate to="/" />}
                 />
 
                 {/* Catch-all. Redirect unknown paths based on auth state. */}

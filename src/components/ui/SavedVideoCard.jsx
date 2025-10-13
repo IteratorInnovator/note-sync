@@ -1,16 +1,6 @@
 import { Play } from "lucide-react";
-import EllipsisButton from "./EllipsisButton";
 
-const VideoCard = ({
-    videoId,
-    thumbnail,
-    title,
-    channelTitle,
-    open, // boolean: controlled by parent
-    onOpenChange, // (boolean) => void
-    onSave,
-    onAddToPlaylist,
-}) => {
+const SavedVideoCard = ({ videoId, thumbnail, title, channelTitle }) => {
     const href = `https://www.youtube.com/watch?v=${videoId}`;
 
     return (
@@ -44,13 +34,6 @@ const VideoCard = ({
                     </div>
                 </div>
 
-                <EllipsisButton
-                    open={open}
-                    onOpenChange={onOpenChange}
-                    onSave={() => onSave(videoId, title, channelTitle, thumbnail)}
-                    onAddToPlaylist={() => onAddToPlaylist(videoId)}
-                />
-
                 <div className="p-4">
                     <h3 className="text-xs md:text-sm font-semibold line-clamp-2 truncate">
                         {title}
@@ -64,4 +47,4 @@ const VideoCard = ({
     );
 };
 
-export default VideoCard;
+export default SavedVideoCard;
