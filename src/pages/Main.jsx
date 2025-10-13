@@ -14,6 +14,8 @@ export default function Main() {
   const [title, setTitle] = useState("My Videos");
   const [collapsed, setCollapsed] = useState(false);   // desktop
   const [mobileOpen, setMobileOpen] = useState(false); // mobile
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
   const sidebarW = collapsed ? "3.5rem" : "16rem";
 
   const sidebarVisible = useMemo(() => (mdUp ? !collapsed : mobileOpen), [mdUp, collapsed, mobileOpen]);
@@ -38,7 +40,14 @@ export default function Main() {
         return <MyVideosView />;
       case "search":    
         setTitle("Search Videos");
-        return <SearchView />;
+        return (
+          <SearchView
+            searchTerm={searchTerm}
+            onSearchTermChange={setSearchTerm}
+            results={searchResults}
+            onResultsChange={setSearchResults}
+          />
+        );
       case "playlists": 
         setTitle("My Playlists");
         return <PlaylistsView />;
@@ -46,7 +55,7 @@ export default function Main() {
         setTitle("My Videos");       
         return null; // immediately redirected above
     }
-  }, [tab]);
+  }, [tab, searchTerm, searchResults]);
 
 
   return (
