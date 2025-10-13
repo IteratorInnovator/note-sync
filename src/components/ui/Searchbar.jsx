@@ -3,8 +3,7 @@ import { useRef, useState } from "react";
 import { Search, Loader2 } from "lucide-react";
 import { searchVideos } from "../../services/utils/youtube.js";
 
-const Searchbar = ({ onResults }) => {
-  const [queryTerm, setQueryTerm] = useState("");
+const Searchbar = ({ value = "", onChange, onResults }) => {
   const [loading, setLoading] = useState(false);
 
   /** 
@@ -46,7 +45,7 @@ const Searchbar = ({ onResults }) => {
      * Trim away any whitespace from the query term
      * Run search only if trimmed query term is not empty
      */
-    const term = queryTerm.trim();
+    const term = value.trim();
     if (term) runSearch(term);
   }
 
@@ -55,8 +54,8 @@ const Searchbar = ({ onResults }) => {
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-500" />
       <input
         type="text"
-        value={queryTerm}
-        onChange={(e) => setQueryTerm(e.target.value)}
+        value={value}
+        onChange={(e) => onChange?.(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Enter") e.currentTarget.form?.requestSubmit();
         }}

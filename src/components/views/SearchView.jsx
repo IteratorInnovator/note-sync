@@ -1,13 +1,19 @@
-import { useState } from "react";
 import Searchbar from "../ui/Searchbar";
 import VideoList from "../VideoList";
 
-const SearchView = () => {
-    const [results, setResults] = useState([]);
-
+const SearchView = ({
+    searchTerm = "",
+    onSearchTermChange,
+    results = [],
+    onResultsChange,
+}) => {
     return (
         <div className="space-y-4">
-            <Searchbar onResults={setResults} />
+            <Searchbar
+                value={searchTerm}
+                onChange={onSearchTermChange}
+                onResults={onResultsChange}
+            />
 
             {results.length === 0 ? (
                 <div className="text-sm text-slate-500">No results.</div>
