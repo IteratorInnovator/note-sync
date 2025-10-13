@@ -1,4 +1,5 @@
 import { Play } from "lucide-react";
+import FadeInSection from "./ui/FadeInSection";
 
 const Hero = ({ openAuthDialog }) => {
     return (
@@ -6,7 +7,7 @@ const Hero = ({ openAuthDialog }) => {
             <div className="mx-auto max-w-7xl px-6 py-28 lg:px-8">
                 <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
                     {/* Left */}
-                    <div className="space-y-8 text-center lg:text-left">
+                    <FadeInSection direction="left" className="space-y-8 text-center lg:text-left">
                         <span className="inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-100 px-4 py-2 text-sm font-semibold text-red-500">
                             <Play className="w-5" />
                             Transform Your Video Learning
@@ -71,10 +72,10 @@ const Hero = ({ openAuthDialog }) => {
                                 </p>
                             </div>
                         </div>
-                    </div>
+                    </FadeInSection>
 
                     {/* Right */}
-                    <div className="relative">
+                    <FadeInSection direction="right" className="relative">
                         <div className="relative ml-auto max-w-[640px] rounded-[28px] overflow-hidden shadow-2xl ring-1 ring-black/5">
                             <img
                                 src="/src/assets/hero-image.png"
@@ -83,7 +84,7 @@ const Hero = ({ openAuthDialog }) => {
                             />
                             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-white/20 to-transparent" />
                         </div>
-                    </div>
+                    </FadeInSection>
                 </div>
             </div>
         </section>

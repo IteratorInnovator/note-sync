@@ -6,6 +6,7 @@ import HowItWorks from "../components/HowItWorks";
 import CTA from "../components/CTA";
 import Footer from "../components/Footer";
 import AuthDialog from "../components/auth/AuthDialog";
+import FadeInSection from "../components/ui/FadeInSection";
 
 const Index = () => {
     const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
@@ -27,10 +28,18 @@ const Index = () => {
             )}
             <Header openAuthDialog={openAuthDialog} switchAuthView={switchAuthView}/>
             <Hero openAuthDialog={openAuthDialog} />
-            <Features />
-            <HowItWorks openAuthDialog={openAuthDialog} />
-            <CTA openAuthDialog={openAuthDialog} switchAuthView={switchAuthView} />
-            <Footer />
+            <FadeInSection direction="right">
+                <Features />
+            </FadeInSection>
+            <FadeInSection>
+                <HowItWorks openAuthDialog={openAuthDialog} />
+            </FadeInSection>
+            <FadeInSection>
+                <CTA openAuthDialog={openAuthDialog} switchAuthView={switchAuthView} />
+            </FadeInSection>
+            <FadeInSection>
+                <Footer />
+            </FadeInSection>
         </div>
     );
 };

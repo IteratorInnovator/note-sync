@@ -29,11 +29,6 @@ const EllipsisButton = ({ open, onOpenChange, onSave, onAddToPlaylist }) => {
       ref={rootRef}
       className="absolute top-2 right-2 z-10"
       onMouseEnter={cancelClose}
-      onMouseLeave={() => {
-        // close after brief hover-out
-        cancelClose();
-        leaveTimer.current = setTimeout(() => onOpenChange(false), 150);
-      }}
     >
       <button
         type="button"
