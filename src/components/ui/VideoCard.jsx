@@ -1,54 +1,61 @@
 import { Play } from "lucide-react";
+import EllipsisButton from "./EllipsisButton";
 
 const VideoCard = ({
     videoId,
     thumbnail,
     title,
     channelTitle,
-    // duration, // e.g. "12:34" (optional)
+    open, // boolean: controlled by parent
+    onOpenChange, // (boolean) => void
+    onSave,
+    onAddToPlaylist,
 }) => {
     const href = `https://www.youtube.com/watch?v=${videoId}`;
 
     return (
-        <li>
+        <li className="relative">
             <a
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={(e) => {
-                    if (!videoId) e.preventDefault();
-                }}
-                className="block overflow-hidden rounded-xl border border-slate-200 bg-white hover:shadow-lg transition-shadow cursor-pointer group"
+                className={`block overflow-hidden rounded-xl border border-slate-200 bg-white transition-shadow cursor-pointer group ${
+                    href ? "hover:shadow-lg" : "opacity-80 cursor-not-allowed"
+                }`}
             >
-                {/* Media */}
                 <div className="relative aspect-video bg-slate-100">
                     {thumbnail ? (
                         <img
                             src={thumbnail}
-                            className="w-full h-full object-cover"
+                            alt={title || "Video thumbnail"}
                             loading="lazy"
+                            decoding="async"
+                            className="w-full h-full object-cover"
                         />
                     ) : null}
 
-                    {/* Hover overlay */}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="pointer-events-none absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <div className="rounded-full bg-red-500/90 p-4">
-                            <Play className="h-6 w-6 text-white fill-current" />
+                            <Play
+                                aria-hidden
+                                className="h-6 w-6 text-white fill-current"
+                            />
                         </div>
                     </div>
-
-                    {/* Duration badge */}
-                    {/* {duration ? (
-                        <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
-                            {duration}
-                        </div>
-                    ) : null} */}
                 </div>
 
-                {/* Content */}
+                <EllipsisButton
+                    open={open}
+                    onOpenChange={onOpenChange}
+                    onSave={() => onSave(videoId, title, channelTitle, thumbnail)}
+                    onAddToPlaylist={() => onAddToPlaylist(videoId)}
+                />
+
                 <div className="p-4">
-                    <h3 className="font-semibold truncate line-clamp-2">{title}</h3>
-                    <p className="text-xs text-slate-600 mt-1">
+                    <h3 className="text-xs md:text-sm font-semibold line-clamp-2 truncate">
+                        {title}
+                    </h3>
+                    <p className="text-[10px] text-slate-600 mt-1 truncate">
                         {channelTitle}
                     </p>
                 </div>
