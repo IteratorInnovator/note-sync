@@ -1,4 +1,4 @@
-import { getFirestore, doc, getDoc } from "firebase/firestore";
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { app } from "../..";
 
 const firebaseConfig = {
@@ -16,14 +16,29 @@ const db = getFirestore(app);
 
 export const createUser = async (user) => {
   try {
-    const docRef = await addDoc(collection(db, "users"), {
-      ...user,
-      createdAt: serverTimestamp(), // auto timestamp
-    });
-    console.log("User created with ID:", docRef.id);
-    return docRef.id;
-  } catch (error) {
-    console.error("Error creating user:", error);
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      await setDoc(userRef, {
+        uid: user.uid,
+        name: user.displayName,
+        email: user.email,
+        photoURL: user.photoURL || null,    // will extract google profile pic if deployed correctly. else will be null.. can be called by: src={user.photoURL}
+        createdAt: serverTimestamp(),
+      });
+      console.log("User created:", user.uid);
+    } 
+    
+    else {
+      console.log("User already exists:", user.uid);
+    }
+
+    return user.uid;
+  } 
+  
+  catch (error) {
+    console.error("Failed to create user:", error);
     throw error;
   }
 };
