@@ -1,58 +1,53 @@
-// /**
-//  * Import function triggers from their respective submodules:
-//  *
-//  * const {onCall} = require("firebase-functions/v2/https");
-//  * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
-//  *
-//  * See a full list of supported triggers at https://firebase.google.com/docs/functions
-//  */
+// Import V2 Auth triggers as a namespace from the explicit 'v2/auth' submodule path
+import * as auth from 'firebase-functions/auth'; 
+// Import specific components from Firebase Admin SDK for modern ES Module usage
+import { initializeApp, getApps } from 'firebase-admin/app';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
-// const {setGlobalOptions} = require("firebase-functions");
-// const {onRequest} = require("firebase-functions/https");
-// const logger = require("firebase-functions/logger");
+// Initialize Firebase Admin SDK if it hasn't been already.
+// This uses the explicit 'getApps()' function to check the length of initialized apps.
+if (getApps().length === 0) {
+  initializeApp();
+}
 
-// // For cost control, you can set the maximum number of containers that can be
-// // running at the same time. This helps mitigate the impact of unexpected
-// // traffic spikes by instead downgrading performance. This limit is a
-// // per-function limit. You can override the limit for each function using the
-// // `maxInstances` option in the function's options, e.g.
-// // `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// // NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// // functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// // In the v1 API, each function can only serve one request per container, so
-// // this will be the maximum concurrent request count.
-// setGlobalOptions({ maxInstances: 10 });
+/**
+ * Handles new user signups via Firebase Authentication (V2 Trigger).
+ * Creates a corresponding user document in Firestore to store profile data.
+ */
+// Using auth.onCreate() after importing 'auth' namespace
+export const newUserSignup = auth.onCreate(async (event) => {
+  const user = event.data; // Extract the user record from the event object
 
-// // Create and deploy your first functions
-// // https://firebase.google.com/docs/functions/get-started
+  if (!user) {
+    console.warn("Auth trigger fired but user data was null/undefined.");
+    return;
+  }
 
-// // exports.helloWorld = onRequest((request, response) => {
-// //   logger.info("Hello logs!", {structuredData: true});
-// //   response.send("Hello from Firebase!");
-// // });
+  const {
+    uid,
+    email,
+    displayName,
+    photoURL,
+    // Safely destructure providerData, defaulting to an empty array
+    providerData = [], 
+  } = user;
 
+  const userData = {
+    uid,
+    email,
+    displayName,
+    photoURL,
+    // Safely access the first provider's ID using optional chaining (?.)
+    providerId: providerData[0]?.providerId || 'firebase', 
+    // Use FieldValue directly from the import
+    createdAtServer: FieldValue.serverTimestamp(), 
+  };
 
-import { onCreate } from "firebase-functions/v2/auth";
-import { initializeApp } from "firebase-admin/app";
-import { getFirestore, serverTimestamp } from "firebase-admin/firestore";
-
-initializeApp();
-const db = getFirestore();
-
-export const createUserRecord = onCreate(async (user) => {
   try {
-    const userRef = db.collection("Users").doc(user.uid);
-
-    const userData = {
-      uid: user.uid,
-      name: user.displayName,
-      email: user.email,
-      photoURL: user.photoURL || null,
-      createdAt: serverTimestamp(),
-    };
-
-    await userRef.set(userData);
+    await getFirestore().collection('users').doc(uid).set(userData); 
+    console.log(`User ${uid} saved to Firestore`);
   } catch (error) {
-    console.error("Error creating Firestore user:", error);
+    console.error('Error saving user:', error);
   }
 });
+
