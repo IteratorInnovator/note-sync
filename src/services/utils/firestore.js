@@ -27,18 +27,12 @@ export const createUser = async (user) => {
         photoURL: user.photoURL || null,    // will extract google profile pic if deployed correctly. else will be null.. can be called by: src={user.photoURL}
         createdAt: serverTimestamp(),
       });
-      console.log("User created:", user.uid);
     } 
     
-    else {
-      console.log("User already exists:", user.uid);
-    }
-
     return user.uid;
   } 
   
   catch (error) {
-    console.error("Failed to create user:", error);
     throw error;
   }
 };
