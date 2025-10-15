@@ -16,7 +16,9 @@ const SearchView = ({
             />
 
             {results.length === 0 ? (
-                <div className="text-sm text-slate-500">No results.</div>
+                <div className="flex items-center justify-center h-64">
+                    <div className="text-8xl text-slate-500 text-center">No results.</div>
+                </div>
             ) : (
                 <VideoList videoList={results} />
             )}
