@@ -1,5 +1,6 @@
 import { Play } from "lucide-react";
 import FadeInSection from "./ui/FadeInSection";
+import HeroImage from "../assets/hero-image.png";
 
 const Hero = ({ openAuthDialog }) => {
     return (
@@ -78,7 +79,7 @@ const Hero = ({ openAuthDialog }) => {
                     <FadeInSection direction="right" className="relative">
                         <div className="relative ml-auto max-w-[640px] rounded-[28px] overflow-hidden shadow-2xl ring-1 ring-black/5">
                             <img
-                                src="/src/assets/hero-image.png"
+                                src={HeroImage}
                                 alt="YouTube on a laptop with timestamp notes"
                                 className="block w-full h-auto"
                             />

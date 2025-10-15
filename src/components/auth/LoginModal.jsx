@@ -9,6 +9,9 @@ import {
     signInWithEmailAndPassword,
 } from "firebase/auth";
 import { AUTH_ERRORS, fallbackError } from "../../services/utils/constants.js";
+import User from "../../assets/user.svg";
+import EyeOff from "../../assets/eye-off.svg";
+import EyeShow from "../../assets/eye-show.svg";
 
 const LoginModal = ({ switchToSignUpView }) => {
     const [showPassword, setShowPassword] = useState(false);
@@ -84,7 +87,7 @@ const LoginModal = ({ switchToSignUpView }) => {
                                            focus:outline-none focus:ring-2 focus:ring-red-500"
                             />
                             <img
-                                src="/src/assets/user.svg"
+                                src={User}
                                 alt=""
                                 className="w-[1.25em] pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
                             />
@@ -135,8 +138,8 @@ const LoginModal = ({ switchToSignUpView }) => {
                                 <img
                                     src={
                                         !showPassword
-                                            ? "src/assets/eye-off.svg"
-                                            : "src/assets/eye-show.svg"
+                                            ? EyeOff
+                                            : EyeShow
                                     }
                                     className="h-4 w-4 text-slate-500"
                                     alt=""
