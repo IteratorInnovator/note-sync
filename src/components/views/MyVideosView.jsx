@@ -25,7 +25,11 @@ const MyVideosView = () => {
     }, []);
 
     return videoList.length === 0 ? (
-        <div>No results</div>
+        <div className="flex h-64 items-center justify-center">
+            <div className="text-center text-xl text-slate-500/60">
+                Your library is empty. Add a video.
+            </div>
+        </div>
     ) : (
         <SavedVideoList videoList={videoList} />
     );

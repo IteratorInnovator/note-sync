@@ -15,9 +15,11 @@ const SearchView = ({
                 onResults={onResultsChange}
             />
 
-            {results.length === 0 ? (
-                <div className="flex items-center justify-center h-64">
-                    <div className="text-2xl text-slate-500/60 text-center">No results</div>
+            {results.length == 0 ? (
+                <div className="flex h-64 items-center justify-center">
+                    <div className="text-center text-xl text-slate-500/60">
+                        Start searching to discover new videos.
+                    </div>
                 </div>
             ) : (
                 <VideoList videoList={results} />
