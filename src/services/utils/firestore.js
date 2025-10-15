@@ -47,4 +47,4 @@ export const addVideo = async (
     });
 };
 
-export const deleteVideo = (videoId, uid) => {};
+export const deleteVideo = (uid, video) => {};
