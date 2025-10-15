@@ -31,7 +31,7 @@ export const createUser = async (user) => {
     });
 
     return user.uid;
-  } catch (error) 
+  } catch (error) {
     throw error;
   }
 };
