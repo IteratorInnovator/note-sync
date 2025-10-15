@@ -1,13 +1,13 @@
 import {
-  getFirestore,
-  collection,
-  query,
-  orderBy,
-  doc,
-  getDoc,
-  getDocs,
-  setDoc,
-  serverTimestamp,
+    getFirestore,
+    collection,
+    query,
+    orderBy,
+    doc,
+    getDoc,
+    getDocs,
+    setDoc,
+    serverTimestamp,
 } from "firebase/firestore";
 import { app } from "../..";
 

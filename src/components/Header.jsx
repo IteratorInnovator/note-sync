@@ -33,15 +33,17 @@ const Header = ({ openAuthDialog, switchAuthView }) => {
                     <div className="hidden md:flex items-center gap-10">
                         <a
                             href="#features"
-                            className="text-slate-700 hover:text-red-500"
+                            className="group relative text-slate-700 transition-colors duration-200 hover:text-red-500"
                         >
                             Features
+                            <span className="pointer-events-none absolute left-0 -bottom-1 h-0.5 w-full origin-left scale-x-0 bg-red-500 transition-transform duration-200 ease-out group-hover:scale-x-100" />
                         </a>
                         <a
                             href="#how-it-works"
-                            className="text-slate-700 hover:text-red-500"
+                            className="group relative text-slate-700 transition-colors duration-200 hover:text-red-500"
                         >
                             How It Works
+                            <span className="pointer-events-none absolute left-0 -bottom-1 h-0.5 w-full origin-left scale-x-0 bg-red-500 transition-transform duration-200 ease-out group-hover:scale-x-100" />
                         </a>
                     </div>
 

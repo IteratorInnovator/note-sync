@@ -10,16 +10,16 @@ import { signOut } from "firebase/auth";
 import { auth } from "../../..";
 
 const navItems = [
-    { label: "My Videos", to: "/video", icon: Clapperboard },
+    { label: "My Videos", to: "/videos", icon: Clapperboard },
     { label: "Search Videos", to: "/search", icon: Search },
-    { label: "My Playlists", to: "/playlist", icon: ListVideo },
+    { label: "My Playlists", to: "/playlists", icon: ListVideo },
     { label: "Settings", to: "/settings", icon: Settings },
 ];
 
 
-const SidebarContent = ({ collapsed }) => {
+const SidebarContent = ({ collapsed, onCloseMobile }) => {
     const itemBase =
-        "grid items-center h-10 rounded-md text-slate-900 text-sm transition-colors hover:bg-slate-100";
+        "grid items-center h-10 rounded-xl text-slate-900 text-sm transition-colors hover:bg-neutral-200";
     const cols = "grid-cols-[28px_var(--label-col)]";
     const pad = collapsed ? "px-1.5" : "px-2";
     const gap = collapsed ? "gap-x-0" : "gap-x-3";
@@ -75,6 +75,7 @@ const SidebarContent = ({ collapsed }) => {
                         className={`${itemBase} ${cols} ${gap} ${pad}`}
                         aria-label={label}
                         title={collapsed ? label : undefined}
+                        onClick={onCloseMobile}
                     >
                         {/* Icon: perfectly centered vertically and horizontally */}
                         <Icon className="size-4 place-self-center" />
