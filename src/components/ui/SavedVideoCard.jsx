@@ -4,7 +4,7 @@ const SavedVideoCard = ({ videoId, thumbnail, title, channelTitle }) => {
     const href = `https://www.youtube.com/watch?v=${videoId}`;
 
     return (
-        <li className="relative">
+        <div className="relative">
             <a
                 href={href}
                 target="_blank"
@@ -43,7 +43,7 @@ const SavedVideoCard = ({ videoId, thumbnail, title, channelTitle }) => {
                     </p>
                 </div>
             </a>
-        </li>
+        </div>
     );
 };
 
