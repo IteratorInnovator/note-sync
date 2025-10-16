@@ -23,7 +23,6 @@ const SavedVideoList = () => {
     const fetchVideos = async () => {
       try {
         const videos = await getVideosByUserId(user.uid);
-        console.log("Fetched videos durations:", videos.map(v => v.duration));
         setVideoList(videos || []);
       } catch (error) {
         console.error("Error fetching videos:", error);
