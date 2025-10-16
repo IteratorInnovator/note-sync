@@ -1,53 +1,53 @@
-// Import V2 Auth triggers as a namespace from the explicit 'v2/auth' submodule path
-import * as auth from 'firebase-functions/auth'; 
-// Import specific components from Firebase Admin SDK for modern ES Module usage
-import { initializeApp, getApps } from 'firebase-admin/app';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-
-// Initialize Firebase Admin SDK if it hasn't been already.
-// This uses the explicit 'getApps()' function to check the length of initialized apps.
-if (getApps().length === 0) {
-  initializeApp();
-}
-
 /**
- * Handles new user signups via Firebase Authentication (V2 Trigger).
- * Creates a corresponding user document in Firestore to store profile data.
+ * Import function triggers from their respective submodules:
+ *
+ * const {onCall} = require("firebase-functions/v2/https");
+ * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
+ *
+ * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
-// Using auth.onCreate() after importing 'auth' namespace
-export const newUserSignup = auth.onCreate(async (event) => {
-  const user = event.data; // Extract the user record from the event object
+// functions/src/index.ts
+import { setGlobalOptions } from "firebase-functions";
+import { auth } from "firebase-functions/v1";
+import { initializeApp } from "firebase-admin/app";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
 
-  if (!user) {
-    console.warn("Auth trigger fired but user data was null/undefined.");
-    return;
-  }
+// For cost control, you can set the maximum number of containers that can be
+// running at the same time. This helps mitigate the impact of unexpected
+// traffic spikes by instead downgrading performance. This limit is a
+// per-function limit. You can override the limit for each function using the
+// `maxInstances` option in the function's options, e.g.
+// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
+// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
+// functions should each use functions.runWith({ maxInstances: 10 }) instead.
+// In the v1 API, each function can only serve one request per container, so
+// this will be the maximum concurrent request count.
+setGlobalOptions({ region: "asia-southeast1", maxInstances: 10 });
 
-  const {
-    uid,
-    email,
-    displayName,
-    photoURL,
-    // Safely destructure providerData, defaulting to an empty array
-    providerData = [], 
-  } = user;
+// Create and deploy your first functions
+// https://firebase.google.com/docs/functions/get-started
 
-  const userData = {
-    uid,
-    email,
-    displayName,
-    photoURL,
-    // Safely access the first provider's ID using optional chaining (?.)
-    providerId: providerData[0]?.providerId || 'firebase', 
-    // Use FieldValue directly from the import
-    createdAtServer: FieldValue.serverTimestamp(), 
-  };
+// exports.helloWorld = onRequest((request, response) => {
+//   logger.info("Hello logs!", {structuredData: true});
+//   response.send("Hello from Firebase!");
+// });
 
-  try {
-    await getFirestore().collection('users').doc(uid).set(userData); 
-    console.log(`User ${uid} saved to Firestore`);
-  } catch (error) {
-    console.error('Error saving user:', error);
-  }
+initializeApp();
+
+const db = getFirestore(undefined, "note-sync");
+
+// Create a user doc in Firestore user collections when a new user sign ups
+export const createUserDoc = auth.user().onCreate(async (user) => {
+    await db
+        .collection("users")
+        .doc(user.uid)
+        .set({
+            name: user.displayName ?? null,
+            createdAt: FieldValue.serverTimestamp(),
+        });
 });
 
+// Delete a user doc in Firestore user collections when a user deletes his account
+export const deleteUserDoc = auth.user().onDelete(async (user) => {
+    await db.collection("users").doc(user.uid).delete();
+});
