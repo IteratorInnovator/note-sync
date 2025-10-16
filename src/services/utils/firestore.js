@@ -14,33 +14,11 @@ import { app } from "../..";
 const FIREBASE_DATABASE_ID = import.meta.env.VITE_APP_FIREBASE_DATABASE_ID;
 const db = getFirestore(app, FIREBASE_DATABASE_ID);
 
-/**
- * Create or overwrite a user document in Firestore.
- * Called when a user signs up (e.g. via Google).
- */
-export const createUser = async (user) => {
-  try {
-    const userRef = doc(db, "users", user.uid);
-
-    // Always create or update user document
-    await setDoc(userRef, {
-      name: user.displayName,
-      email: user.email,
-      photoURL: user.photoURL || null, // from Google profile if available
-      createdAt: serverTimestamp(),
-    });
-
-    return user.uid;
-  } catch (error) {
-    throw error;
-  }
-};
 
 /**
  * Retrieve all videos added by a specific user, ordered by timestamp (descending)
  */
 export const getVideosByUserId = async (uid) => {
-  if (!uid) return [];
 
   const q = query(
     collection(db, "users", uid, "videos"),
