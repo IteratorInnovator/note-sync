@@ -85,8 +85,7 @@ export const createNote = async (uid, videoId, content, timeSec) => {
     });
 
     return docRef.id;
-  } 
-};
+  };
 
 export const updateNote = async (uid, videoId, noteId, newContent) => {
     const ref = doc(db, "users", uid, "videos", videoId, "notes", noteId);
@@ -96,7 +95,7 @@ export const updateNote = async (uid, videoId, noteId, newContent) => {
     });
 
     return noteId;
-}
+};
   
   
 
