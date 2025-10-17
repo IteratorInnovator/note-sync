@@ -7,6 +7,9 @@ import {
     getDoc,
     getDocs,
     setDoc,
+    addDoc,
+    updateDoc,
+    deleteDoc,
     serverTimestamp,
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
@@ -66,42 +69,42 @@ export const removeVideo = async (uid, videoId) => {
     } catch {
         return false;
     }
-
 };
-  
+
+// Retrieves all notes associated with a video
 export const getNotesByVideoId = async (uid, videoId) => {
-  const notesCol = collection(db, "users", uid, "videos", videoId, "notes");
-  const q = query(notesCol, orderBy("timeSec", "asc")); // optional ordering
-  const snap = await getDocs(q);
-  return snap.docs.map(doc => ({ noteId: doc.id, ...doc.data() }));
+    const notesCol = collection(db, "users", uid, "videos", videoId, "notes");
+    const q = query(notesCol, orderBy("timeSec", "asc")); // optional ordering
+    const snap = await getDocs(q);
+    return snap.docs.map((doc) => ({ noteId: doc.id, ...doc.data() }));
 };
 
+// Create a new note under a video
 export const createNote = async (uid, videoId, content, timeSec) => {
     const notesCol = collection(db, "users", uid, "videos", videoId, "notes");
 
     const docRef = await addDoc(notesCol, {
-      timeSec,
-      content,
+        timeSec,
+        content,
     });
 
     return docRef.id;
-  } 
 };
 
+
+// Update an exisiting note under a video
 export const updateNote = async (uid, videoId, noteId, newContent) => {
     const ref = doc(db, "users", uid, "videos", videoId, "notes", noteId);
 
     await updateDoc(ref, {
-      content: newContent
+        content: newContent,
     });
 
     return noteId;
-}
-  
-  
+};
 
+// Delete an existing note under a video
 export const deleteNote = async (uid, videoId, noteId) => {
     const ref = doc(db, "users", uid, "videos", videoId, "notes", noteId);
     await deleteDoc(ref);
 };
-  
