@@ -58,12 +58,12 @@ const MyVideosView = () => {
 
     return videoList.length === 0 ? (
         <div className="flex h-64 items-center justify-center">
-            <div className="text-center text-sm md:text-xl text-slate-500/60">
+            <div className="text-center md:text-lg text-slate-500/60">
                 Your library is empty. Add a video.
             </div>
         </div>
     ) : (
-        <div className="p-4 bg-gray-50 min-h-screen">
+        <div className="rounded-lg p-4 bg-gray-50 min-h-screen">
             {/* Sort dropdown */}
             <div className="flex items-center justify-end mb-6">
                 <label
