@@ -66,4 +66,42 @@ export const removeVideo = async (uid, videoId) => {
     } catch {
         return false;
     }
+
 };
+  
+export const getNotesByVideoId = async (uid, videoId) => {
+  const notesCol = collection(db, "users", uid, "videos", videoId, "notes");
+  const q = query(notesCol, orderBy("timeSec", "asc")); // optional ordering
+  const snap = await getDocs(q);
+  return snap.docs.map(doc => ({ noteId: doc.id, ...doc.data() }));
+};
+
+export const createNote = async (uid, videoId, content, timeSec) => {
+    const notesCol = collection(db, "users", uid, "videos", videoId, "notes");
+
+    const docRef = await addDoc(notesCol, {
+      timeSec,
+      content,
+    });
+
+    return docRef.id;
+  } 
+};
+
+export const updateNote = async (uid, videoId, noteId, newContent) => {
+    const ref = doc(db, "users", uid, "videos", videoId, "notes", noteId);
+
+    await updateDoc(ref, {
+      content: newContent
+    });
+
+    return noteId;
+}
+  
+  
+
+export const deleteNote = async (uid, videoId, noteId) => {
+    const ref = doc(db, "users", uid, "videos", videoId, "notes", noteId);
+    await deleteDoc(ref);
+};
+  
