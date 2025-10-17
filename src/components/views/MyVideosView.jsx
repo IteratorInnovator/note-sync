@@ -90,7 +90,14 @@ const MyVideosView = () => {
                     </span>
                 </div>
             </div>
-            <SavedVideoList videoList={sortedVideos} />
+            <SavedVideoList
+                videoList={sortedVideos}
+                onRemoveSuccess={(removedId) =>
+                    setVideoList((prev) =>
+                        prev.filter((video) => video.videoId !== removedId)
+                    )
+                }
+            />
         </div>
     );
 };

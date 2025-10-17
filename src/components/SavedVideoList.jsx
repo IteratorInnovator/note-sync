@@ -7,7 +7,7 @@ import { CircleCheck, CircleX } from "lucide-react";
 
 let toastId = 0;
 
-const SavedVideoList = ({ videoList }) => {
+const SavedVideoList = ({ videoList, onRemoveSuccess }) => {
     const [openMenuId, setOpenMenuId] = useState(null);
     const [toasts, setToasts] = useState([]);
 
@@ -33,25 +33,31 @@ const SavedVideoList = ({ videoList }) => {
         setToasts((prev) => prev.filter((t) => t.id !== id));
     };
 
-    const handleRemove = useCallback(async (videoId) => {
-        try {
-            const uid = auth.currentUser.uid;
-            await removeVideo(uid, videoId);
-            addToast(
-                `Removed from My Videos`,
-                CircleCheck,
-                "text-emerald-4400"
-            );
-        } catch {
-            addToast(
-                `Failed to remove from My Videos`,
-                CircleX,
-                "text-red-400"
-            );
-        } finally {
-            setOpenMenuId(null);
-        }
-    }, []);
+    const handleRemove = useCallback(
+        async (videoId) => {
+            try {
+                const uid = auth.currentUser.uid;
+                const ok = await removeVideo(uid, videoId);
+                if (!ok) throw new Error();
+                addToast(
+                    `Removed from My Videos`,
+                    CircleCheck,
+                    "text-emerald-400"
+                );
+                onRemoveSuccess?.(videoId);
+            } catch (err) {
+                console.log(err);
+                addToast(
+                    `Failed to remove from My Videos`,
+                    CircleX,
+                    "text-red-400"
+                );
+            } finally {
+                setOpenMenuId(null);
+            }
+        },
+        [onRemoveSuccess]
+    );
 
     const handleAddToPlaylist = useCallback((videoId) => {
         // TODO: add-to-playlist logic

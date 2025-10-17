@@ -9,44 +9,49 @@ import {
     setDoc,
     serverTimestamp,
 } from "firebase/firestore";
-import { getFunctions, httpsCallable } from "firebase/functions";
-import { app } from "../..";
+import { httpsCallable } from "firebase/functions";
+import { app, functions } from "../..";
 import { VideoAlreadySavedError } from "./errors";
 
 const FIREBASE_DATABASE_ID = import.meta.env.VITE_APP_FIREBASE_DATABASE_ID;
-const db = getFirestore(app, FIREBASE_DATABASE_ID);
 
+const db = getFirestore(app, FIREBASE_DATABASE_ID);
 
 /**
  * Retrieve all videos added by a specific user, ordered by timestamp (descending)
  */
 export const getVideosByUserId = async (uid) => {
+    const q = query(
+        collection(db, "users", uid, "videos"),
+        orderBy("addedAt", "desc")
+    );
 
-  const q = query(
-    collection(db, "users", uid, "videos"),
-    orderBy("addedAt", "desc")
-  );
-
-  const snap = await getDocs(q);
-  return snap.docs.map((doc) => ({ videoId: doc.id, ...doc.data() }));
+    const snap = await getDocs(q);
+    return snap.docs.map((doc) => ({ videoId: doc.id, ...doc.data() }));
 };
 
 /**
  * Add a video to a user's subcollection "videos"
  */
-export const addVideo = async (uid, videoId, title, channelTitle, thumbnail) => {
-  const ref = doc(db, "users", uid, "videos", videoId);
-
-  // optional: you could remove this check too if you always want to overwrite
-  if ((await getDoc(ref)).exists()) throw new VideoAlreadySavedError();
-
-  await setDoc(ref, {
+export const addVideo = async (
+    uid,
+    videoId,
     title,
     channelTitle,
-    thumbnailUrl: thumbnail,
-    progresSec: 0,
-    addedAt: serverTimestamp(),
-  });
+    thumbnail
+) => {
+    const ref = doc(db, "users", uid, "videos", videoId);
+
+    // optional: you could remove this check too if you always want to overwrite
+    if ((await getDoc(ref)).exists()) throw new VideoAlreadySavedError();
+
+    await setDoc(ref, {
+        title,
+        channelTitle,
+        thumbnailUrl: thumbnail,
+        progresSec: 0,
+        addedAt: serverTimestamp(),
+    });
 };
 
 /**
@@ -54,7 +59,11 @@ export const addVideo = async (uid, videoId, title, channelTitle, thumbnail) => 
  * Triggers the cloud function
  */
 export const removeVideo = async (uid, videoId) => {
-  const fn = httpsCallable(getFunctions(), "deleteVideoDocWithNotes");
-  const response = await fn({ uid: uid, videoId });
-  return response.ok;
-}
+    const fn = httpsCallable(functions, "deleteVideoDocWithNotes");
+    try {
+        const { data } = await fn({ uid, videoId });
+        return !!data?.ok;
+    } catch {
+        return false;
+    }
+};
