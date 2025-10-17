@@ -8,6 +8,8 @@ export const searchVideos = async (searchTerm, { signal }) => {
         q: String(searchTerm),
         maxResults: "48",
         key: YOUTUBE_API_KEY,
+        videoEmbeddable: true,
+        safeSearch: "none"
     });
 
     const url = `${YOUTUBE_API_ENDPOINT}/search?${params.toString()}`;
