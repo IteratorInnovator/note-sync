@@ -19,9 +19,7 @@ const VideoCard = ({
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`block overflow-hidden rounded-xl border border-slate-200 bg-white transition-shadow cursor-pointer group ${
-                    href ? "hover:shadow-lg" : "opacity-80 cursor-not-allowed"
-                }`}
+                className="block overflow-hidden rounded-xl border border-slate-200 bg-white cursor-pointer group hover:shadow-lg hover:scale-105 transition-all duration-300"
             >
                 <div className="relative aspect-video bg-slate-100">
                     {thumbnail ? (
@@ -47,7 +45,9 @@ const VideoCard = ({
                 <EllipsisButton
                     open={open}
                     onOpenChange={onOpenChange}
-                    onSave={() => onSave(videoId, title, channelTitle, thumbnail)}
+                    onSave={() =>
+                        onSave(videoId, title, channelTitle, thumbnail)
+                    }
                     onAddToPlaylist={() => onAddToPlaylist(videoId)}
                 />
 

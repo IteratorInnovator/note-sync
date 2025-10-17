@@ -2,12 +2,10 @@
 
 @import "tailwindcss";
 
-@theme {
-    --font-gwendolyn: Gwendolyn, sans-serif;
-    --font-mont: Montserrat, sans-serif;
-    --font-playpen: Playpen Sans Deva, sans-serif;
-    --font-poppins: Poppins, sans-serif;
-    --font-jetbrains: JetBrains Mono, sans-serif;
-    
+:root {
+    --font-gwendolyn: 'Gwendolyn', sans-serif;
+    --font-mont: 'Montserrat', sans-serif;
+    --font-playpen: 'Playpen Sans Deva', sans-serif;
+    --font-poppins: 'Poppins', sans-serif;
+    --font-jetbrains: 'JetBrains Mono', monospace;
 }
-

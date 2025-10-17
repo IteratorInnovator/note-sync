@@ -17,7 +17,7 @@ const SearchView = ({
 
             {results.length == 0 ? (
                 <div className="flex h-64 items-center justify-center">
-                    <div className="text-center text-xl text-slate-500/60">
+                    <div className="text-center text-sm md:text-xl text-slate-500/60">
                         Start searching to discover new videos.
                     </div>
                 </div>
