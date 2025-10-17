@@ -8,7 +8,7 @@ const Toast = ({ id, message, duration = 3000, onClose }) => {
   }, [id, duration, onClose]);
 
   return (
-    <div className="bg-slate-800 text-white px-4 py-2 rounded shadow-lg mb-2 animate-slide-in max-w-xs break-words">
+    <div className="bg-neutral-100 text-slate-900 px-4 py-2 rounded shadow-lg mb-2 animate-slide-in max-w-xs break-words">
       {message}
     </div>
   );
@@ -17,7 +17,7 @@ const Toast = ({ id, message, duration = 3000, onClose }) => {
 // position temp message bottom right
 export const ToastContainer = ({ toasts, removeToast }) => {
   return (
-    <div className="fixed bottom-6 right-6 flex flex-col items-end space-y-2 z-50">
+    <div className="fixed bottom-6 left-6 flex flex-col items-end space-y-2 z-50">
       {toasts.map((t) => (
         <Toast
           key={t.id}
