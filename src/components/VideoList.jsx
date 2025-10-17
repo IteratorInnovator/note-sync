@@ -4,7 +4,7 @@ import { addVideo } from "../services/utils/firestore";
 import { auth } from "..";
 import { ToastContainer } from "./ui/toast"; 
 import { VideoAlreadySavedError } from "../services/utils/errors";
-import { CircleCheck } from "lucide-react";
+import { CircleCheck, CircleX, BadgeCheck } from "lucide-react";
 
 
 let toastId = 0;
@@ -18,10 +18,9 @@ const VideoList = ({ videoList }) => {
     []
   );
 
-  const addToast = (message, Icon = null, duration = 3000) => {
+  const addToast = (message, Icon = null, iconColour = '', duration = 3000) => {
     const id = toastId++;
-    setToasts((prev) => [...prev, { id, message, Icon, duration }]);
-    return id;
+    setToasts((prev) => [...prev, { id, message, Icon, iconColour, duration }]);
   };
 
   const removeToast = (id) => {
@@ -33,12 +32,12 @@ const VideoList = ({ videoList }) => {
       try {
         const uid = auth.currentUser.uid;
         await addVideo(uid, videoId, title, channelTitle, thumbnail);
-        addToast(`Added to My Videos`, CircleCheck);
+        addToast(`Added to My Videos`, CircleCheck, "text-emerald-400");
       } catch (error) {
         if (error instanceof VideoAlreadySavedError) {
-          addToast("Video has already been added");
+          addToast("Video has already been added", BadgeCheck, "text-emerald-400");
         } else {
-          addToast("Failed to save video. Please try again");
+          addToast("Failed to save video", CircleX, "text-red-400");
         }
       } finally {
         setOpenMenuId(null);
