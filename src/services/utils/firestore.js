@@ -85,7 +85,6 @@ export const createNote = async (uid, videoId, content, timeSec) => {
     });
 
     return docRef.id;
-  } 
 };
 
 export const updateNote = async (uid, videoId, noteId, newContent) => {
@@ -96,7 +95,7 @@ export const updateNote = async (uid, videoId, noteId, newContent) => {
     });
 
     return noteId;
-}
+};
   
   
 
