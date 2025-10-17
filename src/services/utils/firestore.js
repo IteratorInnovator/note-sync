@@ -10,6 +10,7 @@ import {
     serverTimestamp,
 } from "firebase/firestore";
 import { app } from "../..";
+import { VideoAlreadySavedError } from "./errors";
 
 const FIREBASE_DATABASE_ID = import.meta.env.VITE_APP_FIREBASE_DATABASE_ID;
 const db = getFirestore(app, FIREBASE_DATABASE_ID);
@@ -36,7 +37,7 @@ export const addVideo = async (uid, videoId, title, channelTitle, thumbnail) => 
   const ref = doc(db, "users", uid, "videos", videoId);
 
   // optional: you could remove this check too if you always want to overwrite
-  if ((await getDoc(ref)).exists()) return;
+  if ((await getDoc(ref)).exists()) throw new VideoAlreadySavedError();
 
   await setDoc(ref, {
     title,
