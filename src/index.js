@@ -6,6 +6,7 @@ import {
     setPersistence,
     browserLocalPersistence
 } from "firebase/auth";
+import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 
 const firebaseConfig = {
     apiKey: "AIzaSyC0XvKd14qKqDFrrgXsSraIf1biANk5geA",
@@ -17,6 +18,7 @@ const firebaseConfig = {
     measurementId: "G-M03J250RMZ",
 };
 
+const FIREBASE_CLOUD_FUNCTIONS_REGION = import.meta.env.VITE_APP_FIREBASE_CLOUD_FUNCTIONS_REGION;
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
@@ -26,3 +28,11 @@ await setPersistence(auth, browserLocalPersistence);
 export const GoogleProvider = new GoogleAuthProvider();
 export const FacebookProvider = new FacebookAuthProvider();
 FacebookProvider.addScope("email");
+
+export const functions = getFunctions(app, FIREBASE_CLOUD_FUNCTIONS_REGION);
+
+if (import.meta.env.DEV) {
+  connectFunctionsEmulator(functions, "localhost", 5001);
+}
+
+
