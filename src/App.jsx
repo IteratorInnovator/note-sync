@@ -14,6 +14,7 @@ function App() {
         () =>
             onAuthStateChanged(auth, (u) => {
                 setUser(u);
+
                 setLoading(false);
             }),
         []

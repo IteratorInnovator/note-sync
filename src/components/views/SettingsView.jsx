@@ -1,20 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, ChevronDown, Trash2, X } from "lucide-react";
-
-const STORAGE_KEY = "notesync.settings";
-
-const DEFAULT_SETTINGS = {
-    defaultLandingTab: "videos",
-    safeSearch: "moderate",
-    videoDuration: "any",
-    quickCapturePrompt: true,
-};
-
-const landingTabOptions = [
-    { value: "videos", label: "My Videos" },
-    { value: "search", label: "Search Videos" },
-    { value: "playlists", label: "My Playlists" },
-];
+import { useRef, useCallback, useEffect, useMemo, useState } from "react";
+import { AlertTriangle, ChevronDown, CircleCheck, CircleX, Trash2, X } from "lucide-react";
+import { DEFAULT_SETTINGS, useSettings } from "../../stores/useSettings";
+import { auth } from "../..";
+import { deleteUser } from "firebase/auth";
+import { useDebounce } from "../../hooks/useDebounce";
+import { deleteAllVideos } from "../../services/utils/firestore";
+import { ToastContainer } from "../ui/Toast";
 
 const safeSearchOptions = [
     { value: "strict", label: "Strict (hide mature content)" },
@@ -29,55 +20,20 @@ const videoDurationOptions = [
     { value: "short", label: "Short (<4 minutes)" },
 ];
 
-const factoredStorage =
-    typeof window === "undefined"
-        ? null
-        : {
-              read() {
-                  try {
-                      const raw = window.localStorage.getItem(STORAGE_KEY);
-                      return raw ? JSON.parse(raw) : null;
-                  } catch {
-                      return null;
-                  }
-              },
-              write(value) {
-                  try {
-                      window.localStorage.setItem(
-                          STORAGE_KEY,
-                          JSON.stringify(value)
-                      );
-                  } catch {
-                      /* no-op */
-                  }
-              },
-              clear() {
-                  try {
-                      window.localStorage.removeItem(STORAGE_KEY);
-                  } catch {
-                      /* no-op */
-                  }
-              },
-          };
+const fetchUserSettingsPlaceholder = async () => {
+    // TODO: Replace with Firestore getSettings(uid)
+    return { ...DEFAULT_SETTINGS };
+};
 
-const Toggle = ({ checked, onChange, label }) => (
-    <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-            checked ? "bg-red-500" : "bg-slate-300"
-        }`}
-    >
-        <span className="sr-only">{label}</span>
-        <span
-            className={`inline-block size-5 rounded-full bg-white shadow transform transition-transform ${
-                checked ? "translate-x-5" : "translate-x-1"
-            }`}
-        />
-    </button>
-);
+const persistUserSettingsPlaceholder = async (nextSettings) => {
+    // TODO: Replace with Firestore updateSettings(uid, nextSettings)
+    return nextSettings;
+};
+
+const resetUserSettingsPlaceholder = () => {
+    // TODO: Replace with Firestore reset logic
+    return Promise.resolve();
+};
 
 const SectionCard = ({ title, description, children }) => (
     <section className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
@@ -94,6 +50,31 @@ const Row = ({ title, description, control }) => (
         <div>
             <h3 className="text-sm font-medium text-slate-900">{title}</h3>
             <p className="mt-1 text-sm text-slate-500">{description}</p>
+        </div>
+        <div className="sm:flex-shrink-0">{control}</div>
+    </div>
+);
+
+const DangerSection = ({ title, description, children }) => (
+    <section className="rounded-2xl border border-red-200 bg-red-50/80 ring-1 ring-red-100/80">
+        <div className="flex items-start gap-3 border-b border-red-200/80 px-6 py-5">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10 text-red-500">
+                <AlertTriangle className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div>
+                <h2 className="text-lg font-semibold text-red-700">{title}</h2>
+                <p className="mt-1 text-sm text-red-600/80">{description}</p>
+            </div>
+        </div>
+        <div className="divide-y divide-red-100/70">{children}</div>
+    </section>
+);
+
+const DangerRow = ({ title, description, control }) => (
+    <div className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h3 className="text-sm font-semibold text-red-700">{title}</h3>
+            <p className="mt-1 text-sm text-red-600/80">{description}</p>
         </div>
         <div className="sm:flex-shrink-0">{control}</div>
     </div>
@@ -149,6 +130,8 @@ const ACCENT_STYLES = {
     },
 };
 
+let toastId = 0;
+
 const ConfirmationModal = ({
     open,
     onClose,
@@ -192,7 +175,7 @@ const ConfirmationModal = ({
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={dialogId}
-                className={`w-full max-w-xl scale-100 rounded-3xl border p-8 text-left shadow-2xl backdrop-blur transition-transform duration-200 ease-out ${styles.panel}`}
+                className={`w-full max-w-xl scale-100 rounded-3xl border px-6 py-8 text-left shadow-2xl backdrop-blur transition-transform duration-200 ease-out ${styles.panel}`}
                 onClick={(event) => event.stopPropagation()}
             >
                 <div className="flex items-start gap-4">
@@ -266,57 +249,100 @@ const ConfirmationModal = ({
 };
 
 export default function SettingsView() {
-    const [settings, setSettings] = useState(() => ({ ...DEFAULT_SETTINGS }));
-    const [loaded, setLoaded] = useState(false);
+    const { settings, getSettings, updateSettings, resetSettings } =
+        useSettings();
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showClearVideosModal, setShowClearVideosModal] = useState(false);
+    const [draftSettings, setDraftSettings] = useState(() => ({
+        ...settings,
+    }));
+    const [toasts, setToasts] = useState([]);
 
     useEffect(() => {
-        if (!factoredStorage) return;
-        const stored = factoredStorage.read();
-        if (stored) {
-            setSettings((current) => ({ ...current, ...stored }));
+        void getSettings(fetchUserSettingsPlaceholder);
+    }, [getSettings]);
+
+    useEffect(() => {
+        setDraftSettings({ ...settings });
+    }, [settings]);
+
+    const persistDraftSettings = useCallback(() => {
+        const changes = {};
+        if (draftSettings.safeSearch !== settings.safeSearch) {
+            changes.safeSearch = draftSettings.safeSearch;
         }
-        setLoaded(true);
-    }, []);
+        if (draftSettings.videoDuration !== settings.videoDuration) {
+            changes.videoDuration = draftSettings.videoDuration;
+        }
 
-    useEffect(() => {
-        if (!factoredStorage || !loaded) return;
-        factoredStorage.write(settings);
-    }, [settings, loaded]);
+        if (Object.keys(changes).length === 0) return;
+
+        updateSettings(persistUserSettingsPlaceholder, changes).catch((error) =>
+            console.error("[Settings] failed to persist changes", error)
+        );
+    }, [
+        draftSettings.safeSearch,
+        draftSettings.videoDuration,
+        settings.safeSearch,
+        settings.videoDuration,
+        updateSettings,
+    ]);
+
+    useDebounce(persistDraftSettings, [persistDraftSettings], 400);
 
     const handleSelectChange = (key) => (event) => {
         const { value } = event.target;
-        setSettings((prev) => ({ ...prev, [key]: value }));
+        setDraftSettings((prev) => ({ ...prev, [key]: value }));
     };
-
-    const handleToggle = (key) => (value) => {
-        setSettings((prev) => ({ ...prev, [key]: value }));
-    };
-
     const resetDisabled = useMemo(
         () =>
             Object.entries(DEFAULT_SETTINGS).every(
-                ([key, value]) => settings[key] === value
+                ([key, value]) => draftSettings[key] === value
             ),
-        [settings]
+        [draftSettings]
     );
 
+    const addToast = (
+        message,
+        Icon = null,
+        iconColour = "",
+        duration = 3000
+    ) => {
+        const id = toastId++;
+        setToasts((prev) => [
+            ...prev,
+            { id, message, Icon, iconColour, duration },
+        ]);
+    };
+
+    const removeToast = (id) => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+    };
+
     const handleReset = () => {
-        setSettings(() => ({ ...DEFAULT_SETTINGS }));
-        if (factoredStorage) factoredStorage.clear();
+        setDraftSettings({ ...DEFAULT_SETTINGS });
+        resetSettings(resetUserSettingsPlaceholder).catch((error) =>
+            console.error("[Settings] failed to reset settings", error)
+        );
     };
 
-    const handleDeleteAccount = () => {
+    const handleDeleteAccount = async () => {
         setShowDeleteModal(false);
-        // Placeholder: hook this up to Firebase auth deletion flow when ready.
-        console.warn("[Settings] Account deletion requested.");
+        await deleteUser(auth.currentUser);
     };
 
-    const handleClearSavedVideos = () => {
+    const handleClearSavedVideos = async () => {
         setShowClearVideosModal(false);
-        // Placeholder: hook this up to Firestore bulk delete when ready.
-        console.warn("[Settings] Clear saved videos and notes requested.");
+        try {
+            const ok = await deleteAllVideos(auth.currentUser.uid);
+            if (!ok) {
+                throw new Error();
+            }
+            addToast("Cleared saved videos", CircleCheck, "text-emerald-400");
+        } catch {
+            addToast("Failed to clear saved videos", CircleX, "text-red-400");
+        }
+        
     };
 
     return (
@@ -345,10 +371,9 @@ export default function SettingsView() {
                 accent="caution"
                 dialogId="clear-videos-modal"
                 title="Clear all saved videos?"
-                description="This wipes every video inside My Videos and permanently deletes any notes you captured for them. Playlists that referenced those videos will remain but without entries."
+                description="This wipes every video inside My Videos and permanently deletes any notes you captured for them."
                 bullets={[
-                    "Your YouTube account is untouched—only NoteSync entries are cleared.",
-                    "Export or back up important notes before continuing.",
+                    "Your NoteSync account is untouched—only NoteSync entries are cleared.",
                 ]}
                 subtext="This action cannot be undone."
                 confirmLabel="Clear saved videos"
@@ -367,25 +392,12 @@ export default function SettingsView() {
                 description="Fine-tune how NoteSync surfaces content across the dashboard."
             >
                 <Row
-                    title="Default landing tab"
-                    description="Choose which view opens first after you sign in."
-                    control={
-                        <SelectField
-                            id="preferences-landing-tab"
-                            value={settings.defaultLandingTab}
-                            onChange={handleSelectChange("defaultLandingTab")}
-                            options={landingTabOptions}
-                            className="sm:min-w-[13rem]"
-                        />
-                    }
-                />
-                <Row
                     title="Safe search level"
                     description="Filter search results using YouTube’s built-in SafeSearch."
                     control={
                         <SelectField
                             id="preferences-safe-search"
-                            value={settings.safeSearch}
+                            value={draftSettings.safeSearch}
                             onChange={handleSelectChange("safeSearch")}
                             options={safeSearchOptions}
                             className="sm:min-w-[17rem]"
@@ -398,21 +410,10 @@ export default function SettingsView() {
                     control={
                         <SelectField
                             id="preferences-video-duration"
-                            value={settings.videoDuration}
+                            value={draftSettings.videoDuration}
                             onChange={handleSelectChange("videoDuration")}
                             options={videoDurationOptions}
                             className="sm:min-w-[17rem]"
-                        />
-                    }
-                />
-                <Row
-                    title="Quick capture prompt"
-                    description="Surface the quick-save dialog whenever you copy a YouTube link."
-                    control={
-                        <Toggle
-                            checked={settings.quickCapturePrompt}
-                            onChange={handleToggle("quickCapturePrompt")}
-                            label="Enable quick capture prompt"
                         />
                     }
                 />
@@ -429,37 +430,40 @@ export default function SettingsView() {
                 </button>
             </div>
 
-            <SectionCard
+            <DangerSection
                 title="Danger zone"
-                description="Take irreversible actions that impact your NoteSync data or account."
+                description="High-impact actions that permanently alter your NoteSync data."
             >
-                <Row
+                <DangerRow
                     title="Delete NoteSync account"
                     description="All synced notes and saved videos will be permanently removed."
                     control={
                         <button
                             type="button"
                             onClick={() => setShowDeleteModal(true)}
-                            className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300"
+                            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-2 focus:ring-offset-red-50"
                         >
                             Delete account
                         </button>
                     }
                 />
-                <Row
+                <DangerRow
                     title="Clear saved videos"
                     description="Remove every video from My Videos while keeping your account active."
                     control={
                         <button
                             type="button"
                             onClick={() => setShowClearVideosModal(true)}
-                            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-300"
+                            className="rounded-lg border border-red-200 bg-white/90 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-red-200 focus:ring-offset-2 focus:ring-offset-red-50"
                         >
                             Clear saved videos
                         </button>
                     }
                 />
-            </SectionCard>
+            </DangerSection>
+
+            {/* Render toast container */}
+            <ToastContainer toasts={toasts} removeToast={removeToast} />
         </div>
     );
 }

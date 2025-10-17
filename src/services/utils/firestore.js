@@ -15,6 +15,7 @@ import {
 import { httpsCallable } from "firebase/functions";
 import { app, functions } from "../..";
 import { VideoAlreadySavedError } from "./errors";
+import { DEFAULT_SETTINGS } from "../../stores/useSettings";
 
 const FIREBASE_DATABASE_ID = import.meta.env.VITE_APP_FIREBASE_DATABASE_ID;
 
@@ -71,6 +72,17 @@ export const removeVideo = async (uid, videoId) => {
     }
 };
 
+// Deletes the entire video subcollection in a user doc
+export const deleteAllVideos = async (uid) => {
+    const fn = httpsCallable(functions, "deleteAllVideoDocs");
+    try {
+        const { data } = await fn({ uid });
+        return !!data?.ok;
+    } catch {
+        return false;
+    }
+};
+
 // Retrieves all notes associated with a video
 export const getNotesByVideoId = async (uid, videoId) => {
     const notesCol = collection(db, "users", uid, "videos", videoId, "notes");
@@ -91,7 +103,6 @@ export const createNote = async (uid, videoId, content, timeSec) => {
     return docRef.id;
 };
 
-
 // Update an exisiting note under a video
 export const updateNote = async (uid, videoId, noteId, newContent) => {
     const ref = doc(db, "users", uid, "videos", videoId, "notes", noteId);
@@ -107,4 +118,23 @@ export const updateNote = async (uid, videoId, noteId, newContent) => {
 export const deleteNote = async (uid, videoId, noteId) => {
     const ref = doc(db, "users", uid, "videos", videoId, "notes", noteId);
     await deleteDoc(ref);
+};
+
+// Get a user's settings
+export const getSettings = async (uid) => {
+    const ref = doc(db, "users", uid);
+    const snap = await getDoc(ref);
+
+    return snap.data().settings;
+};
+
+// Update a user's settings
+export const updateSettings = async (uid, partial) => {};
+
+// Reset a user's settings to default
+export const resetSettings = async (uid) => {
+    const ref = doc(db, "users", uid);
+    await updateDoc(ref, {
+        settings: DEFAULT_SETTINGS,
+    });
 };
