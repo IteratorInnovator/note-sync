@@ -1,10 +1,20 @@
 import { Play } from "lucide-react";
+import SavedEllipsisButton from "./SavedEllipsisButton";
 
-const SavedVideoCard = ({ videoId, thumbnail, title, channelTitle }) => {
+const SavedVideoCard = ({
+    videoId,
+    thumbnail,
+    title,
+    channelTitle,
+    open, // boolean: controlled by parent
+    onOpenChange, // (boolean) => void
+    onRemove,
+    onAddToPlaylist,
+}) => {
     const href = `https://www.youtube.com/watch?v=${videoId}`;
 
     return (
-        <div className="relative">
+        <li className="relative">
             <a
                 href={href}
                 target="_blank"
@@ -32,6 +42,15 @@ const SavedVideoCard = ({ videoId, thumbnail, title, channelTitle }) => {
                     </div>
                 </div>
 
+                <SavedEllipsisButton
+                    open={open}
+                    onOpenChange={onOpenChange}
+                    onRemove={() =>
+                        onRemove(videoId)
+                    }
+                    onAddToPlaylist={() => onAddToPlaylist(videoId)}
+                />
+
                 <div className="p-4">
                     <h3 className="text-xs md:text-sm font-semibold line-clamp-2 truncate">
                         {title}
@@ -41,7 +60,7 @@ const SavedVideoCard = ({ videoId, thumbnail, title, channelTitle }) => {
                     </p>
                 </div>
             </a>
-        </div>
+        </li>
     );
 };
 

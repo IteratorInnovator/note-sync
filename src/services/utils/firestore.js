@@ -9,6 +9,7 @@ import {
     setDoc,
     serverTimestamp,
 } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { app } from "../..";
 import { VideoAlreadySavedError } from "./errors";
 
@@ -49,8 +50,11 @@ export const addVideo = async (uid, videoId, title, channelTitle, thumbnail) => 
 };
 
 /**
- * Delete a video document by ID
+ * Delete a video document and its notes subcollection from the user's saved videos by its ID
+ * Triggers the cloud function
  */
-export const deleteVideo = (videoId, uid) => {
-  // (to be implemented if needed)
-};
+export const removeVideo = async (uid, videoId) => {
+  const fn = httpsCallable(getFunctions(), "deleteVideoDocWithNotes");
+  const response = await fn({ uid: uid, videoId });
+  return response.ok;
+}

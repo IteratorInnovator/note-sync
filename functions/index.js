@@ -11,6 +11,7 @@ import { setGlobalOptions } from "firebase-functions";
 import { auth } from "firebase-functions/v1";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import { onCall } from "firebase-functions/https";
 
 // For cost control, you can set the maximum number of containers that can be
 // running at the same time. This helps mitigate the impact of unexpected
@@ -47,7 +48,23 @@ export const createUserDoc = auth.user().onCreate(async (user) => {
         });
 });
 
-// Delete a user doc in Firestore user collections when a user deletes his account
+// Delete a user doc and its subcollections in Firestore user collections when a user deletes his account
 export const deleteUserDoc = auth.user().onDelete(async (user) => {
-    await db.collection("users").doc(user.uid).delete();
+    const uid = user.uid;
+    await db.recursiveDelete(db.doc(`users/${uid}`));
+});
+
+// Delete a user's saved video and its 'notes' subcollection by videoId
+export const deleteVideoDocWithNotes = onCall(async (request) => {
+  const { uid, videoId } = request.data;
+
+  const docRef = db.doc(`users/${uid}/videos/${videoId}`);
+
+  // Delete subcollections under the doc
+  await db.recursiveDelete(docRef);
+
+  // Finally delete the doc itself (recursiveDelete does not remove the doc)
+  await docRef.delete();
+
+  return { ok: true };
 });
