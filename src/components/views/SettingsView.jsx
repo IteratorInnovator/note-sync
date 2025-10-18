@@ -1,10 +1,22 @@
 import { useRef, useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, ChevronDown, CircleCheck, CircleX, Trash2, X } from "lucide-react";
+import {
+    AlertTriangle,
+    ChevronDown,
+    CircleCheck,
+    CircleX,
+    Trash2,
+    X,
+} from "lucide-react";
 import { DEFAULT_SETTINGS, useSettings } from "../../stores/useSettings";
 import { auth } from "../..";
 import { deleteUser } from "firebase/auth";
 import { useDebounce } from "../../hooks/useDebounce";
-import { deleteAllVideos } from "../../services/utils/firestore";
+import {
+    getUserSettings,
+    updateUserSettings,
+    resetUserSettings,
+    deleteAllVideos,
+} from "../../services/utils/firestore";
 import { ToastContainer } from "../ui/Toast";
 
 const safeSearchOptions = [
@@ -19,21 +31,6 @@ const videoDurationOptions = [
     { value: "medium", label: "Medium (4-20 minutes)" },
     { value: "short", label: "Short (<4 minutes)" },
 ];
-
-const fetchUserSettingsPlaceholder = async () => {
-    // TODO: Replace with Firestore getSettings(uid)
-    return { ...DEFAULT_SETTINGS };
-};
-
-const persistUserSettingsPlaceholder = async (nextSettings) => {
-    // TODO: Replace with Firestore updateSettings(uid, nextSettings)
-    return nextSettings;
-};
-
-const resetUserSettingsPlaceholder = () => {
-    // TODO: Replace with Firestore reset logic
-    return Promise.resolve();
-};
 
 const SectionCard = ({ title, description, children }) => (
     <section className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
@@ -259,14 +256,14 @@ export default function SettingsView() {
     const [toasts, setToasts] = useState([]);
 
     useEffect(() => {
-        void getSettings(fetchUserSettingsPlaceholder);
+        void getSettings(() => getUserSettings(auth.currentUser.uid));
     }, [getSettings]);
 
     useEffect(() => {
         setDraftSettings({ ...settings });
     }, [settings]);
 
-    const persistDraftSettings = useCallback(() => {
+    const persistDraftSettings = useCallback(async () => {
         const changes = {};
         if (draftSettings.safeSearch !== settings.safeSearch) {
             changes.safeSearch = draftSettings.safeSearch;
@@ -277,8 +274,9 @@ export default function SettingsView() {
 
         if (Object.keys(changes).length === 0) return;
 
-        updateSettings(persistUserSettingsPlaceholder, changes).catch((error) =>
-            console.error("[Settings] failed to persist changes", error)
+        await updateSettings(
+            (next) => updateUserSettings(auth.currentUser.uid, next),
+            changes
         );
     }, [
         draftSettings.safeSearch,
@@ -288,7 +286,7 @@ export default function SettingsView() {
         updateSettings,
     ]);
 
-    useDebounce(persistDraftSettings, [persistDraftSettings], 400);
+    useDebounce(persistDraftSettings, [persistDraftSettings], 2000);
 
     const handleSelectChange = (key) => (event) => {
         const { value } = event.target;
@@ -319,11 +317,9 @@ export default function SettingsView() {
         setToasts((prev) => prev.filter((t) => t.id !== id));
     };
 
-    const handleReset = () => {
+    const handleReset = async () => {
         setDraftSettings({ ...DEFAULT_SETTINGS });
-        resetSettings(resetUserSettingsPlaceholder).catch((error) =>
-            console.error("[Settings] failed to reset settings", error)
-        );
+        await resetSettings(() => resetUserSettings(auth.currentUser.uid));
     };
 
     const handleDeleteAccount = async () => {
@@ -342,7 +338,6 @@ export default function SettingsView() {
         } catch {
             addToast("Failed to clear saved videos", CircleX, "text-red-400");
         }
-        
     };
 
     return (

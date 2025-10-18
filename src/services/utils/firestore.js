@@ -121,7 +121,7 @@ export const deleteNote = async (uid, videoId, noteId) => {
 };
 
 // Get a user's settings
-export const getSettings = async (uid) => {
+export const getUserSettings = async (uid) => {
     const ref = doc(db, "users", uid);
     const snap = await getDoc(ref);
 
@@ -129,10 +129,12 @@ export const getSettings = async (uid) => {
 };
 
 // Update a user's settings
-export const updateSettings = async (uid, partial) => {};
+export const updateUserSettings = async (uid, partial) => {
+    
+};
 
 // Reset a user's settings to default
-export const resetSettings = async (uid) => {
+export const resetUserSettings = async (uid) => {
     const ref = doc(db, "users", uid);
     await updateDoc(ref, {
         settings: DEFAULT_SETTINGS,
