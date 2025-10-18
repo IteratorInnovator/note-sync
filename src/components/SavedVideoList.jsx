@@ -45,8 +45,7 @@ const SavedVideoList = ({ videoList, onRemoveSuccess }) => {
                     "text-emerald-400"
                 );
                 onRemoveSuccess?.(videoId);
-            } catch (err) {
-                console.log(err);
+            } catch {
                 addToast(
                     `Failed to remove from My Videos`,
                     CircleX,
