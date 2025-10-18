@@ -286,7 +286,7 @@ export default function SettingsView() {
         updateSettings,
     ]);
 
-    useDebounce(persistDraftSettings, [persistDraftSettings], 2000);
+    useDebounce(persistDraftSettings, [persistDraftSettings], 500);
 
     const handleSelectChange = (key) => (event) => {
         const { value } = event.target;

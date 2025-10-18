@@ -129,8 +129,12 @@ export const getUserSettings = async (uid) => {
 };
 
 // Update a user's settings
-export const updateUserSettings = async (uid, partial) => {
-    
+export const updateUserSettings = async (uid, nextSettings) => {
+    const ref = doc(db, "users", uid);
+    await updateDoc(ref, {
+        settings: nextSettings,
+    });
+    return nextSettings;
 };
 
 // Reset a user's settings to default
