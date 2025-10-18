@@ -5,9 +5,10 @@ import MainHeader from "../components/MainHeader";
 import MyVideosView from "../components/views/MyVideosView";
 import SearchView from "../components/views/SearchView";
 import PlaylistsView from "../components/views/PlaylistsView";
+import SettingsView from "../components/views/SettingsView";
 import { useIsMdUp } from "../services/utils/breakpoint";
 
-const VALID_PATHS = new Set(["videos", "search", "playlists"]);
+const VALID_PATHS = new Set(["videos", "search", "playlists", "settings"]);
 
 export default function Main() {
   const mdUp = useIsMdUp();
@@ -51,6 +52,9 @@ export default function Main() {
       case "playlists": 
         setTitle("My Playlists");
         return <PlaylistsView />;
+      case "settings":
+        setTitle("Settings");
+        return <SettingsView />;
       default:   
         setTitle("My Videos");       
         return null; // immediately redirected above

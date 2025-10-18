@@ -45,6 +45,10 @@ export const createUserDoc = functions
             .set({
                 name: user.displayName ?? null,
                 createdAt: FieldValue.serverTimestamp(),
+                settings: {
+                    safeSearch: "moderate",
+                    videoDuration: "any",
+                },
             });
     });
 
@@ -55,6 +59,24 @@ export const deleteUserDoc = functions
     .onDelete(async (user) => {
         const uid = user.uid;
         await db.recursiveDelete(db.doc(`users/${uid}`));
+    });
+
+// Delete the entire video collection recursively under a user doc
+export const deleteAllVideoDocs = functions
+    .region("asia-southeast1")
+    .https.onCall(async (data, context) => {
+        const uid = data?.uid;
+
+        if (context.auth?.uid !== uid) {
+            throw new functions.https.HttpsError("permission-denied");
+        }
+
+        const videosCollection = db
+            .collection("users")
+            .doc(uid)
+            .collection("videos");
+        await db.recursiveDelete(videosCollection);
+        return { ok: true };
     });
 
 // Delete a user's saved video and its 'notes' subcollection by videoId

@@ -1,13 +1,20 @@
+import { useSettings } from "../../stores/useSettings";
+
 const YOUTUBE_API_KEY = import.meta.env.VITE_APP_YOUTUBE_API_KEY;
 const YOUTUBE_API_ENDPOINT = import.meta.env.VITE_APP_YOUTUBE_API_ENDPOINT;
 
 export const searchVideos = async (searchTerm, { signal }) => {
+    const { safeSearch, videoDuration } = useSettings.getState().settings;
+    
     const params = new URLSearchParams({
         part: "snippet",
         type: "video",
         q: String(searchTerm),
         maxResults: "48",
         key: YOUTUBE_API_KEY,
+        videoEmbeddable: true,
+        safeSearch: safeSearch,
+        videoDuration: videoDuration
     });
 
     const url = `${YOUTUBE_API_ENDPOINT}/search?${params.toString()}`;
@@ -31,6 +38,4 @@ export const searchVideos = async (searchTerm, { signal }) => {
     }));
 };
 
-export const getVideoById = (videoId) => {
-    
-}
+export const getVideoById = (videoId) => {};

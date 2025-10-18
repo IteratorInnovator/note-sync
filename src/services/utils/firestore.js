@@ -7,11 +7,15 @@ import {
     getDoc,
     getDocs,
     setDoc,
+    addDoc,
+    updateDoc,
+    deleteDoc,
     serverTimestamp,
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { app, functions } from "../..";
 import { VideoAlreadySavedError } from "./errors";
+import { DEFAULT_SETTINGS } from "../../stores/useSettings";
 
 const FIREBASE_DATABASE_ID = import.meta.env.VITE_APP_FIREBASE_DATABASE_ID;
 
@@ -66,41 +70,77 @@ export const removeVideo = async (uid, videoId) => {
     } catch {
         return false;
     }
-
 };
-  
+
+// Deletes the entire video subcollection in a user doc
+export const deleteAllVideos = async (uid) => {
+    const fn = httpsCallable(functions, "deleteAllVideoDocs");
+    try {
+        const { data } = await fn({ uid });
+        return !!data?.ok;
+    } catch {
+        return false;
+    }
+};
+
+// Retrieves all notes associated with a video
 export const getNotesByVideoId = async (uid, videoId) => {
-  const notesCol = collection(db, "users", uid, "videos", videoId, "notes");
-  const q = query(notesCol, orderBy("timeSec", "asc")); // optional ordering
-  const snap = await getDocs(q);
-  return snap.docs.map(doc => ({ noteId: doc.id, ...doc.data() }));
+    const notesCol = collection(db, "users", uid, "videos", videoId, "notes");
+    const q = query(notesCol, orderBy("timeSec", "asc")); // optional ordering
+    const snap = await getDocs(q);
+    return snap.docs.map((doc) => ({ noteId: doc.id, ...doc.data() }));
 };
 
+// Create a new note under a video
 export const createNote = async (uid, videoId, content, timeSec) => {
     const notesCol = collection(db, "users", uid, "videos", videoId, "notes");
 
     const docRef = await addDoc(notesCol, {
-      timeSec,
-      content,
+        timeSec,
+        content,
     });
 
     return docRef.id;
-  };
+};
 
+// Update an exisiting note under a video
 export const updateNote = async (uid, videoId, noteId, newContent) => {
     const ref = doc(db, "users", uid, "videos", videoId, "notes", noteId);
 
     await updateDoc(ref, {
-      content: newContent
+        content: newContent,
     });
 
     return noteId;
 };
-  
-  
 
+// Delete an existing note under a video
 export const deleteNote = async (uid, videoId, noteId) => {
     const ref = doc(db, "users", uid, "videos", videoId, "notes", noteId);
     await deleteDoc(ref);
 };
-  
+
+// Get a user's settings
+export const getUserSettings = async (uid) => {
+    const ref = doc(db, "users", uid);
+    const snap = await getDoc(ref);
+
+    return snap.data().settings;
+};
+
+// Update a user's settings
+export const updateUserSettings = async (uid, nextSettings) => {
+    const ref = doc(db, "users", uid);
+    await updateDoc(ref, {
+        settings: nextSettings,
+    });
+    return nextSettings;
+};
+
+// Reset a user's settings to default
+export const resetUserSettings = async (uid) => {
+    const ref = doc(db, "users", uid);
+    await updateDoc(ref, {
+        settings: DEFAULT_SETTINGS,
+    });
+};

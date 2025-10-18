@@ -14,11 +14,11 @@ function App() {
         () =>
             onAuthStateChanged(auth, (u) => {
                 setUser(u);
+
                 setLoading(false);
             }),
         []
     );
-    
     
 
     if (loading) return null;
@@ -43,6 +43,10 @@ function App() {
                 />
                 <Route
                     path="/playlists"
+                    element={user ? <Main /> : <Navigate to="/" />}
+                />
+                <Route
+                    path="/settings"
                     element={user ? <Main /> : <Navigate to="/" />}
                 />
 

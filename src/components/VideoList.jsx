@@ -2,10 +2,9 @@ import { useState, useCallback } from "react";
 import VideoCard from "./ui/VideoCard";
 import { addVideo } from "../services/utils/firestore";
 import { auth } from "..";
-import { ToastContainer } from "./ui/toast"; 
+import { ToastContainer } from "./ui/Toast"; 
 import { VideoAlreadySavedError } from "../services/utils/errors";
 import { CircleCheck, CircleX, BadgeCheck } from "lucide-react";
-
 
 let toastId = 0;
 
