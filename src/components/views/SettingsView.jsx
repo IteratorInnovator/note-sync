@@ -57,7 +57,7 @@ const Row = ({ title, description, control }) => (
 const DangerSection = ({ title, description, children }) => (
     <section className="rounded-2xl border border-red-200 bg-red-50/80 ring-1 ring-red-100/80">
         <div className="flex items-start gap-3 border-b border-red-200/80 px-6 py-5">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10 text-red-500">
+            <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-red-500/10 text-red-500">
                 <AlertTriangle className="h-5 w-5" aria-hidden="true" />
             </span>
             <div>
@@ -75,7 +75,7 @@ const DangerRow = ({ title, description, control }) => (
             <h3 className="text-sm font-semibold text-red-700">{title}</h3>
             <p className="mt-1 text-sm text-red-600/80">{description}</p>
         </div>
-        <div className="sm:flex-shrink-0">{control}</div>
+        <div className="self-end sm:ml-auto sm:self-auto sm:flex-shrink-0">{control}</div>
     </div>
 );
 
@@ -304,8 +304,8 @@ export default function SettingsView() {
                 title="Permanently delete your account?"
                 description="This removes every saved video, playlist, note, and preference associated with this account."
                 bullets={[
-                    "You may be asked to reauthenticate before deletion.",
-                    "Shared notes and collaborations will stop immediately.",
+                    "All saved videos, notes, playlists, and preferences will be removed.",
+                    "You can't recover your NoteSync account after deletion.",
                 ]}
                 subtext="This action cannot be undone."
                 confirmLabel="Delete account"
@@ -328,12 +328,12 @@ export default function SettingsView() {
             <header className="rounded-2xl bg-gradient-to-r from-red-500/90 to-rose-500/80 p-6 text-white shadow-sm">
                 <h1 className="text-2xl font-semibold">Your Preferences</h1>
                 <p className="mt-2 max-w-2xl text-sm text-white/80">
-                    Customize how NoteSync surfaces and organizes YouTube content for you.
+                    Fine-tune how NoteSync searches and manages your saved content.
                 </p>
             </header>
 
             {/* Preferences */}
-            <SectionCard title="Preferences" description="Fine-tune your dashboard experience.">
+            <SectionCard title="Search Preferences" description="Set default filters that shape your NoteSync search results.">
                 <Row
                     title="Safe search level"
                     description="Filter YouTube search results using SafeSearch."
@@ -363,7 +363,7 @@ export default function SettingsView() {
             </SectionCard>
 
             {/* Reset Section */}
-            <div className="flex justify-center">
+            <div className="flex justify-end">
                 <button
                     type="button"
                     onClick={handleReset}
