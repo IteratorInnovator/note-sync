@@ -36,6 +36,6 @@ export const searchVideos = async (searchTerm, { signal }) => {
         publishedAt: item.snippet?.publishedAt ?? "",
         thumbnail: item.snippet?.thumbnails?.medium?.url ?? null,
     }));
-};
+}
 
 export const getVideoById = (videoId) => {};

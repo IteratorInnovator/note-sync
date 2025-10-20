@@ -1,35 +1,40 @@
 import { useState, useCallback } from "react";
 import SavedVideoCard from "./ui/SavedVideoCard";
 import { ToastContainer } from "./ui/Toast";
-import { removeVideo } from "../services/utils/firestore";
+import { removeVideo, hasNotes } from "../services/utils/firestore";
 import { auth } from "..";
 import { CircleCheck, CircleX } from "lucide-react";
 import { Button } from "./ui/button";
 
-
 let toastId = 0;
 
 // Small confirm dialog component (inline for simplicity)
-const ConfirmDialog = ({ open, message, onConfirm, onCancel }) => {
+const ConfirmDialog = ({ open, onConfirm, onCancel }) => {
     if (!open) return null;
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
             <div className="bg-white rounded-2xl p-6 shadow-xl w-[90%] max-w-sm text-center space-y-4">
-                <p className="text-gray-800 font-medium">{message}</p>
+                <div className="space-y-1">
+                    <p className="text-lg font-semibold text-red-600">
+                        This video has notes attached to it.
+                    </p>
+                    <p className="text-sm text-gray-600">
+                        Deleting will permanently remove the video and every
+                        note linked to it. This cannot be undone.
+                    </p>
+                </div>
                 <div className="flex justify-center gap-4">
-                    <Button
-                        variant="destructive"
-                        onClick={onConfirm}
-                        className="px-4"
-                    >
-                        Yes
-                    </Button>
                     <Button
                         variant="secondary"
                         onClick={onCancel}
-                        className="px-4"
                     >
                         No
+                    </Button>
+                    <Button
+                        variant="destructive"
+                        onClick={onConfirm}
+                    >
+                        Yes
                     </Button>
                 </div>
             </div>
@@ -94,14 +99,36 @@ const SavedVideoList = ({ videoList, onRemoveSuccess }) => {
         setOpenMenuId(null);
     }, []);
 
-    // When user clicks delete → open confirmation
-    const handleRemoveRequest = (videoId) => {
-        setConfirmingId(videoId);
-    };
+    // Ask for confirmation only when notes are present on the video
+    const handleRemoveRequest = useCallback(
+        async (videoId) => {
+            setOpenMenuId(null);
+
+            const uid = auth.currentUser?.uid;
+            if (!uid) return;
+
+            try {
+                const videoHasNotes = await hasNotes(uid, videoId);
+                if (videoHasNotes) {
+                    setConfirmingId(videoId);
+                } else {
+                    await handleRemove(videoId);
+                }
+            } catch (error) {
+                console.error(
+                    "Failed to determine if notes exist before removal",
+                    error
+                );
+                setConfirmingId(videoId);
+            }
+        },
+        [handleRemove]
+    );
 
     const confirmRemove = async () => {
         const videoId = confirmingId;
         setConfirmingId(null);
+        if (!videoId) return;
         await handleRemove(videoId);
     };
 
@@ -130,7 +157,6 @@ const SavedVideoList = ({ videoList, onRemoveSuccess }) => {
             {/* Confirmation dialog */}
             <ConfirmDialog
                 open={!!confirmingId}
-                message="Are you sure you want to delete this video?"
                 onConfirm={confirmRemove}
                 onCancel={cancelRemove}
             />

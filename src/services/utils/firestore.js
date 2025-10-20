@@ -11,6 +11,7 @@ import {
     updateDoc,
     deleteDoc,
     serverTimestamp,
+    limit,
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { app, functions } from "../..";
@@ -118,6 +119,16 @@ export const updateNote = async (uid, videoId, noteId, newContent) => {
 export const deleteNote = async (uid, videoId, noteId) => {
     const ref = doc(db, "users", uid, "videos", videoId, "notes", noteId);
     await deleteDoc(ref);
+};
+
+/**
+ * Check whether a video has any notes stored under it
+ * Use case: Show confirmation modal before removing video from list, if the video has notes stored under it
+ */
+export const hasNotes = async (uid, videoId) => {
+    const notesCol = collection(db, "users", uid, "videos", videoId, "notes");
+    const snap = await getDocs(query(notesCol, limit(1)));
+    return !snap.empty;
 };
 
 // Get a user's settings
