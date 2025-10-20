@@ -12,6 +12,7 @@ const SavedVideosView = () => {
 
   const auth = getAuth();
 
+  // Fetch saved videos for logged-in user
   useEffect(() => {
     const fetchVideos = async () => {
       const user = auth.currentUser;
@@ -26,6 +27,7 @@ const SavedVideosView = () => {
     fetchVideos();
   }, [auth]);
 
+  // Show message if user not logged in
   if (!auth.currentUser) {
     return (
       <p className="p-6 text-center text-gray-600">
@@ -34,8 +36,8 @@ const SavedVideosView = () => {
     );
   }
 
+  // Reset confirmation handlers
   const handleReset = () => setShowResetModal(true);
-
   const confirmReset = (choice) => {
     if (choice) {
       setSearchQuery("");
@@ -44,6 +46,7 @@ const SavedVideosView = () => {
     setShowResetModal(false);
   };
 
+  // Filter videos by search query (title or channel)
   const filteredVideos = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return videos.filter(
@@ -53,6 +56,7 @@ const SavedVideosView = () => {
     );
   }, [videos, searchQuery]);
 
+  // Sort videos based on selected option
   const sortedVideos = useMemo(() => {
     const vids = [...filteredVideos];
     switch (sortOption) {
@@ -69,6 +73,7 @@ const SavedVideosView = () => {
     }
   }, [filteredVideos, sortOption]);
 
+  // Group videos by category or channel
   const groupedVideos = useMemo(() => {
     return sortedVideos.reduce((acc, video) => {
       const key = (video.category || video.channelTitle || "Uncategorized").trim();
@@ -78,6 +83,7 @@ const SavedVideosView = () => {
     }, {});
   }, [sortedVideos]);
 
+  // Highlight search matches in text
   const highlightMatch = (text) => {
     if (!searchQuery) return text;
     const regex = new RegExp(`(${searchQuery})`, "gi");
@@ -94,9 +100,8 @@ const SavedVideosView = () => {
 
   return (
     <div className="p-6 space-y-8 relative">
-      {/* Search + Sort + Reset */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
-        {/* Search: centered horizontally */}
+        {/* Search input */}
         <div className="w-full flex justify-center md:justify-center">
           <input
             type="text"
@@ -107,8 +112,8 @@ const SavedVideosView = () => {
           />
         </div>
 
+        {/* Sort dropdown and Reset button */}
         <div className="flex flex-col md:flex-row items-center gap-2">
-          {/* Sort Dropdown */}
           <div className="flex items-center gap-2">
             <label htmlFor="sort" className="font-medium text-gray-700 whitespace-nowrap">
               Sort By
@@ -126,7 +131,6 @@ const SavedVideosView = () => {
             </select>
           </div>
 
-          {/* Reset Button */}
           <Button
             className="px-4 py-1 bg-green-500 text-white rounded-full hover:bg-green-600 transition-colors"
             onClick={handleReset}
@@ -136,7 +140,7 @@ const SavedVideosView = () => {
         </div>
       </div>
 
-      {/* Video Content */}
+      {/* Video grid */}
       {sortedVideos.length === 0 ? (
         <p className="text-center text-gray-600">No videos match your search.</p>
       ) : (
@@ -187,13 +191,12 @@ const SavedVideosView = () => {
         ))
       )}
 
-      {/* Reset Modal Overlay */}
+      {/* Reset Confirmation Modal */}
       {showResetModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50">
-          {/* Semi-transparent background */}
           <div className="absolute inset-0 bg-black opacity-40"></div>
 
-          {/* Modal box */}
+          {/* Modal content */}
           <div className="relative bg-white p-6 rounded-xl shadow-lg w-80 max-w-full text-center z-50">
             <p className="mb-4 text-gray-700 font-medium">
               Reset to default (Recently Added) and clear search?
