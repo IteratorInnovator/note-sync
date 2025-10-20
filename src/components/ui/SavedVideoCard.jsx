@@ -12,13 +12,13 @@ const SavedVideoCard = ({
     onRemove,
     onAddToPlaylist,
 }) => (
-    <li className="relative">
+    <li className="relative group">
         <Link
             to={`/watch/${videoId}`}
             state={{
                 video: { videoId, thumbnailUrl: thumbnail, title, channelTitle },
             }}
-            className="block overflow-hidden rounded-xl border border-slate-200 bg-white cursor-pointer group hover:shadow-lg hover:scale-105 transition-all duration-300"
+            className="block overflow-hidden rounded-xl border border-slate-200 bg-white cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-300"
         >
             <div className="relative aspect-video bg-slate-100">
                 {thumbnail ? (
@@ -27,11 +27,11 @@ const SavedVideoCard = ({
                         alt={title || "Video thumbnail"}
                         loading="lazy"
                         decoding="async"
-                        className="w-full h-full object-cover"
+                        className="h-full w-full object-cover"
                     />
                 ) : null}
 
-                <div className="pointer-events-none absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
                     <div className="rounded-full bg-red-500/90 p-4">
                         <Play
                             aria-hidden
@@ -41,22 +41,21 @@ const SavedVideoCard = ({
                 </div>
             </div>
 
-            <SavedEllipsisButton
-                open={open}
-                onOpenChange={onOpenChange}
-                onRemove={() => onRemove(videoId)}
-                onAddToPlaylist={() => onAddToPlaylist(videoId)}
-            />
-
             <div className="p-4">
-                <h3 className="text-xs md:text-sm font-semibold line-clamp-2 truncate">
+                <h3 className="line-clamp-2 truncate text-xs font-semibold md:text-sm">
                     {title}
                 </h3>
-                <p className="text-[10px] text-slate-600 mt-1 truncate">
+                <p className="mt-1 truncate text-[10px] text-slate-600">
                     {channelTitle}
                 </p>
             </div>
         </Link>
+        <SavedEllipsisButton
+            open={open}
+            onOpenChange={onOpenChange}
+            onRemove={() => onRemove(videoId)}
+            onAddToPlaylist={() => onAddToPlaylist(videoId)}
+        />
     </li>
 );
 

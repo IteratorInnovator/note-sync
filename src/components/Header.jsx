@@ -9,10 +9,9 @@ const Header = ({ openAuthDialog, switchAuthView }) => {
                     {/* left: logo */}
                     <a href="#" className="flex items-center gap-2">
                         <svg
-                            width="28"
-                            height="28"
                             viewBox="0 0 24 24"
                             aria-hidden="true"
+                            className="size-7 md:size-8"
                         >
                             <circle
                                 cx="12"
@@ -24,7 +23,7 @@ const Header = ({ openAuthDialog, switchAuthView }) => {
                             />
                             <path d="M10 8l6 4-6 4V8z" fill="#ef4444" />
                         </svg>
-                        <span className="text-md sm:text-2xl font-bold text-red-500">
+                        <span className="text-sm sm:text-lg font-bold text-red-500">
                             NoteSync
                         </span>
                     </a>
@@ -48,7 +47,7 @@ const Header = ({ openAuthDialog, switchAuthView }) => {
                     </div>
 
                     {/* right: actions */}
-                    <div className="flex items-center gap-2 sm:gap-3 max-md:mr-6">
+                    <div className="flex items-center gap-2 sm:gap-3 max-sm:mr-6">
                         <button
                             className="rounded-xl px-2.5 py-2 text-[11px] font-semibold text-slate-700 transition-colors duration-200 hover:bg-red-500 hover:text-white sm:px-4 sm:text-sm"
                             onClick={() => {
