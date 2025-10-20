@@ -8,7 +8,16 @@ import {
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { auth } from "..";
 import { getVideoById } from "../utils/firestore";
-import { Maximize2, Minimize2, Pause, Play, Volume2, VolumeX } from "lucide-react";
+import {
+    Maximize2,
+    Minimize2,
+    Pause,
+    Play,
+    SkipBack,
+    SkipForward,
+    Volume2,
+    VolumeX,
+} from "lucide-react";
 
 let youtubeApiPromise = null;
 
@@ -73,6 +82,12 @@ const WatchView = ({ onTitleChange }) => {
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [controlsVisible, setControlsVisible] = useState(false);
     const [centerCue, setCenterCue] = useState(null);
+    const PLAYBACK_RATES = [0.25, 0.5, 1, 1.25, 1.5, 1.75, 2];
+    const [playbackRateIndex, setPlaybackRateIndex] = useState(
+        PLAYBACK_RATES.indexOf(1)
+    );
+    const playbackRate =
+        PLAYBACK_RATES[playbackRateIndex] ?? PLAYBACK_RATES[0];
 
     const playerRef = useRef(null);
     const playerInstanceRef = useRef(null);
@@ -110,6 +125,11 @@ const WatchView = ({ onTitleChange }) => {
             centerCueTimeoutRef.current = null;
         }, 450);
     }, []);
+
+    useEffect(() => {
+        if (!isPlayerReady) return;
+        playerInstanceRef.current?.setPlaybackRate?.(playbackRate);
+    }, [playbackRate, isPlayerReady]);
 
     useEffect(() => {
         if (!videoId) return;
@@ -222,6 +242,7 @@ const WatchView = ({ onTitleChange }) => {
                         const initialVolume = player.getVolume();
                         setVolume(initialVolume);
                         lastVolumeRef.current = initialVolume || 100;
+                        player.setPlaybackRate?.(playbackRate);
                         startProgressTracking();
                     },
                     onStateChange: (event) => {
@@ -369,6 +390,29 @@ const WatchView = ({ onTitleChange }) => {
         setCurrentTime(nextTime);
     };
 
+    const seekBy = (offsetSeconds) => {
+        const player = playerInstanceRef.current;
+        if (!player || !isPlayerReady) return;
+        const totalDuration =
+            player.getDuration?.() ?? duration ?? Number.MAX_SAFE_INTEGER;
+        const target = Math.min(
+            Math.max(0, (player.getCurrentTime?.() ?? currentTime) + offsetSeconds),
+            totalDuration
+        );
+        player.seekTo(target, true);
+        setCurrentTime(target);
+    };
+
+    const handleSeekBackward = () => seekBy(-10);
+    const handleSeekForward = () => seekBy(10);
+    const handleCyclePlaybackRate = () => {
+        if (!isPlayerReady) return;
+        const nextIndex = (playbackRateIndex + 1) % PLAYBACK_RATES.length;
+        const nextRate = PLAYBACK_RATES[nextIndex];
+        setPlaybackRateIndex(nextIndex);
+        playerInstanceRef.current?.setPlaybackRate?.(nextRate);
+    };
+
     const handleVolume = (event) => {
         const player = playerInstanceRef.current;
         if (!player || !isPlayerReady) return;
@@ -428,7 +472,7 @@ const WatchView = ({ onTitleChange }) => {
         <div className="space-y-6">
             <div
                 ref={videoContainerRef}
-                className={`group relative overflow-hidden bg-black shadow-xl transition-[border-radius] ${
+                className={`group relative overflow-hidden border border-slate-200 shadow-xl transition-[border-radius] ${
                     isFullscreen ? "h-full w-full rounded-none" : "rounded-2xl"
                 }`}
                 onMouseEnter={() => {
@@ -518,6 +562,26 @@ const WatchView = ({ onTitleChange }) => {
                                 )}
                             </button>
 
+                            <button
+                                type="button"
+                                onClick={handleSeekBackward}
+                                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                aria-label="Seek backward 10 seconds"
+                                disabled={!isPlayerReady}
+                            >
+                                <SkipBack className="h-5 w-5" />
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleSeekForward}
+                                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                aria-label="Seek forward 10 seconds"
+                                disabled={!isPlayerReady}
+                            >
+                                <SkipForward className="h-5 w-5" />
+                            </button>
+
                             <div className="flex items-center gap-2">
                                 <button
                                     type="button"
@@ -529,9 +593,9 @@ const WatchView = ({ onTitleChange }) => {
                                     disabled={!isPlayerReady}
                                 >
                                     {volume === 0 ? (
-                                        <VolumeX className="h-4 w-4" />
+                                        <VolumeX className="h-5 w-5" />
                                     ) : (
-                                        <Volume2 className="h-4 w-4" />
+                                        <Volume2 className="h-5 w-5" />
                                     )}
                                 </button>
                                 <input
@@ -552,8 +616,18 @@ const WatchView = ({ onTitleChange }) => {
 
                             <button
                                 type="button"
+                                onClick={handleCyclePlaybackRate}
+                                className="ml-auto flex w-11 h-10 items-center justify-center rounded-lg bg-white/10 px-3 text-sm font-semibold text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                aria-label="Change playback speed"
+                                disabled={!isPlayerReady}
+                            >
+                                {`${playbackRate}x`}
+                            </button>
+
+                            <button
+                                type="button"
                                 onClick={handleToggleFullscreen}
-                                className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/25"
+                                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/25"
                                 aria-label={
                                     isFullscreen
                                         ? "Exit fullscreen"
