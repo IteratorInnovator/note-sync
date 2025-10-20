@@ -7,7 +7,11 @@ import { CircleCheck, CircleX } from "lucide-react";
 
 let toastId = 0;
 
-const SavedVideoList = ({ videoList, onRemoveSuccess }) => {
+const SavedVideoList = ({
+    videoList,
+    onRemoveSuccess,
+    gridClassName = "grid-cols-2 md:grid-cols-3 lg:grid-cols-3",
+}) => {
     const [openMenuId, setOpenMenuId] = useState(null);
     const [toasts, setToasts] = useState([]);
 
@@ -63,9 +67,10 @@ const SavedVideoList = ({ videoList, onRemoveSuccess }) => {
         console.log("add to playlist", videoId);
         setOpenMenuId(null);
     }, []);
+
     return (
         <>
-            <ul className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            <ul className={`grid ${gridClassName} gap-4`}>
                 {videoList.map((v) => (
                     <SavedVideoCard
                         key={v.videoId}
