@@ -252,6 +252,23 @@ export default function SettingsView() {
     const [draftSettings, setDraftSettings] = useState({ ...settings });
     const [toasts, setToasts] = useState([]);
 
+    const addToast = (
+        message,
+        Icon = null,
+        iconColour = "",
+        duration = 3000
+    ) => {
+        const id = toastId++;
+        setToasts((prev) => [
+            ...prev,
+            { id, message, Icon, iconColour, duration },
+        ]);
+    };
+
+    const removeToast = (id) => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+    };
+
     useEffect(() => {
         void getSettings(() => getUserSettings(auth.currentUser.uid));
     }, [getSettings]);
@@ -304,26 +321,12 @@ export default function SettingsView() {
         setShowClearVideosModal(false);
         try {
             const ok = await deleteAllVideos(auth.currentUser.uid);
-            if (!ok) throw new Error();
-            setToasts((t) => [
-                ...t,
-                {
-                    id: ++toastId,
-                    message: "Cleared saved videos",
-                    Icon: CircleCheck,
-                    iconColour: "text-emerald-400"
-                },
-            ]);
+            if (!ok) {
+                throw new Error();
+            }
+            addToast("Cleared saved videos", CircleCheck, "text-emerald-400");
         } catch {
-            setToasts((t) => [
-                ...t,
-                {
-                    id: ++toastId,
-                    message: "Failed to clear saved videos",
-                    Icon: CircleX,
-                    iconColour: "text-red-400"
-                },
-            ]);
+            addToast("Failed to clear saved videos", CircleX, "text-red-400");
         }
     };
 
@@ -452,7 +455,7 @@ export default function SettingsView() {
                 />
             </DangerSection>
 
-            <ToastContainer toasts={toasts} />
+            <ToastContainer toasts={toasts} removeToast={removeToast} />
         </div>
     );
 }
