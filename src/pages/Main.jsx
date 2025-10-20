@@ -4,7 +4,6 @@ import Sidebar from "../components/ui/sidebar/Sidebar";
 import MainHeader from "../components/MainHeader";
 import MyVideosView from "../views/MyVideosView";
 import SearchView from "../views/SearchView";
-import PlaylistsView from "../views/PlaylistsView";
 import SettingsView from "../views/SettingsView";
 import { useIsMdUp } from "../utils/breakpoint";
 
@@ -49,9 +48,6 @@ export default function Main() {
             onResultsChange={setSearchResults}
           />
         );
-      case "playlists": 
-        setTitle("My Playlists");
-        return <PlaylistsView />;
       case "settings":
         setTitle("Settings");
         return <SettingsView />;

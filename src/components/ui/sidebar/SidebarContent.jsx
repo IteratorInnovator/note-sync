@@ -2,7 +2,6 @@ import {
     Clapperboard,
     Settings,
     Search,
-    ListVideo,
     LogOut,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
@@ -12,7 +11,6 @@ import { auth } from "../../..";
 const navItems = [
     { label: "My Videos", to: "/videos", icon: Clapperboard },
     { label: "Search Videos", to: "/search", icon: Search },
-    { label: "My Playlists", to: "/playlists", icon: ListVideo },
     { label: "Settings", to: "/settings", icon: Settings },
 ];
 
