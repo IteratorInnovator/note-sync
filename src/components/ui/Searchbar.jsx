@@ -30,7 +30,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Search, Loader2 } from "lucide-react";
-import { searchVideos } from "../../services/utils/youtube.js";
+import { searchVideos } from "../../utils/youtube.js";
 import { useDebounce } from "../../hooks/useDebounce.js";
 import { useSearchSuggestions } from "../../stores/useSearchSuggestions.js";
 

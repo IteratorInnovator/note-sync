@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
-import SavedVideoList from "../SavedVideoList";
-import { getVideosByUserId } from "../../services/utils/firestore";
+import SavedVideoList from "../components/SavedVideoList";
+import { getVideosByUserId } from "../utils/firestore";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../..";
+import { auth } from "../";
 import { ChevronDown, Grid2x2, Grid3x3, Rows } from "lucide-react";
-
 
 const MyVideosView = () => {
     const [videoList, setVideoList] = useState([]);

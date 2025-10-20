@@ -2,11 +2,11 @@ import { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "../components/ui/sidebar/Sidebar";
 import MainHeader from "../components/MainHeader";
-import MyVideosView from "../components/views/MyVideosView";
-import SearchView from "../components/views/SearchView";
-import PlaylistsView from "../components/views/PlaylistsView";
-import SettingsView from "../components/views/SettingsView";
-import { useIsMdUp } from "../services/utils/breakpoint";
+import MyVideosView from "../views/MyVideosView";
+import SearchView from "../views/SearchView";
+import PlaylistsView from "../views/PlaylistsView";
+import SettingsView from "../views/SettingsView";
+import { useIsMdUp } from "../utils/breakpoint";
 
 const VALID_PATHS = new Set(["videos", "search", "playlists", "settings"]);
 

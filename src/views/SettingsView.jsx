@@ -18,7 +18,7 @@ import {
     updateUserSettings,
     resetUserSettings,
     deleteAllVideos,
-} from "../../utils/utils/firestore";
+} from "../utils/firestore";
 import { ToastContainer } from "../components/ui/Toast";
 
 const safeSearchOptions = [
@@ -311,6 +311,7 @@ export default function SettingsView() {
                     id: ++toastId,
                     message: "Cleared saved videos",
                     Icon: CircleCheck,
+                    iconColour: "text-emerald-400"
                 },
             ]);
         } catch {
@@ -320,6 +321,7 @@ export default function SettingsView() {
                     id: ++toastId,
                     message: "Failed to clear saved videos",
                     Icon: CircleX,
+                    iconColour: "text-red-400"
                 },
             ]);
         }

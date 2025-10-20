@@ -38,7 +38,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { searchVideos } from "../services/utils/youtube";
+import { searchVideos } from "../utils/youtube";
 
 let activeController = null;
 

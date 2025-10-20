@@ -14,9 +14,9 @@ import {
     limit,
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
-import { app, functions } from "../..";
+import { app, functions } from "../";
 import { VideoAlreadySavedError } from "./errors";
-import { DEFAULT_SETTINGS } from "../../stores/useSettings";
+import { DEFAULT_SETTINGS } from "../stores/useSettings";
 
 const FIREBASE_DATABASE_ID = import.meta.env.VITE_APP_FIREBASE_DATABASE_ID;
 

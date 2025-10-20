@@ -1,5 +1,5 @@
-import Searchbar from "../ui/Searchbar";
-import VideoList from "../VideoList";
+import Searchbar from "../components/ui/Searchbar";
+import VideoList from "../components/VideoList";
 
 const SearchView = ({
     searchTerm = "",

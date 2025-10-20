@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
-import VideoCard from "./ui/VideoCard";
-import { addVideo } from "../utils/utils/firestore";
+import VideoCard from "../components/ui/VideoCard";
+import { addVideo } from "../utils/firestore";
 import { auth } from "..";
 import { ToastContainer } from "./ui/Toast";
 import { VideoAlreadySavedError } from "../utils/errors";

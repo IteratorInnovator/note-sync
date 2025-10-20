@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
-import SavedVideoCard from "./ui/SavedVideoCard";
+import SavedVideoCard from "../components/ui/SavedVideoCard"
 import { ToastContainer } from "./ui/Toast";
-import { removeVideo, hasNotes } from "../services/utils/firestore";
+import { removeVideo, hasNotes } from "../utils/firestore";
 import { auth } from "..";
 import { CircleCheck, CircleX } from "lucide-react";
 import { Button } from "./ui/button";

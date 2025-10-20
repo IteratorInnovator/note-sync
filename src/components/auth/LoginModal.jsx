@@ -8,7 +8,7 @@ import {
     fetchSignInMethodsForEmail,
     signInWithEmailAndPassword,
 } from "firebase/auth";
-import { AUTH_ERRORS, fallbackError } from "../../services/utils/constants.js";
+import { AUTH_ERRORS, fallbackError } from "../../utils/constants.js";
 import User from "../../assets/user.svg";
 import EyeOff from "../../assets/eye-off.svg";
 import EyeShow from "../../assets/eye-show.svg";
