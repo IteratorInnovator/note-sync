@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Grid2x2, Grid3x3, Rows } from "lucide-react";
 import { Button } from "./ui/button";
+import Searchbar from "./ui/Searchbar";
 
 const GridControls = ({
   searchQuery,
@@ -42,58 +43,71 @@ const GridControls = ({
       ];
 
   return (
-    <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
-      {/* Left: Layout toggle */}
-      <div className="inline-flex overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-        {layoutOptions.map(({ condensed, label, Icon }, index) => {
-          const active = condensed === isCondensedLayout;
-          return (
-            <button
-              key={label}
-              type="button"
-              aria-label={label}
-              aria-pressed={active}
-              onClick={() => setIsCondensedLayout(condensed)}
-              className={`flex h-9 w-9 items-center justify-center text-slate-400 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 ${
-                active ? "bg-slate-100 text-slate-700" : ""
-              } ${index > 0 ? "border-l border-slate-200" : ""}`}
-            >
-              <Icon className="h-4 w-4" />
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Right: Search + Sort + Reset */}
-      <div className="flex flex-1 flex-col md:flex-row items-center gap-2">
-        {/* Centered Search */}
-        <div className={`flex flex-1 ${centerSearch ? "justify-center" : "justify-start"}`}>
-          <input
-            type="text"
-            placeholder="Search by title or channel"
+    <div className="flex flex-col gap-4 mb-6 mt-0">
+      {/* Row 1: Searchbar */}
+      <div className={`flex ${centerSearch ? "justify-center" : "justify-start"}`}>
+        <div className="w-full md:w-1/2">
+          <Searchbar
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full md:w-64 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={setSearchQuery}
+            onResults={() => {}}
+            placeholder="Search playlist..."
+
           />
         </div>
+      </div>
 
-        {/* Sort + Reset aligned to right */}
-        <div className="flex items-center gap-2 md:ml-auto">
-          <label className="hidden md:block font-medium text-gray-700 mr-2">Sort by:</label>
-          <select
-            value={sortOption}
-            onChange={(e) => setSortOption(e.target.value)}
-            className="border rounded-full px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="recent">Recently Added</option>
-            <option value="earliest">Earliest Added</option>
-            <option value="title-asc">Title (A-Z)</option>
-            <option value="title-desc">Title (Z-A)</option>
-          </select>
+      {/* Row 2: Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        {/* Left side: Layout toggle */}
+        <div className="flex items-center gap-3">
+          <div className="inline-flex overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+            {layoutOptions.map(({ condensed, label, Icon }, index) => {
+              const active = condensed === isCondensedLayout;
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  aria-label={label}
+                  aria-pressed={active}
+                  onClick={() => setIsCondensedLayout(condensed)}
+                  className={`flex h-9 w-9 items-center justify-center text-slate-400 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 ${
+                    active ? "bg-slate-100 text-slate-700" : ""
+                  } ${index > 0 ? "border-l border-slate-200" : ""}`}
+                >
+                  <Icon className="h-4 w-4" />
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
+        {/* Right side: Sort + Reset */}
+        <div className="flex items-center gap-3">
+          {/* Sort by */}
+          <div className="flex items-center gap-2">
+            <label className="font-medium text-gray-700 text-sm">Sort by:</label>
+            <div className="relative">
+              <select
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value)}
+                className="appearance-none border border-slate-200 bg-white text-sm text-slate-700 rounded-full px-4 py-2 pr-8 shadow-sm hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+              >
+                <option value="recent">Recently Added</option>
+                <option value="earliest">Earliest Added</option>
+                <option value="title-asc">Title (A-Z)</option>
+                <option value="title-desc">Title (Z-A)</option>
+              </select>
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">
+                ▼
+              </span>
+            </div>
+          </div>
+
+          {/* Reset Button */}
           <Button
-            className="px-4 py-1 bg-green-500 text-white rounded-full hover:bg-green-600 transition-colors"
             onClick={onReset}
+            className="rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
           >
             Reset
           </Button>

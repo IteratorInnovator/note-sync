@@ -34,7 +34,7 @@ import { searchVideos } from "../../utils/youtube.js";
 import { useDebounce } from "../../hooks/useDebounce.js";
 import { useSearchSuggestions } from "../../stores/useSearchSuggestions.js";
 
-const Searchbar = ({ value = "", onChange, onResults }) => {
+const Searchbar = ({ value = "", onChange, onResults, placeholder="Search videos..."  }) => {
     const [searchLoading, setSearchLoading] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
 
@@ -158,7 +158,7 @@ const Searchbar = ({ value = "", onChange, onResults }) => {
                     // defer hiding suggestions so clicks register
                     requestAnimationFrame(() => setIsFocused(false));
                 }}
-                placeholder="Search videos..."
+                placeholder={placeholder}
                 className="w-full h-10 pl-10 pr-10 rounded-full border border-slate-300 bg-white text-sm text-slate-900 placeholder:text-slate-500 focus:shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-transparent transition-all"
                 autoComplete="off"
                 disabled={searchLoading}
