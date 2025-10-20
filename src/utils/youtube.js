@@ -1,4 +1,4 @@
-import { useSettings } from "../../stores/useSettings";
+import { useSettings } from "../stores/useSettings";
 
 const YOUTUBE_API_KEY = import.meta.env.VITE_APP_YOUTUBE_API_KEY;
 const YOUTUBE_API_ENDPOINT = import.meta.env.VITE_APP_YOUTUBE_API_ENDPOINT;

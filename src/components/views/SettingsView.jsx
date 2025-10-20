@@ -18,7 +18,7 @@ import {
     updateUserSettings,
     resetUserSettings,
     deleteAllVideos,
-} from "../../services/utils/firestore";
+} from "../../utils/utils/firestore";
 import { ToastContainer } from "../ui/Toast";
 
 const safeSearchOptions = [
@@ -75,7 +75,9 @@ const DangerRow = ({ title, description, control }) => (
             <h3 className="text-sm font-semibold text-red-700">{title}</h3>
             <p className="mt-1 text-sm text-red-600/80">{description}</p>
         </div>
-        <div className="self-end sm:ml-auto sm:self-auto sm:flex-shrink-0">{control}</div>
+        <div className="self-end sm:ml-auto sm:self-auto sm:flex-shrink-0">
+            {control}
+        </div>
     </div>
 );
 
@@ -87,7 +89,9 @@ const SelectField = ({
     className = "",
     disabled = false,
 }) => (
-    <div className={`relative inline-flex w-full items-center sm:w-auto ${className}`}>
+    <div
+        className={`relative inline-flex w-full items-center sm:w-auto ${className}`}
+    >
         <select
             id={id}
             value={value}
@@ -174,14 +178,21 @@ const ConfirmationModal = ({
                 onClick={(event) => event.stopPropagation()}
             >
                 <div className="flex items-start gap-4">
-                    <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${styles.icon}`}>
+                    <div
+                        className={`flex h-12 w-12 items-center justify-center rounded-2xl ${styles.icon}`}
+                    >
                         <IconComponent className="h-6 w-6" aria-hidden="true" />
                     </div>
                     <div className="flex-1">
-                        <h2 id={dialogId} className="text-xl font-semibold text-slate-900">
+                        <h2
+                            id={dialogId}
+                            className="text-xl font-semibold text-slate-900"
+                        >
                             {title}
                         </h2>
-                        <p className="mt-3 text-sm leading-6 text-slate-600">{description}</p>
+                        <p className="mt-3 text-sm leading-6 text-slate-600">
+                            {description}
+                        </p>
                     </div>
                     <button
                         type="button"
@@ -193,7 +204,9 @@ const ConfirmationModal = ({
                 </div>
 
                 {(bullets.length > 0 || subtext) && (
-                    <div className={`mt-6 rounded-2xl p-4 text-sm ring-1 ${styles.info}`}>
+                    <div
+                        className={`mt-6 rounded-2xl p-4 text-sm ring-1 ${styles.info}`}
+                    >
                         {bullets.length > 0 && (
                             <ul className="space-y-2 pl-4 list-disc">
                                 {bullets.map((item) => (
@@ -232,7 +245,8 @@ const ConfirmationModal = ({
 };
 
 export default function SettingsView() {
-    const { settings, getSettings, updateSettings, resetSettings } = useSettings();
+    const { settings, getSettings, updateSettings, resetSettings } =
+        useSettings();
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showClearVideosModal, setShowClearVideosModal] = useState(false);
     const [draftSettings, setDraftSettings] = useState({ ...settings });
@@ -253,7 +267,10 @@ export default function SettingsView() {
         if (draftSettings.videoDuration !== settings.videoDuration)
             changes.videoDuration = draftSettings.videoDuration;
         if (Object.keys(changes).length === 0) return;
-        await updateSettings((next) => updateUserSettings(auth.currentUser.uid, next), changes);
+        await updateSettings(
+            (next) => updateUserSettings(auth.currentUser.uid, next),
+            changes
+        );
     }, [draftSettings, settings, updateSettings]);
 
     useDebounce(persistDraftSettings, [persistDraftSettings], 500);
@@ -263,7 +280,10 @@ export default function SettingsView() {
     };
 
     const resetDisabled = useMemo(
-        () => Object.entries(DEFAULT_SETTINGS).every(([k, v]) => draftSettings[k] === v),
+        () =>
+            Object.entries(DEFAULT_SETTINGS).every(
+                ([k, v]) => draftSettings[k] === v
+            ),
         [draftSettings]
     );
 
@@ -285,9 +305,23 @@ export default function SettingsView() {
         try {
             const ok = await deleteAllVideos(auth.currentUser.uid);
             if (!ok) throw new Error();
-            setToasts((t) => [...t, { id: ++toastId, message: "Cleared saved videos", Icon: CircleCheck }]);
+            setToasts((t) => [
+                ...t,
+                {
+                    id: ++toastId,
+                    message: "Cleared saved videos",
+                    Icon: CircleCheck,
+                },
+            ]);
         } catch {
-            setToasts((t) => [...t, { id: ++toastId, message: "Failed to clear saved videos", Icon: CircleX }]);
+            setToasts((t) => [
+                ...t,
+                {
+                    id: ++toastId,
+                    message: "Failed to clear saved videos",
+                    Icon: CircleX,
+                },
+            ]);
         }
     };
 
@@ -319,7 +353,9 @@ export default function SettingsView() {
                 dialogId="clear-videos-modal"
                 title="Clear all saved videos?"
                 description="This deletes all videos and notes from My Videos but keeps your account active."
-                bullets={["Only NoteSync entries will be removed; your account remains intact."]}
+                bullets={[
+                    "Only NoteSync entries will be removed; your account remains intact.",
+                ]}
                 subtext="This action cannot be undone."
                 confirmLabel="Clear saved videos"
             />
@@ -328,12 +364,16 @@ export default function SettingsView() {
             <header className="rounded-2xl bg-gradient-to-r from-red-500/90 to-rose-500/80 p-6 text-white shadow-sm">
                 <h1 className="text-2xl font-semibold">Your Preferences</h1>
                 <p className="mt-2 max-w-2xl text-sm text-white/80">
-                    Fine-tune how NoteSync searches and manages your saved content.
+                    Fine-tune how NoteSync searches and manages your saved
+                    content.
                 </p>
             </header>
 
             {/* Preferences */}
-            <SectionCard title="Search Preferences" description="Set default filters that shape your NoteSync search results.">
+            <SectionCard
+                title="Search Preferences"
+                description="Set default filters that shape your NoteSync search results."
+            >
                 <Row
                     title="Safe search level"
                     description="Filter YouTube search results using SafeSearch."
@@ -376,7 +416,10 @@ export default function SettingsView() {
             </div>
 
             {/* Danger Zone */}
-            <DangerSection title="Danger Zone" description="Irreversible actions that affect your NoteSync data.">
+            <DangerSection
+                title="Danger Zone"
+                description="Irreversible actions that affect your NoteSync data."
+            >
                 <DangerRow
                     title="Delete account"
                     description="Remove all saved videos, notes, and preferences permanently."

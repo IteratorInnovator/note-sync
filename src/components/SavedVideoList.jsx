@@ -42,7 +42,6 @@ const ConfirmDialog = ({ open, onConfirm, onCancel }) => {
     );
 };
 
-const SavedVideoList = ({ videoList, onRemoveSuccess }) => {
 const SavedVideoList = ({
     videoList,
     onRemoveSuccess,
