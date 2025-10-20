@@ -2,13 +2,14 @@ import { useEffect, useState, useMemo } from "react";
 import { getVideosByUserId } from "../utils/firestore";
 import { getAuth } from "firebase/auth";
 import { Button } from "../components/ui/button";
+import GridControls from "../components/GridControls";
 
-const SavedVideosView = () => {
+const MyPlaylistView = () => {
   const [videos, setVideos] = useState([]);
   const [hoveredVideo, setHoveredVideo] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOption, setSortOption] = useState("recent");
-  const [showResetModal, setShowResetModal] = useState(false);
+  const [isCondensedLayout, setIsCondensedLayout] = useState(false);
 
   const auth = getAuth();
 
@@ -31,22 +32,12 @@ const SavedVideosView = () => {
   if (!auth.currentUser) {
     return (
       <p className="p-6 text-center text-gray-600">
-        Please log in to see your saved videos.
+        Please log in to see your playlist.
       </p>
     );
   }
 
-  // Reset confirmation handlers
-  const handleReset = () => setShowResetModal(true);
-  const confirmReset = (choice) => {
-    if (choice) {
-      setSearchQuery("");
-      setSortOption("recent");
-    }
-    setShowResetModal(false);
-  };
-
-  // Filter videos by search query (title or channel)
+  // Filter videos by search query
   const filteredVideos = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return videos.filter(
@@ -56,14 +47,18 @@ const SavedVideosView = () => {
     );
   }, [videos, searchQuery]);
 
-  // Sort videos based on selected option
+  // Sort videos safely
   const sortedVideos = useMemo(() => {
     const vids = [...filteredVideos];
     switch (sortOption) {
       case "recent":
-        return vids.sort((a, b) => b.addedAt?.seconds - a.addedAt?.seconds);
+        return vids.sort(
+          (a, b) => (b.addedAt?.seconds || 0) - (a.addedAt?.seconds || 0)
+        );
       case "earliest":
-        return vids.sort((a, b) => a.addedAt?.seconds - b.addedAt?.seconds);
+        return vids.sort(
+          (a, b) => (a.addedAt?.seconds || 0) - (b.addedAt?.seconds || 0)
+        );
       case "title-asc":
         return vids.sort((a, b) => a.title.localeCompare(b.title));
       case "title-desc":
@@ -83,72 +78,51 @@ const SavedVideosView = () => {
     }, {});
   }, [sortedVideos]);
 
-  // Highlight search matches in text
+  // Highlight search matches
   const highlightMatch = (text) => {
     if (!searchQuery) return text;
     const regex = new RegExp(`(${searchQuery})`, "gi");
     return text.split(regex).map((part, idx) =>
       regex.test(part) ? (
-        <span key={idx} className="bg-yellow-200">
-          {part}
-        </span>
-      ) : (
-        part
-      )
+        <span key={idx} className="bg-yellow-200">{part}</span>
+      ) : part
     );
   };
 
+  // Determine grid column classes based on toggle
+  const gridColumnsClass = isCondensedLayout
+    ? "grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2"
+    : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3";
+
   return (
-    <div className="p-6 space-y-8 relative">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
-        {/* Search input */}
-        <div className="w-full flex justify-center md:justify-center">
-          <input
-            type="text"
-            placeholder="Search by title or channel"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full md:w-1/2 px-4 py-2 border rounded-full text-left focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+    <div className="p-6 space-y-8 relative min-h-screen">
+      {/* Top Controls */}
+      <GridControls
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        sortOption={sortOption}
+        setSortOption={setSortOption}
+        isCondensedLayout={isCondensedLayout}
+        setIsCondensedLayout={setIsCondensedLayout}
+        onReset={() => {
+          setSearchQuery("");
+          setSortOption("recent");
+        }}
+        centerSearch={true}
+      />
 
-        {/* Sort dropdown and Reset button */}
-        <div className="flex flex-col md:flex-row items-center gap-2">
-          <div className="flex items-center gap-2">
-            <label htmlFor="sort" className="font-medium text-gray-700 whitespace-nowrap">
-              Sort By
-            </label>
-            <select
-              id="sort"
-              value={sortOption}
-              onChange={(e) => setSortOption(e.target.value)}
-              className="border rounded-full px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="recent">Recently Added</option>
-              <option value="earliest">Earliest Added</option>
-              <option value="title-asc">Title (A-Z)</option>
-              <option value="title-desc">Title (Z-A)</option>
-            </select>
-          </div>
-
-          <Button
-            className="px-4 py-1 bg-green-500 text-white rounded-full hover:bg-green-600 transition-colors"
-            onClick={handleReset}
-          >
-            Reset
-          </Button>
-        </div>
-      </div>
-
-      {/* Video grid */}
+      {/* No results */}
       {sortedVideos.length === 0 ? (
-        <p className="text-center text-gray-600">No videos match your search.</p>
+        <p className="text-center text-gray-600 mt-16">
+          {videos.length === 0
+            ? "Your playlist is empty."
+            : `No videos found for "${searchQuery}".`}
+        </p>
       ) : (
         Object.entries(groupedVideos).map(([category, vids]) => (
           <div key={category} className="space-y-6">
             <h2 className="text-2xl font-bold border-b border-gray-300 pb-2">{category}</h2>
-
-            <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <ul className={`grid gap-6 ${gridColumnsClass}`}>
               {vids.map((v) => (
                 <li
                   key={v.videoId}
@@ -190,36 +164,8 @@ const SavedVideosView = () => {
           </div>
         ))
       )}
-
-      {/* Reset Confirmation Modal */}
-      {showResetModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-          <div className="absolute inset-0 bg-black opacity-40"></div>
-
-          {/* Modal content */}
-          <div className="relative bg-white p-6 rounded-xl shadow-lg w-80 max-w-full text-center z-50">
-            <p className="mb-4 text-gray-700 font-medium">
-              Reset to default (Recently Added) and clear search?
-            </p>
-            <div className="flex justify-center gap-4">
-              <Button
-                className="bg-green-500 hover:bg-green-600 text-white rounded-full px-4 py-1"
-                onClick={() => confirmReset(true)}
-              >
-                Yes
-              </Button>
-              <Button
-                className="bg-red-500 hover:bg-red-600 text-white rounded-full px-4 py-1"
-                onClick={() => confirmReset(false)}
-              >
-                No
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-export default SavedVideosView;
+export default MyPlaylistView;
