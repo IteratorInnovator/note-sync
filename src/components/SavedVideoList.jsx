@@ -43,6 +43,11 @@ const ConfirmDialog = ({ open, onConfirm, onCancel }) => {
 };
 
 const SavedVideoList = ({ videoList, onRemoveSuccess }) => {
+const SavedVideoList = ({
+    videoList,
+    onRemoveSuccess,
+    gridClassName = "grid-cols-2 md:grid-cols-3 lg:grid-cols-3",
+}) => {
     const [openMenuId, setOpenMenuId] = useState(null);
     const [toasts, setToasts] = useState([]);
     const [confirmingId, setConfirmingId] = useState(null);
@@ -114,11 +119,7 @@ const SavedVideoList = ({ videoList, onRemoveSuccess }) => {
                 } else {
                     await handleRemove(videoId);
                 }
-            } catch (error) {
-                console.error(
-                    "Failed to determine if notes exist before removal",
-                    error
-                );
+            } catch {
                 setConfirmingId(videoId);
             }
         },
@@ -136,7 +137,7 @@ const SavedVideoList = ({ videoList, onRemoveSuccess }) => {
 
     return (
         <>
-            <ul className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            <ul className={`grid ${gridClassName} gap-4`}>
                 {videoList.map((v) => (
                     <SavedVideoCard
                         key={v.videoId}

@@ -6,6 +6,8 @@ import {
     CircleX,
     Trash2,
     X,
+    RotateCcw,
+    Settings2,
 } from "lucide-react";
 import { DEFAULT_SETTINGS, useSettings } from "../../stores/useSettings";
 import { auth } from "../..";
@@ -55,7 +57,7 @@ const Row = ({ title, description, control }) => (
 const DangerSection = ({ title, description, children }) => (
     <section className="rounded-2xl border border-red-200 bg-red-50/80 ring-1 ring-red-100/80">
         <div className="flex items-start gap-3 border-b border-red-200/80 px-6 py-5">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10 text-red-500">
+            <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-red-500/10 text-red-500">
                 <AlertTriangle className="h-5 w-5" aria-hidden="true" />
             </span>
             <div>
@@ -73,7 +75,7 @@ const DangerRow = ({ title, description, control }) => (
             <h3 className="text-sm font-semibold text-red-700">{title}</h3>
             <p className="mt-1 text-sm text-red-600/80">{description}</p>
         </div>
-        <div className="sm:flex-shrink-0">{control}</div>
+        <div className="self-end sm:ml-auto sm:self-auto sm:flex-shrink-0">{control}</div>
     </div>
 );
 
@@ -85,9 +87,7 @@ const SelectField = ({
     className = "",
     disabled = false,
 }) => (
-    <div
-        className={`relative inline-flex w-full items-center sm:w-auto ${className}`}
-    >
+    <div className={`relative inline-flex w-full items-center sm:w-auto ${className}`}>
         <select
             id={id}
             value={value}
@@ -154,9 +154,7 @@ const ConfirmationModal = ({
     }, [open, onClose]);
 
     useEffect(() => {
-        if (open && cancelButtonRef.current) {
-            cancelButtonRef.current.focus();
-        }
+        if (open && cancelButtonRef.current) cancelButtonRef.current.focus();
     }, [open]);
 
     if (!open) return null;
@@ -172,46 +170,34 @@ const ConfirmationModal = ({
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={dialogId}
-                className={`w-full max-w-xl scale-100 rounded-3xl border px-6 py-8 text-left shadow-2xl backdrop-blur transition-transform duration-200 ease-out ${styles.panel}`}
+                className={`w-full max-w-xl rounded-3xl border px-6 py-8 text-left shadow-2xl backdrop-blur ${styles.panel}`}
                 onClick={(event) => event.stopPropagation()}
             >
                 <div className="flex items-start gap-4">
-                    <div
-                        className={`flex h-12 w-12 items-center justify-center rounded-2xl ${styles.icon}`}
-                    >
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${styles.icon}`}>
                         <IconComponent className="h-6 w-6" aria-hidden="true" />
                     </div>
                     <div className="flex-1">
-                        <h2
-                            id={dialogId}
-                            className="text-xl font-semibold text-slate-900"
-                        >
+                        <h2 id={dialogId} className="text-xl font-semibold text-slate-900">
                             {title}
                         </h2>
-                        <p className="mt-3 text-sm leading-6 text-slate-600">
-                            {description}
-                        </p>
+                        <p className="mt-3 text-sm leading-6 text-slate-600">{description}</p>
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="ml-auto rounded-full border border-transparent p-1.5 text-slate-400 transition-colors hover:border-slate-200 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                        className="ml-auto rounded-full border border-transparent p-1.5 text-slate-400 transition hover:border-slate-200 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-200"
                     >
-                        <span className="sr-only">Close warning modal</span>
                         <X className="h-4 w-4" aria-hidden="true" />
                     </button>
                 </div>
 
                 {(bullets.length > 0 || subtext) && (
-                    <div
-                        className={`mt-6 rounded-2xl p-4 text-sm ring-1 ${styles.info}`}
-                    >
+                    <div className={`mt-6 rounded-2xl p-4 text-sm ring-1 ${styles.info}`}>
                         {bullets.length > 0 && (
-                            <ul className="space-y-2 pl-4">
+                            <ul className="space-y-2 pl-4 list-disc">
                                 {bullets.map((item) => (
-                                    <li key={item} className="list-disc">
-                                        {item}
-                                    </li>
+                                    <li key={item}>{item}</li>
                                 ))}
                             </ul>
                         )}
@@ -228,14 +214,14 @@ const ConfirmationModal = ({
                         type="button"
                         onClick={onClose}
                         ref={cancelButtonRef}
-                        className={`inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-2 ${styles.cancelFocus}`}
+                        className={`rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-2 ${styles.cancelFocus}`}
                     >
                         Cancel
                     </button>
                     <button
                         type="button"
                         onClick={onConfirm}
-                        className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 ${styles.confirm}`}
+                        className={`rounded-lg px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 ${styles.confirm}`}
                     >
                         {confirmLabel}
                     </button>
@@ -246,13 +232,10 @@ const ConfirmationModal = ({
 };
 
 export default function SettingsView() {
-    const { settings, getSettings, updateSettings, resetSettings } =
-        useSettings();
+    const { settings, getSettings, updateSettings, resetSettings } = useSettings();
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showClearVideosModal, setShowClearVideosModal] = useState(false);
-    const [draftSettings, setDraftSettings] = useState(() => ({
-        ...settings,
-    }));
+    const [draftSettings, setDraftSettings] = useState({ ...settings });
     const [toasts, setToasts] = useState([]);
 
     useEffect(() => {
@@ -265,57 +248,27 @@ export default function SettingsView() {
 
     const persistDraftSettings = useCallback(async () => {
         const changes = {};
-        if (draftSettings.safeSearch !== settings.safeSearch) {
+        if (draftSettings.safeSearch !== settings.safeSearch)
             changes.safeSearch = draftSettings.safeSearch;
-        }
-        if (draftSettings.videoDuration !== settings.videoDuration) {
+        if (draftSettings.videoDuration !== settings.videoDuration)
             changes.videoDuration = draftSettings.videoDuration;
-        }
-
         if (Object.keys(changes).length === 0) return;
-
-        await updateSettings(
-            (next) => updateUserSettings(auth.currentUser.uid, next),
-            changes
-        );
-    }, [
-        draftSettings.safeSearch,
-        draftSettings.videoDuration,
-        settings.safeSearch,
-        settings.videoDuration,
-        updateSettings,
-    ]);
+        await updateSettings((next) => updateUserSettings(auth.currentUser.uid, next), changes);
+    }, [draftSettings, settings, updateSettings]);
 
     useDebounce(persistDraftSettings, [persistDraftSettings], 500);
 
     const handleSelectChange = (key) => (event) => {
-        const { value } = event.target;
-        setDraftSettings((prev) => ({ ...prev, [key]: value }));
+        setDraftSettings((prev) => ({ ...prev, [key]: event.target.value }));
     };
+
     const resetDisabled = useMemo(
-        () =>
-            Object.entries(DEFAULT_SETTINGS).every(
-                ([key, value]) => draftSettings[key] === value
-            ),
+        () => Object.entries(DEFAULT_SETTINGS).every(([k, v]) => draftSettings[k] === v),
         [draftSettings]
     );
 
-    const addToast = (
-        message,
-        Icon = null,
-        iconColour = "",
-        duration = 3000
-    ) => {
-        const id = toastId++;
-        setToasts((prev) => [
-            ...prev,
-            { id, message, Icon, iconColour, duration },
-        ]);
-    };
-
-    const removeToast = (id) => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
-    };
+    const buttonUnified =
+        "inline-flex min-w-[200px] items-center justify-center rounded-lg border border-red-400 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-200 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400";
 
     const handleReset = async () => {
         setDraftSettings({ ...DEFAULT_SETTINGS });
@@ -331,17 +284,16 @@ export default function SettingsView() {
         setShowClearVideosModal(false);
         try {
             const ok = await deleteAllVideos(auth.currentUser.uid);
-            if (!ok) {
-                throw new Error();
-            }
-            addToast("Cleared saved videos", CircleCheck, "text-emerald-400");
+            if (!ok) throw new Error();
+            setToasts((t) => [...t, { id: ++toastId, message: "Cleared saved videos", Icon: CircleCheck }]);
         } catch {
-            addToast("Failed to clear saved videos", CircleX, "text-red-400");
+            setToasts((t) => [...t, { id: ++toastId, message: "Failed to clear saved videos", Icon: CircleX }]);
         }
     };
 
     return (
         <div className="relative mx-auto max-w-4xl space-y-8">
+            {/* Modals */}
             <ConfirmationModal
                 open={showDeleteModal}
                 onClose={() => setShowDeleteModal(false)}
@@ -350,10 +302,10 @@ export default function SettingsView() {
                 accent="danger"
                 dialogId="delete-account-modal"
                 title="Permanently delete your account?"
-                description="Deleting your NoteSync profile removes every saved video, playlist, note, and preference associated with this account."
+                description="This removes every saved video, playlist, note, and preference associated with this account."
                 bullets={[
-                    "You may be asked to reauthenticate before we proceed.",
-                    "Shared notes and collaboration access will stop immediately.",
+                    "All saved videos, notes, playlists, and preferences will be removed.",
+                    "You can't recover your NoteSync account after deletion.",
                 ]}
                 subtext="This action cannot be undone."
                 confirmLabel="Delete account"
@@ -366,29 +318,25 @@ export default function SettingsView() {
                 accent="caution"
                 dialogId="clear-videos-modal"
                 title="Clear all saved videos?"
-                description="This wipes every video inside My Videos and permanently deletes any notes you captured for them."
-                bullets={[
-                    "Your NoteSync account is untouched—only NoteSync entries are cleared.",
-                ]}
+                description="This deletes all videos and notes from My Videos but keeps your account active."
+                bullets={["Only NoteSync entries will be removed; your account remains intact."]}
                 subtext="This action cannot be undone."
                 confirmLabel="Clear saved videos"
             />
+
+            {/* Header */}
             <header className="rounded-2xl bg-gradient-to-r from-red-500/90 to-rose-500/80 p-6 text-white shadow-sm">
-                <h1 className="text-2xl font-semibold">Settings</h1>
+                <h1 className="text-2xl font-semibold">Your Preferences</h1>
                 <p className="mt-2 max-w-2xl text-sm text-white/80">
-                    Personalize how NoteSync behaves so your workspace feels
-                    fast, focused, and tailored to the way you capture and
-                    review YouTube notes.
+                    Fine-tune how NoteSync searches and manages your saved content.
                 </p>
             </header>
 
-            <SectionCard
-                title="Preferences"
-                description="Fine-tune how NoteSync surfaces content across the dashboard."
-            >
+            {/* Preferences */}
+            <SectionCard title="Search Preferences" description="Set default filters that shape your NoteSync search results.">
                 <Row
                     title="Safe search level"
-                    description="Filter search results using YouTube’s built-in SafeSearch."
+                    description="Filter YouTube search results using SafeSearch."
                     control={
                         <SelectField
                             id="preferences-safe-search"
@@ -401,7 +349,7 @@ export default function SettingsView() {
                 />
                 <Row
                     title="Preferred video length"
-                    description="Limit searches to a video duration that matches your study sessions."
+                    description="Limit search results by video duration."
                     control={
                         <SelectField
                             id="preferences-video-duration"
@@ -414,51 +362,52 @@ export default function SettingsView() {
                 />
             </SectionCard>
 
+            {/* Reset Section */}
             <div className="flex justify-end">
                 <button
                     type="button"
                     onClick={handleReset}
                     disabled={resetDisabled}
-                    className="rounded-lg border border-red-400 px-4 py-2 text-sm font-medium text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                    className={buttonUnified}
                 >
+                    <RotateCcw className="mr-2 h-4 w-4" />
                     Reset to defaults
                 </button>
             </div>
 
-            <DangerSection
-                title="Danger zone"
-                description="High-impact actions that permanently alter your NoteSync data."
-            >
+            {/* Danger Zone */}
+            <DangerSection title="Danger Zone" description="Irreversible actions that affect your NoteSync data.">
                 <DangerRow
-                    title="Delete NoteSync account"
-                    description="All synced notes and saved videos will be permanently removed."
+                    title="Delete account"
+                    description="Remove all saved videos, notes, and preferences permanently."
                     control={
                         <button
                             type="button"
                             onClick={() => setShowDeleteModal(true)}
-                            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-2 focus:ring-offset-red-50"
+                            className={buttonUnified}
                         >
+                            <Settings2 className="mr-2 h-4 w-4" />
                             Delete account
                         </button>
                     }
                 />
                 <DangerRow
                     title="Clear saved videos"
-                    description="Remove every video from My Videos while keeping your account active."
+                    description="Delete all videos from My Videos while keeping your account."
                     control={
                         <button
                             type="button"
                             onClick={() => setShowClearVideosModal(true)}
-                            className="rounded-lg border border-red-200 bg-white/90 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-red-200 focus:ring-offset-2 focus:ring-offset-red-50"
+                            className={buttonUnified}
                         >
+                            <Trash2 className="mr-2 h-4 w-4" />
                             Clear saved videos
                         </button>
                     }
                 />
             </DangerSection>
 
-            {/* Render toast container */}
-            <ToastContainer toasts={toasts} removeToast={removeToast} />
+            <ToastContainer toasts={toasts} />
         </div>
     );
 }

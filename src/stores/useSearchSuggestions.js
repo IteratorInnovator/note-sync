@@ -42,7 +42,7 @@ import { searchVideos } from "../services/utils/youtube";
 
 let activeController = null;
 
-const MAX_CACHE_ENTRIES = 25;
+const MAX_CACHE_ENTRIES = 50;
 const SUGGESTION_LIMIT = 5;
 
 const trimCache = (cache) => {
