@@ -35,6 +35,12 @@ export const getVideosByUserId = async (uid) => {
     return snap.docs.map((doc) => ({ videoId: doc.id, ...doc.data() }));
 };
 
+export const getVideoById = async (uid, videoId) => {
+    const ref = doc(db, "users", uid, "videos", videoId);
+    const snap = await getDoc(ref);
+    return snap.exists() ? { videoId: snap.id, ...snap.data() } : null;
+};
+
 /**
  * Add a video to a user's subcollection "videos"
  */

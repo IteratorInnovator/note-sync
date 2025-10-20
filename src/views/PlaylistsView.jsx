@@ -1,6 +1,6 @@
 const PlaylistsView = () => {
     return (
-        <div>PlayList View</div>
+        <div>Playlists View</div>
     );
 }
 

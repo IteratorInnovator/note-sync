@@ -49,6 +49,10 @@ function App() {
                     path="/settings"
                     element={user ? <Main /> : <Navigate to="/" />}
                 />
+                <Route
+                    path="/watch/:videoId"
+                    element={user ? <Main /> : <Navigate to="/" />}
+                />
 
                 {/* Catch-all. Redirect unknown paths based on auth state. */}
                 <Route
