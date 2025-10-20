@@ -24,6 +24,6 @@ export const AUTH_ERRORS = {
         type: "password",
         message: "Too many attempts. Try later.",
     },
-};
+}
 
 export const fallbackError = { type: "password", message: "Login failed." };

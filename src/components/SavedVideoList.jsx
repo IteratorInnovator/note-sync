@@ -1,12 +1,48 @@
 import { useState, useCallback } from "react";
 import SavedVideoCard from "./ui/SavedVideoCard";
 import { ToastContainer } from "./ui/Toast";
-import { removeVideo } from "../services/utils/firestore";
+import { removeVideo, hasNotes } from "../services/utils/firestore";
 import { auth } from "..";
 import { CircleCheck, CircleX } from "lucide-react";
+import { Button } from "./ui/button";
 
 let toastId = 0;
 
+// Small confirm dialog component (inline for simplicity)
+const ConfirmDialog = ({ open, onConfirm, onCancel }) => {
+    if (!open) return null;
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="bg-white rounded-2xl p-6 shadow-xl w-[90%] max-w-sm text-center space-y-4">
+                <div className="space-y-1">
+                    <p className="text-lg font-semibold text-red-600">
+                        This video has notes attached to it.
+                    </p>
+                    <p className="text-sm text-gray-600">
+                        Deleting will permanently remove the video and every
+                        note linked to it. This cannot be undone.
+                    </p>
+                </div>
+                <div className="flex justify-center gap-4">
+                    <Button
+                        variant="secondary"
+                        onClick={onCancel}
+                    >
+                        No
+                    </Button>
+                    <Button
+                        variant="destructive"
+                        onClick={onConfirm}
+                    >
+                        Yes
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const SavedVideoList = ({ videoList, onRemoveSuccess }) => {
 const SavedVideoList = ({
     videoList,
     onRemoveSuccess,
@@ -14,6 +50,7 @@ const SavedVideoList = ({
 }) => {
     const [openMenuId, setOpenMenuId] = useState(null);
     const [toasts, setToasts] = useState([]);
+    const [confirmingId, setConfirmingId] = useState(null);
 
     const handleOpenChange = useCallback(
         (id, isOpen) => setOpenMenuId(isOpen ? id : null),
@@ -63,10 +100,40 @@ const SavedVideoList = ({
     );
 
     const handleAddToPlaylist = useCallback((videoId) => {
-        // TODO: add-to-playlist logic
         console.log("add to playlist", videoId);
         setOpenMenuId(null);
     }, []);
+
+    // Ask for confirmation only when notes are present on the video
+    const handleRemoveRequest = useCallback(
+        async (videoId) => {
+            setOpenMenuId(null);
+
+            const uid = auth.currentUser?.uid;
+            if (!uid) return;
+
+            try {
+                const videoHasNotes = await hasNotes(uid, videoId);
+                if (videoHasNotes) {
+                    setConfirmingId(videoId);
+                } else {
+                    await handleRemove(videoId);
+                }
+            } catch {
+                setConfirmingId(videoId);
+            }
+        },
+        [handleRemove]
+    );
+
+    const confirmRemove = async () => {
+        const videoId = confirmingId;
+        setConfirmingId(null);
+        if (!videoId) return;
+        await handleRemove(videoId);
+    };
+
+    const cancelRemove = () => setConfirmingId(null);
 
     return (
         <>
@@ -82,13 +149,20 @@ const SavedVideoList = ({
                         onOpenChange={(isOpen) =>
                             handleOpenChange(v.videoId, isOpen)
                         }
-                        onRemove={handleRemove}
+                        onRemove={() => handleRemoveRequest(v.videoId)}
                         onAddToPlaylist={handleAddToPlaylist}
                     />
                 ))}
             </ul>
 
-            {/* Render toast container */}
+            {/* Confirmation dialog */}
+            <ConfirmDialog
+                open={!!confirmingId}
+                onConfirm={confirmRemove}
+                onCancel={cancelRemove}
+            />
+
+            {/* Toast notifications */}
             <ToastContainer toasts={toasts} removeToast={removeToast} />
         </>
     );
