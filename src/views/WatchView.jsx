@@ -96,6 +96,8 @@ const WatchView = ({ onTitleChange }) => {
     const videoContainerRef = useRef(null);
     const hideControlsTimeoutRef = useRef(null);
     const centerCueTimeoutRef = useRef(null);
+    const skipCueActiveRef = useRef(false);
+    const skipCueTimeoutRef = useRef(null);
 
     const clearHideControlsTimeout = useCallback(() => {
         if (hideControlsTimeoutRef.current) {
@@ -250,7 +252,9 @@ const WatchView = ({ onTitleChange }) => {
                         const state = event.data;
                         if (state === window.YT.PlayerState.PLAYING) {
                             setIsPlaying(true);
-                            showCenterCue("play");
+                            if (!skipCueActiveRef.current) {
+                                showCenterCue("play");
+                            }
                             startProgressTracking();
                         } else if (
                             state === window.YT.PlayerState.PAUSED ||
@@ -343,6 +347,11 @@ const WatchView = ({ onTitleChange }) => {
                 window.clearTimeout(centerCueTimeoutRef.current);
                 centerCueTimeoutRef.current = null;
             }
+            if (skipCueTimeoutRef.current) {
+                window.clearTimeout(skipCueTimeoutRef.current);
+                skipCueTimeoutRef.current = null;
+            }
+            skipCueActiveRef.current = false;
         },
         [clearHideControlsTimeout]
     );
@@ -401,6 +410,15 @@ const WatchView = ({ onTitleChange }) => {
         );
         player.seekTo(target, true);
         setCurrentTime(target);
+        showCenterCue(offsetSeconds > 0 ? "forward" : "backward");
+        skipCueActiveRef.current = true;
+        if (skipCueTimeoutRef.current) {
+            window.clearTimeout(skipCueTimeoutRef.current);
+        }
+        skipCueTimeoutRef.current = window.setTimeout(() => {
+            skipCueActiveRef.current = false;
+            skipCueTimeoutRef.current = null;
+        }, 400);
     };
 
     const handleSeekBackward = () => seekBy(-10);
@@ -516,10 +534,13 @@ const WatchView = ({ onTitleChange }) => {
                             centerCue ? "scale-110" : "scale-90"
                         }`}
                     >
-                        {centerCue === "pause" ? (
-                            <Pause className="h-10 w-10" />
-                        ) : (
-                            <Play className="h-10 w-10" />
+                        {centerCue === "pause" && <Pause className="h-10 w-10" />}
+                        {centerCue === "play" && <Play className="h-10 w-10" />}
+                        {centerCue === "forward" && (
+                            <SkipForward className="h-10 w-10" />
+                        )}
+                        {centerCue === "backward" && (
+                            <SkipBack className="h-10 w-10" />
                         )}
                     </div>
                 </div>
@@ -617,7 +638,7 @@ const WatchView = ({ onTitleChange }) => {
                             <button
                                 type="button"
                                 onClick={handleCyclePlaybackRate}
-                                className="ml-auto flex w-11 h-10 items-center justify-center rounded-lg bg-white/10 px-3 text-sm font-semibold text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                className="ml-auto flex h-9 min-w-[3.25rem] items-center justify-center rounded-full bg-white/10 px-3 text-xs font-semibold text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
                                 aria-label="Change playback speed"
                                 disabled={!isPlayerReady}
                             >

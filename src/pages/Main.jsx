@@ -9,7 +9,7 @@ import WatchView from "../views/WatchView";
 import { useIsMdUp } from "../utils/breakpoint";
 import PlaylistsView from "../views/PlaylistsView";
 
-const VALID_PATHS = new Set(["videos", "search", "settings", "watch"]);
+const VALID_PATHS = new Set(["videos", "search", "playlists", "settings", "watch"]);
 
 export default function Main() {
     const mdUp = useIsMdUp();
