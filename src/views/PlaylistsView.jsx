@@ -3,6 +3,7 @@ import { getVideosByUserId } from "../utils/firestore";
 import { getAuth } from "firebase/auth";
 import { Button } from "../components/ui/button";
 import GridControls from "../components/ui/ViewControls";
+import SavedVideoList from "../components/SavedVideoList";
 
 const MyPlaylistView = () => {
     const [videos, setVideos] = useState([]);
@@ -134,53 +135,7 @@ const MyPlaylistView = () => {
                         <h2 className="text-2xl font-bold border-b border-gray-300 pb-2">
                             {category}
                         </h2>
-                        <ul className={`grid gap-6 ${gridColumnsClass}`}>
-                            {vids.map((v) => (
-                                <li
-                                    key={v.videoId}
-                                    onMouseEnter={() =>
-                                        setHoveredVideo(v.videoId)
-                                    }
-                                    onMouseLeave={() => setHoveredVideo(null)}
-                                    className={`bg-white shadow-md rounded-lg overflow-hidden flex flex-col transition-transform duration-200 ${
-                                        hoveredVideo &&
-                                        hoveredVideo !== v.videoId
-                                            ? "opacity-50"
-                                            : "opacity-100"
-                                    } hover:shadow-lg`}
-                                >
-                                    {v.thumbnailUrl && (
-                                        <img
-                                            src={v.thumbnailUrl}
-                                            alt={v.title}
-                                            className="w-full h-40 object-cover"
-                                        />
-                                    )}
-
-                                    <div className="p-4 flex flex-col justify-between flex-grow">
-                                        <div>
-                                            <h3 className="font-semibold text-lg mb-1 line-clamp-2">
-                                                {highlightMatch(v.title)}
-                                            </h3>
-                                            <p className="text-sm text-gray-500 truncate">
-                                                {highlightMatch(v.channelTitle)}
-                                            </p>
-                                        </div>
-                                        <Button
-                                            className="mt-4 w-full"
-                                            onClick={() =>
-                                                window.open(
-                                                    `https://www.youtube.com/watch?v=${v.videoId}`,
-                                                    "_blank"
-                                                )
-                                            }
-                                        >
-                                            Open
-                                        </Button>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
+                        <SavedVideoList videoList={vids} gridClassName={gridColumnsClass} />
                     </div>
                 ))
             )}

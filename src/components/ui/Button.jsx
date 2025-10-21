@@ -5,7 +5,7 @@ export const Button = ({
     ...props
 }) => {
     const base =
-        "px-4 py-2 w-16 rounded-xl font-medium border transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1";
+        "px-4 py-2 rounded-xl font-medium border transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1";
 
     const variants = {
         default:
