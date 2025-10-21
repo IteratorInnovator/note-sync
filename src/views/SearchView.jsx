@@ -1,5 +1,7 @@
+import { useState, useEffect } from "react";
 import Searchbar from "../components/ui/Searchbar";
 import VideoList from "../components/VideoList";
+import GridLayoutControls from "../components/ui/GridLayoutControls";
 
 const SearchView = ({
     searchTerm = "",
@@ -7,13 +9,46 @@ const SearchView = ({
     results = [],
     onResultsChange,
 }) => {
+    const [isMdUp, setIsMdUp] = useState(false);
+
+    // Determine grid column classes based on toggle
+    const [isCondensedLayout, setIsCondensedLayout] = useState(false);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const mediaQuery = window.matchMedia("(min-width: 768px)");
+        const handleChange = (e) => setIsMdUp(e.matches);
+        setIsMdUp(mediaQuery.matches);
+
+        mediaQuery.addEventListener
+            ? mediaQuery.addEventListener("change", handleChange)
+            : mediaQuery.addListener(handleChange);
+
+        return () => {
+            mediaQuery.removeEventListener
+                ? mediaQuery.removeEventListener("change", handleChange)
+                : mediaQuery.removeListener(handleChange);
+        };
+    }, []);
+
+    const gridColumnsClass = isCondensedLayout
+        ? "grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2"
+        : "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3";
+
     return (
-        <div className="space-y-4">
+        <div className="rounded-lg p-4 bg-gray-50 min-h-screen space-y-6">
             <Searchbar
                 value={searchTerm}
                 onChange={onSearchTermChange}
                 onResults={onResultsChange}
             />
+            {results.length != 0 && (
+                <GridLayoutControls
+                    isMdUp={isMdUp}
+                    isCondensedLayout={isCondensedLayout}
+                    setIsCondensedLayout={setIsCondensedLayout}
+                />
+            )}
 
             {results.length == 0 ? (
                 <div className="flex h-64 items-center justify-center">
@@ -22,7 +57,12 @@ const SearchView = ({
                     </div>
                 </div>
             ) : (
-                <VideoList videoList={results} />
+                <div>
+                    <VideoList
+                        videoList={results}
+                        gridClassName={gridColumnsClass}
+                    />
+                </div>
             )}
         </div>
     );
