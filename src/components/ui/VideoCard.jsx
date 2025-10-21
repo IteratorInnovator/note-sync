@@ -19,7 +19,7 @@ const VideoCard = ({
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block overflow-hidden rounded-xl border border-slate-200 bg-white cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-300"
+                className="block transform overflow-hidden rounded-xl border border-slate-200 bg-white cursor-pointer transition-transform duration-300 ease-out group-hover:shadow-lg group-hover:scale-[1.02] hover:shadow-lg hover:scale-[1.02]"
             >
                 <div className="relative aspect-video bg-slate-100">
                     {thumbnail ? (

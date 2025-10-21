@@ -48,10 +48,10 @@ const SavedEllipsisButton = ({
                     e.stopPropagation();
                     onOpenChange(!open);
                 }}
-                className={`rounded-full p-1.5 text-white transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 ${
+                className={`rounded-full p-1.5 text-white transform transition-all duration-300 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 ${
                     open
-                        ? "bg-black/80 opacity-100"
-                        : "bg-black/50 opacity-0 group-hover:opacity-100 hover:bg-black/70"
+                        ? "bg-black/80 opacity-100 scale-100"
+                        : "bg-black/50 opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 hover:bg-black/70"
                 }`}
             >
                 <MoreVertical className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -61,7 +61,7 @@ const SavedEllipsisButton = ({
                 <div
                     role="menu"
                     aria-label="Video actions"
-                    className="absolute right-0 mt-2 w-40 rounded-lg border border-slate-200 bg-white p-1.5 text-slate-900 shadow-lg shadow-slate-900/10 sm:w-48 sm:p-2"
+                    className="absolute right-0 mt-2 w-40 rounded-md border border-slate-200 bg-white p-1.5 text-slate-900 shadow-lg shadow-slate-900/10 sm:w-44 sm:p-2"
                     onClick={(e) => e.stopPropagation()}
                     onMouseEnter={cancelClose}
                     onMouseLeave={() => {
