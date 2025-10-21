@@ -49,11 +49,20 @@ export const addVideo = async (
     videoId,
     title,
     channelTitle,
-    thumbnailUrl: thumbnail,
-    progresSec: 0,
-    category: (category || channelTitle || "Uncategorized").trim(),
-    addedAt: serverTimestamp(),
-  });
+    thumbnail
+) => {
+    const ref = doc(db, "users", uid, "videos", videoId);
+
+    // optional: you could remove this check too if you always want to overwrite
+    if ((await getDoc(ref)).exists()) throw new VideoAlreadySavedError();
+
+    await setDoc(ref, {
+        title,
+        channelTitle,
+        thumbnailUrl: thumbnail,
+        progresSec: 0,
+        addedAt: serverTimestamp(),
+    });
 };
 
 export const removeVideo = async (uid, videoId) => {
