@@ -35,11 +35,18 @@ export const getVideosByUserId = async (uid) => {
   });
 };
 
-export const addVideo = async (uid, videoId, title, channelTitle, thumbnail, category) => {
-  const ref = doc(db, "users", uid, "videos", videoId);
-  if ((await getDoc(ref)).exists()) throw new VideoAlreadySavedError();
+export const getVideoById = async (uid, videoId) => {
+    const ref = doc(db, "users", uid, "videos", videoId);
+    const snap = await getDoc(ref);
+    return snap.exists() ? { videoId: snap.id, ...snap.data() } : null;
+};
 
-  await setDoc(ref, {
+/**
+ * Add a video to a user's subcollection "videos"
+ */
+export const addVideo = async (
+    uid,
+    videoId,
     title,
     channelTitle,
     thumbnailUrl: thumbnail,

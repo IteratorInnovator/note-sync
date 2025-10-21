@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import SavedVideoCard from "../components/ui/SavedVideoCard"
+import SavedVideoCard from "../components/ui/SavedVideoCard";
 import { ToastContainer } from "./ui/Toast";
 import { removeVideo, hasNotes } from "../utils/firestore";
 import { auth } from "..";
