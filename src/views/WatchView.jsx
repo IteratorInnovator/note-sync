@@ -90,7 +90,16 @@ const WatchView = ({ onTitleChange }) => {
     const videoContainerRef = useRef(null);
     const hideControlsTimeoutRef = useRef(null);
     const manualControlsTimeoutRef = useRef(null);
+    const skipNextClickRef = useRef(false);
     const isTouchDeviceRef = useRef(false);
+
+    const shouldInterceptOverlay = useMemo(
+        () =>
+            isTouchDevice &&
+            ((isFullscreen && !controlsVisible) ||
+                (!isFullscreen && !manualControlsVisible)),
+        [isTouchDevice, isFullscreen, controlsVisible, manualControlsVisible]
+    );
 
     const clearHideControlsTimeout = useCallback(() => {
         if (hideControlsTimeoutRef.current) {
@@ -495,11 +504,88 @@ const WatchView = ({ onTitleChange }) => {
         }
     };
 
+    const handleTouchIntent = useCallback(
+        (forceTouchDevice = false) => {
+            if (!isPlayerReady) return false;
+            if (forceTouchDevice && !isTouchDevice) {
+                setIsTouchDevice(true);
+                isTouchDeviceRef.current = true;
+            }
+
+            if (!shouldInterceptOverlay) {
+                return false;
+            }
+
+            let handled = false;
+
+            if (!isFullscreen && !manualControlsVisible) {
+                showManualControls();
+                handled = true;
+            } else if (isFullscreen && !controlsVisible) {
+                showFullscreenControls();
+                handled = true;
+            } else if (!isFullscreen) {
+                refreshManualControls();
+            }
+
+            return handled;
+        },
+        [
+            controlsVisible,
+            isFullscreen,
+            isPlayerReady,
+            isTouchDevice,
+            manualControlsVisible,
+            refreshManualControls,
+            showFullscreenControls,
+            showManualControls,
+            shouldInterceptOverlay,
+        ]
+    );
+
+    const handleOverlayPointerDown = useCallback(
+        (event) => {
+            skipNextClickRef.current = false;
+            if (event.pointerType === "touch" || event.pointerType === "pen") {
+                const handled = handleTouchIntent(true);
+                skipNextClickRef.current = handled;
+                if (handled) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            }
+        },
+        [handleTouchIntent]
+    );
+
+    const handleOverlayTouchStart = useCallback(
+        (event) => {
+            skipNextClickRef.current = false;
+            const handled = handleTouchIntent(true);
+            skipNextClickRef.current = handled;
+            if (handled) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        },
+        [handleTouchIntent]
+    );
+
     const handleVideoClick = () => {
         if (!isPlayerReady) return;
-        if (isTouchDevice && !isFullscreen && !manualControlsVisible) {
-            showManualControls();
+        if (skipNextClickRef.current) {
+            skipNextClickRef.current = false;
             return;
+        }
+        if (isTouchDevice && shouldInterceptOverlay) {
+            if (!isFullscreen && !manualControlsVisible) {
+                showManualControls();
+                return;
+            }
+            if (isFullscreen && !controlsVisible) {
+                showFullscreenControls();
+                return;
+            }
         }
         if (isFullscreen) showFullscreenControls();
         handleTogglePlay();
@@ -541,11 +627,13 @@ const WatchView = ({ onTitleChange }) => {
                     role="presentation"
                 >
                     <div
-                        className={`absolute inset-0 ${
-                            isPlaying
+                        className={`absolute inset-0 z-10 ${
+                            shouldInterceptOverlay
                                 ? "pointer-events-auto cursor-pointer"
                                 : "pointer-events-none"
                         }`}
+                        onPointerDown={handleOverlayPointerDown}
+                        onTouchStart={handleOverlayTouchStart}
                         onClick={handleVideoClick}
                         aria-hidden="true"
                     />
@@ -556,7 +644,7 @@ const WatchView = ({ onTitleChange }) => {
                 </div>
 
                 <div
-                    className={`absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 via-black/40 to-transparent px-3 pb-3 pt-6 transition-opacity duration-200 sm:px-6 sm:pb-5 ${
+                    className={`absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/60 via-black/40 to-transparent px-3 pb-3 pt-6 transition-opacity duration-200 sm:px-6 sm:pb-5 ${
                         isFullscreen
                             ? controlsVisible
                                 ? "pointer-events-auto opacity-100"
@@ -609,7 +697,7 @@ const WatchView = ({ onTitleChange }) => {
                                 <button
                                     type="button"
                                     onClick={handleTogglePlay}
-                                    className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40 sm:h-10 sm:w-10"
+                                    className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
                                     aria-label={isPlaying ? "Pause" : "Play"}
                                     disabled={!isPlayerReady}
                                 >
@@ -623,7 +711,7 @@ const WatchView = ({ onTitleChange }) => {
                                 <button
                                     type="button"
                                     onClick={handleSeekBackward}
-                                    className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40 sm:h-10 sm:w-10"
+                                    className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
                                     aria-label="Seek backward 10 seconds"
                                     disabled={!isPlayerReady}
                                 >
@@ -673,7 +761,7 @@ const WatchView = ({ onTitleChange }) => {
                                 <button
                                     type="button"
                                     onClick={handleCyclePlaybackRate}
-                                    className="flex h-6 md:h-9 min-w-[2rem] items-center justify-center rounded-full bg-white/15 text-[8px] md:text-xs font-semibold text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40 sm:h-9 sm:w-auto sm:min-w-[3.25rem]"
+                                    className="flex h-6 md:h-9 min-w-[2rem] md:min-w-[2.75rem] items-center justify-center rounded-full bg-white/15 text-[8px] md:text-xs font-semibold text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
                                     aria-label="Change playback speed"
                                     disabled={!isPlayerReady}
                                 >
