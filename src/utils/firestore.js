@@ -44,7 +44,6 @@ export const getVideoById = async (uid, videoId) => {
 /**
  * Add a video to a user's subcollection "videos"
  */
-<<<<<<< Updated upstream
 export const addVideo = async (uid, videoId, title, channelTitle, thumbnailUrl, progressSec = 0, category) => {
   try {
     const videoRef = doc(db, "users", uid, "videos", videoId);
@@ -64,32 +63,6 @@ export const addVideo = async (uid, videoId, title, channelTitle, thumbnailUrl, 
   }
 };
 
-
-
-=======
-export const addVideo = async (
-  uid,
-  videoId,
-  title,
-  channelTitle,
-  thumbnail,
-  progressSec = 0,
-  category
-) => {
-  const ref = doc(db, "users", uid, "videos", videoId);
-  await setDoc(ref, {
-    title,
-    channelTitle,
-    thumbnail,
-    progressSec,
-    category: (category || channelTitle || "Uncategorized").trim(),
-    addedAt: serverTimestamp(),
-  });
-  return videoId;
-};
-
-
->>>>>>> Stashed changes
 export const removeVideo = async (uid, videoId) => {
   const fn = httpsCallable(functions, "deleteVideoDocWithNotes");
   try {
