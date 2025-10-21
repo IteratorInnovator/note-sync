@@ -24,16 +24,10 @@ const ConfirmDialog = ({ open, onConfirm, onCancel }) => {
                     </p>
                 </div>
                 <div className="flex justify-center gap-4">
-                    <Button
-                        variant="secondary"
-                        onClick={onCancel}
-                    >
+                    <Button variant="secondary" onClick={onCancel}>
                         No
                     </Button>
-                    <Button
-                        variant="destructive"
-                        onClick={onConfirm}
-                    >
+                    <Button variant="destructive" onClick={onConfirm}>
                         Yes
                     </Button>
                 </div>
@@ -46,6 +40,7 @@ const SavedVideoList = ({
     videoList,
     onRemoveSuccess,
     gridClassName = "grid-cols-2 md:grid-cols-3 lg:grid-cols-3",
+    highlightFunc, // <-- new prop
 }) => {
     const [openMenuId, setOpenMenuId] = useState(null);
     const [toasts, setToasts] = useState([]);
@@ -56,12 +51,7 @@ const SavedVideoList = ({
         []
     );
 
-    const addToast = (
-        message,
-        Icon = null,
-        iconColour = "",
-        duration = 3000
-    ) => {
+    const addToast = (message, Icon = null, iconColour = "", duration = 3000) => {
         const id = toastId++;
         setToasts((prev) => [
             ...prev,
@@ -79,18 +69,10 @@ const SavedVideoList = ({
                 const uid = auth.currentUser.uid;
                 const ok = await removeVideo(uid, videoId);
                 if (!ok) throw new Error();
-                addToast(
-                    `Removed from My Videos`,
-                    CircleCheck,
-                    "text-emerald-400"
-                );
+                addToast(`Removed from My Videos`, CircleCheck, "text-emerald-400");
                 onRemoveSuccess?.(videoId);
             } catch {
-                addToast(
-                    `Failed to remove from My Videos`,
-                    CircleX,
-                    "text-red-400"
-                );
+                addToast(`Failed to remove from My Videos`, CircleX, "text-red-400");
             } finally {
                 setOpenMenuId(null);
             }
@@ -144,6 +126,7 @@ const SavedVideoList = ({
                         thumbnail={v.thumbnailUrl}
                         title={v.title}
                         channelTitle={v.channelTitle}
+                        highlightFunc={highlightFunc} // <-- pass highlight
                         open={openMenuId === v.videoId}
                         onOpenChange={(isOpen) =>
                             handleOpenChange(v.videoId, isOpen)
