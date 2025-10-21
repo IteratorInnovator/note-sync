@@ -8,7 +8,10 @@ import { CircleCheck, CircleX, BadgeCheck } from "lucide-react";
 
 let toastId = 0;
 
-const VideoList = ({ videoList }) => {
+const VideoList = ({
+    videoList,
+    gridClassName = "grid-cols-2 md:grid-cols-3 lg:grid-cols-3",
+}) => {
     const [openMenuId, setOpenMenuId] = useState(null);
     const [toasts, setToasts] = useState([]);
 
@@ -64,7 +67,7 @@ const VideoList = ({ videoList }) => {
 
     return (
         <>
-            <ul className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            <ul className={`grid ${gridClassName} gap-4`}>
                 {videoList.map((v) => (
                     <VideoCard
                         key={v.videoId}
