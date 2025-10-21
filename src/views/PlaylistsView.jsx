@@ -86,19 +86,19 @@ const MyPlaylistView = () => {
     }, [sortedVideos]);
 
     // Highlight search matches
-    const highlightMatch = (text) => {
-        if (!searchQuery) return text;
-        const regex = new RegExp(`(${searchQuery})`, "gi");
-        return text.split(regex).map((part, idx) =>
-            regex.test(part) ? (
-                <span key={idx} className="bg-yellow-200">
-                    {part}
-                </span>
-            ) : (
-                part
-            )
-        );
-    };
+    // const highlightMatch = (text) => {
+    //     if (!searchQuery) return text;
+    //     const regex = new RegExp(`(${searchQuery})`, "gi");
+    //     return text.split(regex).map((part, idx) =>
+    //         regex.test(part) ? (
+    //             <span key={idx} className="bg-yellow-200">
+    //                 {part}
+    //             </span>
+    //         ) : (
+    //             part
+    //         )
+    //     );
+    // };
 
     // Determine grid column classes based on toggle
     const gridColumnsClass = isCondensedLayout

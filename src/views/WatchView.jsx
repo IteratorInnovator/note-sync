@@ -81,7 +81,6 @@ const WatchView = ({ onTitleChange }) => {
     const [volume, setVolume] = useState(100);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [controlsVisible, setControlsVisible] = useState(false);
-    const [centerCue, setCenterCue] = useState(null);
     const PLAYBACK_RATES = [0.25, 0.5, 1, 1.25, 1.5, 1.75, 2];
     const [playbackRateIndex, setPlaybackRateIndex] = useState(
         PLAYBACK_RATES.indexOf(1)
@@ -95,9 +94,6 @@ const WatchView = ({ onTitleChange }) => {
     const lastVolumeRef = useRef(100);
     const videoContainerRef = useRef(null);
     const hideControlsTimeoutRef = useRef(null);
-    const centerCueTimeoutRef = useRef(null);
-    const skipCueActiveRef = useRef(false);
-    const skipCueTimeoutRef = useRef(null);
 
     const clearHideControlsTimeout = useCallback(() => {
         if (hideControlsTimeoutRef.current) {
@@ -115,18 +111,6 @@ const WatchView = ({ onTitleChange }) => {
             hideControlsTimeoutRef.current = null;
         }, 3000);
     }, [clearHideControlsTimeout, isFullscreen]);
-
-    const showCenterCue = useCallback((cue) => {
-        if (!cue) return;
-        setCenterCue(cue);
-        if (centerCueTimeoutRef.current) {
-            window.clearTimeout(centerCueTimeoutRef.current);
-        }
-        centerCueTimeoutRef.current = window.setTimeout(() => {
-            setCenterCue(null);
-            centerCueTimeoutRef.current = null;
-        }, 450);
-    }, []);
 
     useEffect(() => {
         if (!isPlayerReady) return;
@@ -229,16 +213,13 @@ const WatchView = ({ onTitleChange }) => {
                     rel: 0,
                     modestbranding: 1,
                     disablekb: 1,
+                    enablejsapi: 0
                 },
                 events: {
                     onReady: (event) => {
                         if (cancelled) return;
                         setIsPlayerReady(true);
                         const player = event.target;
-                        const iframe = player.getIframe?.();
-                        if (iframe) {
-                            iframe.style.pointerEvents = "none";
-                        }
                         const initialDuration = player.getDuration();
                         setDuration(initialDuration);
                         const initialVolume = player.getVolume();
@@ -252,18 +233,12 @@ const WatchView = ({ onTitleChange }) => {
                         const state = event.data;
                         if (state === window.YT.PlayerState.PLAYING) {
                             setIsPlaying(true);
-                            if (!skipCueActiveRef.current) {
-                                showCenterCue("play");
-                            }
                             startProgressTracking();
                         } else if (
                             state === window.YT.PlayerState.PAUSED ||
                             state === window.YT.PlayerState.ENDED
                         ) {
                             setIsPlaying(false);
-                            if (state === window.YT.PlayerState.PAUSED) {
-                                showCenterCue("pause");
-                            }
                             if (state === window.YT.PlayerState.ENDED) {
                                 setCurrentTime(
                                     playerInstanceRef.current?.getDuration() ??
@@ -287,7 +262,7 @@ const WatchView = ({ onTitleChange }) => {
                 playerInstanceRef.current = null;
             }
         };
-    }, [videoId, startProgressTracking, stopProgressTracking, showCenterCue]);
+    }, [videoId, startProgressTracking, stopProgressTracking]);
 
     useEffect(() => {
         const handler = () => {
@@ -343,15 +318,6 @@ const WatchView = ({ onTitleChange }) => {
     useEffect(
         () => () => {
             clearHideControlsTimeout();
-            if (centerCueTimeoutRef.current) {
-                window.clearTimeout(centerCueTimeoutRef.current);
-                centerCueTimeoutRef.current = null;
-            }
-            if (skipCueTimeoutRef.current) {
-                window.clearTimeout(skipCueTimeoutRef.current);
-                skipCueTimeoutRef.current = null;
-            }
-            skipCueActiveRef.current = false;
         },
         [clearHideControlsTimeout]
     );
@@ -410,15 +376,6 @@ const WatchView = ({ onTitleChange }) => {
         );
         player.seekTo(target, true);
         setCurrentTime(target);
-        showCenterCue(offsetSeconds > 0 ? "forward" : "backward");
-        skipCueActiveRef.current = true;
-        if (skipCueTimeoutRef.current) {
-            window.clearTimeout(skipCueTimeoutRef.current);
-        }
-        skipCueTimeoutRef.current = window.setTimeout(() => {
-            skipCueActiveRef.current = false;
-            skipCueTimeoutRef.current = null;
-        }, 400);
     };
 
     const handleSeekBackward = () => seekBy(-10);
@@ -512,12 +469,20 @@ const WatchView = ({ onTitleChange }) => {
                 }}
             >
                 <div
-                    className={`relative w-full cursor-pointer ${
+                    className={`relative w-full ${
                         isFullscreen ? "h-full" : "aspect-video"
                     }`}
-                    onClick={handleVideoClick}
                     role="presentation"
                 >
+                    <div
+                        className={`absolute inset-0 ${
+                            isPlaying
+                                ? "pointer-events-auto cursor-pointer"
+                                : "pointer-events-none"
+                        }`}
+                        onClick={handleVideoClick}
+                        aria-hidden="true"
+                    />
                     <div
                         ref={playerRef}
                         className="absolute inset-0 h-full w-full"
@@ -525,34 +490,17 @@ const WatchView = ({ onTitleChange }) => {
                 </div>
 
                 <div
-                    className={`pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
-                        centerCue ? "opacity-100" : "opacity-0"
-                    }`}
-                >
-                    <div
-                        className={`flex h-20 w-20 items-center justify-center rounded-full bg-black/70 text-white shadow-lg ring-1 ring-white/30 transition-transform duration-300 ${
-                            centerCue ? "scale-110" : "scale-90"
-                        }`}
-                    >
-                        {centerCue === "pause" && <Pause className="h-10 w-10" />}
-                        {centerCue === "play" && <Play className="h-10 w-10" />}
-                        {centerCue === "forward" && (
-                            <SkipForward className="h-10 w-10" />
-                        )}
-                        {centerCue === "backward" && (
-                            <SkipBack className="h-10 w-10" />
-                        )}
-                    </div>
-                </div>
-
-                <div
-                    className={`absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 via-black/40 to-transparent px-4 pb-4 pt-6 transition-opacity duration-200 ${
+                    className={`absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 via-black/40 to-transparent px-3 pb-3 pt-6 transition-opacity duration-200 sm:px-6 sm:pb-5 ${
                         isFullscreen
                             ? controlsVisible
                                 ? "pointer-events-auto opacity-100"
                                 : "pointer-events-none opacity-0"
                             : "pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100"
                     }`}
+                    onClick={(event) => event.stopPropagation()}
+                    onMouseDown={(event) => event.stopPropagation()}
+                    onTouchStart={(event) => event.stopPropagation()}
+                    onPointerDown={(event) => event.stopPropagation()}
                 >
                     <div className="flex flex-col gap-3">
                         <input
@@ -568,11 +516,11 @@ const WatchView = ({ onTitleChange }) => {
                             disabled={!isPlayerReady}
                         />
 
-                        <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                             <button
                                 type="button"
                                 onClick={handleTogglePlay}
-                                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40 sm:h-10 sm:w-10"
                                 aria-label={isPlaying ? "Pause" : "Play"}
                                 disabled={!isPlayerReady}
                             >
@@ -586,7 +534,7 @@ const WatchView = ({ onTitleChange }) => {
                             <button
                                 type="button"
                                 onClick={handleSeekBackward}
-                                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40 sm:h-10 sm:w-10"
                                 aria-label="Seek backward 10 seconds"
                                 disabled={!isPlayerReady}
                             >
@@ -596,14 +544,14 @@ const WatchView = ({ onTitleChange }) => {
                             <button
                                 type="button"
                                 onClick={handleSeekForward}
-                                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40 sm:h-10 sm:w-10"
                                 aria-label="Seek forward 10 seconds"
                                 disabled={!isPlayerReady}
                             >
                                 <SkipForward className="h-5 w-5" />
                             </button>
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex w-full items-center gap-2 sm:w-auto sm:gap-3">
                                 <button
                                     type="button"
                                     onClick={handleToggleMute}
@@ -626,41 +574,43 @@ const WatchView = ({ onTitleChange }) => {
                                     step={1}
                                     value={volume}
                                     onChange={handleVolume}
-                                    className="w-24 accent-indigo-500"
+                                    className="w-full flex-1 accent-indigo-500 sm:w-24 md:w-32"
                                     disabled={!isPlayerReady}
                                 />
                             </div>
 
-                            <div className="text-sm text-white/80">
+                            <div className="order-6 w-full text-center text-xs text-white/80 sm:order-none sm:w-auto sm:text-sm sm:text-white/80">
                                 {formatTime(currentTime)} / {formatTime(duration)}
                             </div>
 
-                            <button
-                                type="button"
-                                onClick={handleCyclePlaybackRate}
-                                className="ml-auto flex h-9 min-w-[3.25rem] items-center justify-center rounded-full bg-white/10 px-3 text-xs font-semibold text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
-                                aria-label="Change playback speed"
-                                disabled={!isPlayerReady}
-                            >
-                                {`${playbackRate}x`}
-                            </button>
+                            <div className="order-7 flex w-full items-center justify-center gap-2 sm:order-none sm:w-auto sm:justify-end sm:gap-3 sm:ml-auto">
+                                <button
+                                    type="button"
+                                    onClick={handleCyclePlaybackRate}
+                                    className="flex h-9 w-full min-w-[3.1rem] items-center justify-center rounded-full bg-white/10 px-3 text-xs font-semibold text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40 sm:h-9 sm:w-auto sm:min-w-[3.25rem]"
+                                    aria-label="Change playback speed"
+                                    disabled={!isPlayerReady}
+                                >
+                                    {`${playbackRate}x`}
+                                </button>
 
-                            <button
-                                type="button"
-                                onClick={handleToggleFullscreen}
-                                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/25"
-                                aria-label={
-                                    isFullscreen
-                                        ? "Exit fullscreen"
-                                        : "Enter fullscreen"
-                                }
-                            >
-                                {isFullscreen ? (
-                                    <Minimize2 className="h-4 w-4" />
-                                ) : (
-                                    <Maximize2 className="h-4 w-4" />
-                                )}
-                            </button>
+                                <button
+                                    type="button"
+                                    onClick={handleToggleFullscreen}
+                                    className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/25"
+                                    aria-label={
+                                        isFullscreen
+                                            ? "Exit fullscreen"
+                                            : "Enter fullscreen"
+                                    }
+                                >
+                                    {isFullscreen ? (
+                                        <Minimize2 className="h-4 w-4" />
+                                    ) : (
+                                        <Maximize2 className="h-4 w-4" />
+                                    )}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
