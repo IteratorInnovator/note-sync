@@ -27,6 +27,7 @@ await setPersistence(auth, browserLocalPersistence);
 
 export const GoogleProvider = new GoogleAuthProvider();
 export const GithubProvider = new GithubAuthProvider();
+GoogleProvider.addScope('email');
 GithubProvider.addScope("read:user");
 GithubProvider.addScope("user:email");
 

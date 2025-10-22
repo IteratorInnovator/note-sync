@@ -33,11 +33,19 @@ const LoginModal = ({ switchToSignUpView }) => {
         const password = credentials.get("password");
 
         try {
-            await signInWithEmailAndPassword(
+            const { user } = await signInWithEmailAndPassword(
                 auth,
                 email.trim().toLowerCase(),
                 password.trim()
             );
+            if (!user.emailVerified) {
+                setError({
+                    type: "email",
+                    message:
+                        "Verify your email to sign in.",
+                });
+                return;
+            }
             // success: redirect to main page
             navigate("/videos");
         } catch (err) {
@@ -45,7 +53,7 @@ const LoginModal = ({ switchToSignUpView }) => {
                 if (methods.includes("google.com")) {
                     setError({
                         type: "email",
-                        message: "Use Google or Facebook for this email.",
+                        message: "Login with Google for this email.",
                     });
                     return;
                 }
