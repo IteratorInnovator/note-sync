@@ -6,12 +6,16 @@ import "./App.css";
 import Index from "./pages/Index";
 import Main from "./pages/Main";
 import { Loader2 } from "lucide-react";
+import { DEFAULT_SETTINGS, useSettings } from "./stores/useSettings";
+import { getUserSettings } from "./utils/firestore";
 
 const FEDERATED_VERIFIED_PROVIDERS = new Set(["google.com", "github.com"]);
 
 function App() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const getSettings = useSettings((state) => state.getSettings);
+    const setSettings = useSettings((state) => state.setSettings);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (u) => {
@@ -21,12 +25,20 @@ function App() {
 
         return unsubscribe;
     }, []);
-    
+
+    useEffect(() => {
+        if (!user) {
+            setSettings(DEFAULT_SETTINGS);
+            return;
+        }
+
+        void getSettings(() => getUserSettings(user.uid));
+    }, [user, getSettings, setSettings]);
 
     if (loading) {
         return (
             <div className="grid min-h-screen place-items-center bg-slate-900 text-white">
-                <div className="flex flex-col items-center gap-4">
+                <div className="flex flex-coetUtems-center gap-4">
                     <Loader2 className="h-10 w-10 animate-spin text-white" aria-hidden="true" />
                     <p className="text-sm tracking-wide">Loading NoteSync...</p>
                 </div>
