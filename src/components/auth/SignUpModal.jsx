@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import GoogleButton from "../ui/GoogleButton";
-import FacebookButton from "../ui/FacebookButton";
+import GithubButton from "../ui/GithubButton";
 import Separator from "../ui/Separator";
 import CriteriaItem from "../ui/CriteriaItem";
 import { auth } from "../..";
@@ -84,7 +84,7 @@ const SignUpModal = ({ switchToLoginView }) => {
             {/* OAuth */}
             <div className="flex justify-center gap-3 w-full mt-6 mb-2">
                 <GoogleButton text="Google" />
-                <FacebookButton text="Facebook" />
+                <GithubButton text="Github" />
             </div>
 
             {/* Divider */}
@@ -160,11 +160,7 @@ const SignUpModal = ({ switchToLoginView }) => {
                                 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 grid place-items-center"
                             >
                                 <img
-                                    src={
-                                        !showPassword
-                                            ? EyeOff
-                                            : EyeShow
-                                    }
+                                    src={!showPassword ? EyeOff : EyeShow}
                                     className="h-4 w-4 text-slate-500"
                                     alt=""
                                 />
