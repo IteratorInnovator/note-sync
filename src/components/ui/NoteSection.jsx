@@ -3,10 +3,9 @@ import {
   getNotesByVideoId,
   createNote,
   updateNote,
-  deleteNote,
-  hasNotes
-} from "../../utils/firestore"; // ⬅️ fixed path
-import { auth } from "../../"; // ⬅️ adjust this if your file is elsewhere
+  deleteNote
+} from "../../utils/firestore";
+import { auth } from "../../";
 import { Trash2, Edit3, Save, Clock } from "lucide-react";
 
 const formatTime = (sec) => {
@@ -24,7 +23,7 @@ const NoteSection = ({ videoId, playerRef }) => {
 
   const uid = auth.currentUser?.uid;
 
-  // 🔹 Fetch all notes when component mounts
+  // Fetch all notes when component mounts
   useEffect(() => {
     if (!uid || !videoId) return;
 
@@ -38,7 +37,7 @@ const NoteSection = ({ videoId, playerRef }) => {
     fetchNotes();
   }, [uid, videoId]);
 
-  // 🔹 Create a new note
+  // Create a new note
   const handleAddNote = async () => {
     if (!newNote.trim()) return;
     const timeSec = playerRef.current?.getCurrentTime?.() || 0;
@@ -47,19 +46,19 @@ const NoteSection = ({ videoId, playerRef }) => {
     setNewNote("");
   };
 
-  // 🔹 Delete a note
+  // Delete a note
   const handleDelete = async (noteId) => {
     await deleteNote(uid, videoId, noteId);
     setNotes((prev) => prev.filter((n) => n.noteId !== noteId));
   };
 
-  // 🔹 Start editing a note
+  // Start editing a note
   const handleEdit = (noteId, content) => {
     setEditingId(noteId);
     setEditedContent(content);
   };
 
-  // 🔹 Save edited note
+  // Save edited note
   const handleSave = async (noteId) => {
     await updateNote(uid, videoId, noteId, editedContent);
     setNotes((prev) =>
@@ -71,7 +70,7 @@ const NoteSection = ({ videoId, playerRef }) => {
     setEditedContent("");
   };
 
-  // 🔹 Jump to timestamp
+  // Jump to timestamp
   const handleSeek = (sec) => {
     const player = playerRef.current;
     if (!player) return;
@@ -142,19 +141,21 @@ const NoteSection = ({ videoId, playerRef }) => {
 
                 <div className="flex items-center gap-2">
                   {editingId !== note.noteId && (
-                    <button
-                      onClick={() => handleEdit(note.noteId, note.content)}
-                      className="text-slate-500 hover:text-slate-700"
-                    >
-                      <Edit3 size={16} />
-                    </button>
+                    <>
+                      <button
+                        onClick={() => handleEdit(note.noteId, note.content)}
+                        className="text-slate-500 hover:text-slate-700"
+                      >
+                        <Edit3 size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(note.noteId)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </>
                   )}
-                  <button
-                    onClick={() => handleDelete(note.noteId)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <Trash2 size={16} />
-                  </button>
                 </div>
               </li>
             ))}

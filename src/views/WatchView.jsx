@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { getAuth } from "firebase/auth";
-import { getVideoById } from "../utils/firestore";
+import { auth } from "..";
 import NoteSection from "../components/ui/NoteSection";
-
+import { getVideoById } from "../utils/firestore";
 import {
     Maximize2,
     Minimize2,
@@ -171,7 +170,7 @@ const WatchView = ({ onTitleChange }) => {
             return;
         }
 
-        const uid = getAuth.currentUser?.uid;
+        const uid = auth.currentUser?.uid;
         if (!uid) {
             navigate("/videos", { replace: true });
             return;
@@ -802,7 +801,7 @@ const WatchView = ({ onTitleChange }) => {
                     </p>
                 ) : null}
             </div>
-
+            
             <NoteSection videoId={videoId} playerRef={playerInstanceRef} />
 
         </div>
