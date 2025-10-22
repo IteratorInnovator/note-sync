@@ -44,7 +44,7 @@ export const createUserDoc = functions
             .doc(user.uid)
             .set({
                 name: user.displayName ?? null,
-                email: user.email ?? null,
+                providerId: user.providerData[0].providerId,
                 createdAt: FieldValue.serverTimestamp(),
                 settings: {
                     safeSearch: "moderate",
