@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { auth } from "..";
+import NoteSection from "../components/ui/NoteSection";
 import { getVideoById } from "../utils/firestore";
 import {
     Maximize2,
@@ -800,6 +801,9 @@ const WatchView = ({ onTitleChange }) => {
                     </p>
                 ) : null}
             </div>
+            
+            <NoteSection videoId={videoId} playerRef={playerInstanceRef} />
+
         </div>
     );
 };
