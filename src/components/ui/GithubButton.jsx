@@ -18,7 +18,7 @@ const GithubButton = ({ text }) => {
             }
             if (err.code === "auth/popup-blocked") {
                 // if sign in with pop, trigger sign in with redirect instead
-                await signInWithRedirect(auth, GithubButton);
+                await signInWithRedirect(auth, GithubProvider);
                 return;
             }
         }

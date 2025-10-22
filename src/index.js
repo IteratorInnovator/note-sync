@@ -26,9 +26,7 @@ auth.languageCode = "en";
 await setPersistence(auth, browserLocalPersistence);
 
 export const GoogleProvider = new GoogleAuthProvider();
-export const GithubProvider = new GithubAuthProvider;
-GithubProvider.addScope("read:user");
-GithubProvider.addScope("user:email");
+export const GithubProvider = new GithubAuthProvider();
 
 export const functions = getFunctions(app, FIREBASE_CLOUD_FUNCTIONS_REGION);
 
