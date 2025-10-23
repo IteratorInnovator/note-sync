@@ -79,6 +79,7 @@ const MyPlaylistView = () => {
     }
   }, [filteredVideos, sortOption]);
 
+  
   // Group videos by category or channel
   const groupedVideos = useMemo(() => {
     return sortedVideos.reduce((acc, video) => {

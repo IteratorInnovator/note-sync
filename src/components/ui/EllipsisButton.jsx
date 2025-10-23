@@ -50,7 +50,7 @@ const EllipsisButton = ({ open, onOpenChange, onSave, onAddToPlaylist }) => {
         <div
           role="menu"
           aria-label="Video actions"
-          className="absolute right-0 mt-2 w-40 rounded-md border border-slate-200 bg-white p-1.5 text-slate-900 shadow-lg shadow-slate-900/10 sm:w-44 sm:p-2"
+          className="absolute right-0 mt-2 w-44 rounded-md border border-slate-200 bg-white p-1 text-slate-900 shadow-lg shadow-slate-900/10"
           onClick={(e) => e.stopPropagation()}
           onMouseEnter={cancelClose}
           onMouseLeave={() => {
@@ -66,7 +66,7 @@ const EllipsisButton = ({ open, onOpenChange, onSave, onAddToPlaylist }) => {
               key={key}
               role="menuitem"
               onClick={(e) => { e.preventDefault(); onOpenChange(false); handler(); }}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-slate-100 sm:rounded-lg sm:px-3 sm:py-2 sm:text-sm"
+              className="flex w-full items-center gap-2 rounded-md p-2 text-left text-xs transition-colors hover:bg-slate-100 md:rounded-lg md:text-sm"
             >
               <Icon className="h-3.5 w-3.5 text-slate-900 sm:h-4 sm:w-4" />
               <span>{label}</span>
