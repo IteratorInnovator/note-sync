@@ -11,6 +11,7 @@ const SavedVideoCard = ({
     onOpenChange, // (boolean) => void
     onRemove,
     onAddToPlaylist,
+    highlightFunc, // optional: (text) => JSX with highlights
 }) => (
     <li className="relative group">
         <Link
@@ -43,10 +44,10 @@ const SavedVideoCard = ({
 
             <div className="p-4">
                 <h3 className="line-clamp-2 truncate text-xs font-semibold md:text-sm">
-                    {title}
+                    {highlightFunc ? highlightFunc(title) : title}
                 </h3>
                 <p className="mt-1 truncate text-[10px] text-slate-600">
-                    {channelTitle}
+                    {highlightFunc ? highlightFunc(channelTitle) : channelTitle}
                 </p>
             </div>
         </Link>
