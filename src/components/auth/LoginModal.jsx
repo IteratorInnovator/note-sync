@@ -13,7 +13,7 @@ import User from "../../assets/user.svg";
 import EyeOff from "../../assets/eye-off.svg";
 import EyeShow from "../../assets/eye-show.svg";
 
-const LoginModal = ({ switchToSignUpView }) => {
+const LoginModal = ({ switchToSignUpView, switchToForgotPasswordView }) => {
     const [showPassword, setShowPassword] = useState(false);
     const togglePassword = () => {
         setShowPassword(!showPassword);
@@ -155,6 +155,14 @@ const LoginModal = ({ switchToSignUpView }) => {
                                 {error.message}
                             </p>
                         )}
+                        {/* Forget Password button */}
+                        <button
+                            type="button"
+                            className="text-sm text-slate-500 mt-2 hover:underline"
+                            onClick={switchToForgotPasswordView}
+                        >
+                            Forget Password?
+                        </button>
                     </div>
                 </div>
 
