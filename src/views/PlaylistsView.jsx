@@ -112,7 +112,7 @@ const MyPlaylistView = () => {
         : "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3";
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="min-h-screen rounded-lg bg-gradient-to-br from-gray-50 to-gray-100">
             <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
                 {/* Header Section */}
                 {!loading && hasVideos && (
