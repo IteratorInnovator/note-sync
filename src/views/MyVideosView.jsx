@@ -163,7 +163,7 @@ const MyVideosView = () => {
               <p className="text-sm sm:text-base text-gray-600 mb-5 sm:mb-6 leading-relaxed">
                 Start building your video library by adding your first video. Your saved videos will appear here.
               </p>
-              <button className="inline-flex items-center justify-center px-5 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-white text-sm sm:text-base font-medium rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto">
+              <button className="inline-flex items-center justify-center px-5 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-white text-sm sm:text-base font-medium rounded-lg hover:bg-blue-700 hover:scale-110 duration-200 ease-in-out transition-all sm:w-auto">
                 <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
