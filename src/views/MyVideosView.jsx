@@ -3,7 +3,7 @@ import SavedVideoList from "../components/SavedVideoList";
 import { getVideosByUserId } from "../utils/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../";
-import ViewControls from "../components/ui/ViewControls";
+import GridControls from "../components/ui/ViewControls";
 
 // Utility to highlight search matches
 const highlightMatch = (text, query) => {
@@ -11,7 +11,7 @@ const highlightMatch = (text, query) => {
   const regex = new RegExp(`(${query})`, "gi");
   return text.split(regex).map((part, idx) =>
     regex.test(part) ? (
-      <span key={idx} className="bg-yellow-200 rounded">
+      <span key={idx} className="bg-yellow-200">
         {part}
       </span>
     ) : (

@@ -10,7 +10,7 @@ const highlightMatch = (text, query) => {
   const regex = new RegExp(`(${query})`, "gi");
   return text.split(regex).map((part, idx) =>
     regex.test(part) ? (
-      <span key={idx} className="bg-yellow-200 rounded">{part}</span>
+      <span key={idx} className="bg-yellow-200">{part}</span>
     ) : part
   );
 };
@@ -92,10 +92,21 @@ const MyPlaylistView = () => {
   const hasVideos = videos.length > 0;
   const hasResults = sortedVideos.length > 0;
 
-  // Grid layout classes
+  // Determine grid columns for layout - optimized for mobile
   const gridColumnsClass = isCondensedLayout
     ? "grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2"
     : "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3";
+    
+  // Render
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-center md:text-lg text-slate-500/60">
+          Loading your playlist...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
