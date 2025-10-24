@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { getVideosByUserId } from "../utils/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import GridControls from "../components/ui/ViewControls";
+import ViewControls from "../components/ui/ViewControls";
 import SavedVideoList from "../components/SavedVideoList";
 
 // Highlight search matches
@@ -136,7 +136,7 @@ const MyPlaylistView = () => {
             </div>
 
             <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 overflow-hidden">
-              <GridControls
+              <ViewControls
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 sortOption={sortOption}
