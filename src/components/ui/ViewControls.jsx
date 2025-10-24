@@ -35,7 +35,7 @@ const ViewControls = ({
     }, []);
 
     return (
-        <div className="flex flex-col justify-between gap-4">
+        <div className="flex flex-col justify-between gap-6">
             {/* Row 1: Searchbar */}
             <div
                 className={`flex ${
@@ -52,7 +52,7 @@ const ViewControls = ({
             </div>
 
             {/* Row 2: Controls */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3.5">
                 {/* Left side: Layout toggle */}
                 <GridLayoutControls
                     isMdUp={isMdUp}
@@ -61,7 +61,7 @@ const ViewControls = ({
                 />
 
                 {/* Right side: Sort + Reset */}
-                <div className="flex items-center gap-3 justify-between">
+                <div className="flex items-center justify-between gap-3">
                     {/* Sort by */}
                     <div className="flex items-center gap-2">
                         <label className="font-medium text-gray-700 text-sm">
