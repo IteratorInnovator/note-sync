@@ -235,7 +235,7 @@ const MyPlaylistView = () => {
                     d="M12 4v16m8-8H4"
                   />
                 </svg>
-                Add First Video
+                Add your First Video
               </button>
             </div>
           </div>
