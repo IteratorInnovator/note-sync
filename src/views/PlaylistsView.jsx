@@ -1,9 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
-import SavedVideoList from "../components/SavedVideoList";
+import { useEffect, useState, useMemo } from "react";
 import { getVideosByUserId } from "../utils/firestore";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../";
-import ViewControls from "../components/ui/ViewControls";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import GridControls from "../components/ui/ViewControls";
+import SavedVideoList from "../components/SavedVideoList";
 
 // Utility to highlight search matches
 const highlightMatch = (text, query) => {
@@ -11,123 +10,128 @@ const highlightMatch = (text, query) => {
   const regex = new RegExp(`(${query})`, "gi");
   return text.split(regex).map((part, idx) =>
     regex.test(part) ? (
-      <span key={idx} className="bg-yellow-200 rounded px-0.5">
-        {part}
-      </span>
-    ) : (
-      part
-    )
+      <span key={idx} className="bg-yellow-200 rounded px-0.5">{part}</span>
+    ) : part
   );
 };
 
-const MyVideosView = () => {
-  const [videoList, setVideoList] = useState([]);
-  const [sortOption, setSortOption] = useState("recent");
+const MyPlaylistView = () => {
+  const [videos, setVideos] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortOption, setSortOption] = useState("recent");
   const [isCondensedLayout, setIsCondensedLayout] = useState(false);
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
-  // Fetch videos for the logged-in user
+  const auth = getAuth();
+
+  // Listen to auth state and fetch videos
   useEffect(() => {
     let active = true;
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        if (active) setVideoList([]);
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
+      if (!active) return;
+      setUser(u);
+      if (!u) {
+        setVideos([]);
         setLoading(false);
         return;
       }
-      const list = await getVideosByUserId(user.uid);
-      if (active) setVideoList(list);
-      setLoading(false);
+      try {
+        const data = await getVideosByUserId(u.uid);
+        setVideos(data);
+      } catch (err) {
+        console.error("Failed to fetch videos:", err);
+      } finally {
+        setLoading(false);
+      }
     });
+
     return () => {
       active = false;
-      unsub();
+      unsubscribe();
     };
-  }, []);
+  }, [auth]);
 
-  // Sort and filter videos
+  // Filter videos by search query
+  const filteredVideos = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return videos.filter(
+      (v) =>
+        v.title.toLowerCase().includes(q) ||
+        v.channelTitle.toLowerCase().includes(q)
+    );
+  }, [videos, searchQuery]);
+
+  // Sort videos
   const sortedVideos = useMemo(() => {
-    if (!videoList || videoList.length === 0) return [];
-    const vids = [...videoList];
-
-    // Sorting
+    const vids = [...filteredVideos];
     switch (sortOption) {
       case "recent":
-        vids.sort((a, b) => (b.addedAt?.seconds || 0) - (a.addedAt?.seconds || 0));
-        break;
+        return vids.sort((a, b) => (b.addedAt?.seconds || 0) - (a.addedAt?.seconds || 0));
       case "earliest":
-        vids.sort((a, b) => (a.addedAt?.seconds || 0) - (b.addedAt?.seconds || 0));
-        break;
+        return vids.sort((a, b) => (a.addedAt?.seconds || 0) - (b.addedAt?.seconds || 0));
       case "title-asc":
-        vids.sort((a, b) => a.title.localeCompare(b.title));
-        break;
+        return vids.sort((a, b) => a.title.localeCompare(b.title));
       case "title-desc":
-        vids.sort((a, b) => b.title.localeCompare(a.title));
-        break;
+        return vids.sort((a, b) => b.title.localeCompare(a.title));
       default:
-        break;
+        return vids;
     }
+  }, [filteredVideos, sortOption]);
 
-    // Filtering
-    if (searchQuery.trim() !== "") {
-      const q = searchQuery.trim().toLowerCase();
-      return vids.filter(
-        (v) =>
-          v.title.toLowerCase().includes(q) ||
-          v.channelTitle.toLowerCase().includes(q)
-      );
-    }
+  // Group videos by category or channel
+  const groupedVideos = useMemo(() => {
+    return sortedVideos.reduce((acc, video) => {
+      const key = (video.category || video.channelTitle || "Uncategorized").trim();
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(video);
+      return acc;
+    }, {});
+  }, [sortedVideos]);
 
-    return vids;
-  }, [videoList, sortOption, searchQuery]);
+  const hasVideos = videos.length > 0;
+  const hasResults = sortedVideos.length > 0;
 
-  const hasVideosInLibrary = videoList.length > 0;
-  const hasVideosAfterSearch = sortedVideos.length > 0;
-
-  // Determine grid columns for layout - improved mobile responsiveness
+  // Grid layout classes
   const gridColumnsClass = isCondensedLayout
-    ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2"
-    : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3";
-
-  // Reset handlers
-  const confirmReset = () => {
-    setSortOption("recent");
-    setSearchQuery("");
-    setShowResetConfirm(false);
-  };
-  const cancelReset = () => setShowResetConfirm(false);
+    ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-2"
+    : "grid-cols-2 md:grid-cols-3 lg:grid-cols-3";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Section */}
-        {!loading && hasVideosInLibrary && (
-          <div className="mb-6 sm:mb-8">
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-              <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-blue-100 text-blue-800">
-                {videoList.length} {videoList.length === 1 ? 'video' : 'videos'}
+        {!loading && hasVideos && (
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                {videos.length} {videos.length === 1 ? 'video' : 'videos'}
               </span>
-              {searchQuery && hasVideosAfterSearch && (
-                <span className="text-xs sm:text-sm text-gray-600">
+              {searchQuery && hasResults && (
+                <span className="text-sm text-gray-600">
                   {sortedVideos.length} result{sortedVideos.length !== 1 ? 's' : ''} found
+                </span>
+              )}
+              {Object.keys(groupedVideos).length > 0 && (
+                <span className="text-sm text-gray-600">
+                  • {Object.keys(groupedVideos).length} {Object.keys(groupedVideos).length === 1 ? 'category' : 'categories'}
                 </span>
               )}
             </div>
 
             {/* Controls */}
-            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
-              <ViewControls
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+              <GridControls
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 sortOption={sortOption}
                 setSortOption={setSortOption}
                 isCondensedLayout={isCondensedLayout}
                 setIsCondensedLayout={setIsCondensedLayout}
-                onReset={confirmReset}
-                showResetConfirm={showResetConfirm}
-                cancelReset={cancelReset}
+                onReset={() => {
+                  setSearchQuery("");
+                  setSortOption("recent");
+                }}
                 centerSearch={true}
                 placeholder="Search by title or channel..."
               />
@@ -137,62 +141,84 @@ const MyVideosView = () => {
 
         {/* Loading State */}
         {loading && (
-          <div className="flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[60vh] px-4">
+          <div className="flex flex-col items-center justify-center min-h-[60vh]">
             <div className="relative">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
+              <div className="w-16 h-16 border-4 border-gray-200 border-t-purple-500 rounded-full animate-spin"></div>
             </div>
-            <p className="mt-4 sm:mt-6 text-base sm:text-lg text-gray-600 font-medium text-center">
-              Loading your videos...
+            <p className="mt-6 text-lg text-gray-600 font-medium">
+              Loading your playlist...
             </p>
           </div>
         )}
 
-        {/* Empty Library State */}
-        {!loading && !hasVideosInLibrary && (
-          <div className="flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[60vh] px-4">
-            <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-8 sm:p-12 max-w-md w-full text-center">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                <svg className="w-8 h-8 sm:w-10 sm:h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        {/* Not Logged In State */}
+        {!loading && !user && (
+          <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-12 max-w-md text-center">
+              <div className="w-20 h-20 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
-                No Videos Yet
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                Authentication Required
               </h2>
-              <p className="text-sm sm:text-base text-gray-600 mb-5 sm:mb-6">
-                Start building your video library by adding your first video. Your saved videos will appear here.
+              <p className="text-gray-600 mb-6">
+                Please log in to access your playlist and manage your saved videos.
               </p>
-              <button className="inline-flex items-center px-5 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-white text-sm sm:text-base font-medium rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto justify-center">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <button className="inline-flex items-center px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors">
+                Log In
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Empty Playlist State */}
+        {!loading && user && !hasVideos && (
+          <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-12 max-w-md text-center">
+              <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-10 h-10 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                No Playlists Yet
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Start organizing your videos into playlists. Add videos and categorize them for easy access.
+              </p>
+              <button className="inline-flex items-center px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                Add Your First Video
+                Add First Video
               </button>
             </div>
           </div>
         )}
 
         {/* No Search Results State */}
-        {!loading && hasVideosInLibrary && !hasVideosAfterSearch && (
-          <div className="flex flex-col items-center justify-center min-h-[40vh] sm:min-h-[50vh] px-4">
-            <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-8 sm:p-12 max-w-md w-full text-center">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-amber-100 to-amber-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                <svg className="w-8 h-8 sm:w-10 sm:h-10 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {!loading && user && hasVideos && !hasResults && (
+          <div className="flex flex-col items-center justify-center min-h-[50vh]">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-12 max-w-md text-center">
+              <div className="w-20 h-20 bg-gradient-to-br from-amber-100 to-amber-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-10 h-10 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">
                 No Results Found
               </h2>
-              <p className="text-sm sm:text-base text-gray-600 mb-1 sm:mb-2">
+              <p className="text-gray-600 mb-2">
                 No videos match your search for
               </p>
-              <p className="text-base sm:text-lg font-semibold text-gray-900 mb-5 sm:mb-6 break-words">
+              <p className="text-lg font-semibold text-gray-900 mb-6">
                 "{searchQuery}"
               </p>
               <button 
                 onClick={() => setSearchQuery("")}
-                className="inline-flex items-center px-5 sm:px-6 py-2.5 sm:py-3 bg-gray-900 text-white text-sm sm:text-base font-medium rounded-lg hover:bg-gray-800 transition-colors w-full sm:w-auto justify-center"
+                className="inline-flex items-center px-6 py-3 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition-colors"
               >
                 Clear Search
               </button>
@@ -200,17 +226,35 @@ const MyVideosView = () => {
           </div>
         )}
 
-        {/* Video Grid */}
-        {!loading && hasVideosAfterSearch && (
-          <div className="animate-fadeIn">
-            <SavedVideoList
-              videoList={sortedVideos}
-              gridClassName={gridColumnsClass}
-              highlightFunc={(text) => highlightMatch(text, searchQuery)}
-              onRemoveSuccess={(removedId) =>
-                setVideoList((prev) => prev.filter((video) => video.videoId !== removedId))
-              }
-            />
+        {/* Grouped Videos */}
+        {!loading && user && hasResults && (
+          <div className="space-y-10">
+            {Object.entries(groupedVideos).map(([category, vids]) => (
+              <div key={category} className="animate-fadeIn">
+                {/* Category Header */}
+                <div className="mb-6">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      {category}
+                    </h2>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                      {vids.length}
+                    </span>
+                  </div>
+                  <div className="mt-2 h-1 w-20 bg-gradient-to-r from-purple-500 to-purple-300 rounded-full"></div>
+                </div>
+
+                {/* Videos Grid */}
+                <SavedVideoList
+                  videoList={vids}
+                  gridClassName={gridColumnsClass}
+                  highlightFunc={(text) => highlightMatch(text, searchQuery)}
+                  onRemoveSuccess={(removedId) =>
+                    setVideos((prev) => prev.filter((video) => video.videoId !== removedId))
+                  }
+                />
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -218,4 +262,4 @@ const MyVideosView = () => {
   );
 };
 
-export default MyVideosView;
+export default MyPlaylistView;
