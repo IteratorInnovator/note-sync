@@ -3,7 +3,7 @@ import SavedVideoList from "../components/SavedVideoList";
 import { getVideosByUserId } from "../utils/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../";
-import GridControls from "../components/ui/ViewControls";
+import ViewControls from "../components/ui/ViewControls";
 
 // Utility to highlight search matches
 const highlightMatch = (text, query) => {
@@ -118,7 +118,7 @@ const MyVideosView = () => {
             </div>
 
             {/* Controls */}
-            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 overflow-hidden">
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 overflow-hidden">
               <ViewControls
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
