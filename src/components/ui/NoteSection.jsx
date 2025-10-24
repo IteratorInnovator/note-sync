@@ -193,7 +193,7 @@ const NoteSection = ({ videoId, playerRef }) => {
         )}
       </div>
 
-      {/* ✅ Toast container bottom-left */}
+      {/* Toast container bottom-left */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
     </>
   );
