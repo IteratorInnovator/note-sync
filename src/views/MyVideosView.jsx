@@ -193,7 +193,7 @@ const MyVideosView = () => {
               </p>
               <button
                 onClick={() => setSearchQuery("")}
-                className="inline-flex items-center justify-center px-5 sm:px-6 py-2.5 sm:py-3 bg-gray-900 text-white text-sm sm:text-base font-medium rounded-lg hover:bg-gray-800 transition-colors w-full sm:w-auto"
+                className="inline-flex items-center justify-center px-5 sm:px-6 py-2.5 sm:py-3 bg-gray-900 text-white text-sm sm:text-base font-medium rounded-lg hover:bg-gray-800 hover:scale-110 duration-200 ease-in-out ransition-all w-auto"
               >
                 Clear Search
               </button>

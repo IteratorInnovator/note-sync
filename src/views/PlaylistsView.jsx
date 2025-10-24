@@ -111,7 +111,6 @@ const MyPlaylistView = () => {
         ? "grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2"
         : "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3";
 
-
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
             <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
@@ -252,11 +251,11 @@ const MyPlaylistView = () => {
 
                 {/* No Search Results State */}
                 {!loading && user && hasVideos && !hasResults && (
-                    <div className="flex flex-col items-center justify-center min-h-[50vh]">
-                        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-12 max-w-md text-center">
-                            <div className="w-20 h-20 bg-gradient-to-br from-amber-100 to-amber-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <div className="flex flex-col items-center justify-center min-h-[40vh] sm:min-h-[50vh] px-4">
+                        <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-6 sm:p-8 md:p-12 max-w-md w-full text-center">
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-amber-100 to-amber-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                                 <svg
-                                    className="w-10 h-10 text-amber-600"
+                                    className="w-8 h-8 sm:w-10 sm:h-10 text-amber-600"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -269,18 +268,18 @@ const MyPlaylistView = () => {
                                     />
                                 </svg>
                             </div>
-                            <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
                                 No Results Found
                             </h2>
-                            <p className="text-gray-600 mb-2">
+                            <p className="text-sm sm:text-base text-gray-600 mb-1 sm:mb-2">
                                 No videos match your search for
                             </p>
-                            <p className="text-lg font-semibold text-gray-900 mb-6">
+                            <p className="text-base sm:text-lg font-semibold text-gray-900 mb-5 sm:mb-6 break-words px-2">
                                 "{searchQuery}"
                             </p>
                             <button
                                 onClick={() => setSearchQuery("")}
-                                className="inline-flex items-center px-6 py-3 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition-colors"
+                                className="inline-flex items-center justify-center px-5 sm:px-6 py-2.5 sm:py-3 bg-gray-900 text-white text-sm sm:text-base font-medium rounded-lg hover:bg-gray-800 hover:scale-110 duration-200 ease-in-out transition-all w-auto"
                             >
                                 Clear Search
                             </button>
