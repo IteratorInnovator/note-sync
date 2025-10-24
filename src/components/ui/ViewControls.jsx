@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Grid2x2, Grid3x3, Rows } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { Button } from "./button";
 import LibrarySearchbar from "./LibrarySeachbar";
 import GridLayoutControls from "./GridLayoutControls";
@@ -35,7 +35,7 @@ const ViewControls = ({
     }, []);
 
     return (
-        <div className="flex flex-col gap-4 mb-6 mt-0">
+        <div className="flex flex-col justify-between gap-6">
             {/* Row 1: Searchbar */}
             <div
                 className={`flex ${
@@ -52,7 +52,7 @@ const ViewControls = ({
             </div>
 
             {/* Row 2: Controls */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3.5">
                 {/* Left side: Layout toggle */}
                 <GridLayoutControls
                     isMdUp={isMdUp}
@@ -61,7 +61,7 @@ const ViewControls = ({
                 />
 
                 {/* Right side: Sort + Reset */}
-                <div className="flex items-center gap-3 justify-between">
+                <div className="flex items-center justify-between gap-3">
                     {/* Sort by */}
                     <div className="flex items-center gap-2">
                         <label className="font-medium text-gray-700 text-sm">
@@ -71,7 +71,7 @@ const ViewControls = ({
                             <select
                                 value={sortOption}
                                 onChange={(e) => setSortOption(e.target.value)}
-                                className="appearance-none border border-slate-200 bg-white text-sm text-slate-700 rounded-full px-4 py-2 pr-8 shadow-sm hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+                                className="appearance-none border border-slate-200 bg-white text-xs md:text-sm text-slate-700 rounded-full px-3 py-1.5 pr-8 md:px-4 md:py-2 md:pr-9 shadow-sm hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
                             >
                                 <option value="recent">Recently Added</option>
                                 <option value="earliest">Earliest Added</option>
@@ -87,7 +87,7 @@ const ViewControls = ({
                     {/* Reset Button */}
                     <Button
                         onClick={onReset}
-                        className="rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                        className="rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-xs md:text-sm font-medium shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
                     >
                         Reset
                     </Button>
