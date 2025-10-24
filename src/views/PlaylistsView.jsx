@@ -10,7 +10,7 @@ const highlightMatch = (text, query) => {
   const regex = new RegExp(`(${query})`, "gi");
   return text.split(regex).map((part, idx) =>
     regex.test(part) ? (
-      <span key={idx} className="bg-yellow-200 rounded px-0.5">
+      <span key={idx} className="bg-yellow-200 rounded">
         {part}
       </span>
     ) : (
