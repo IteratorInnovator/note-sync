@@ -52,7 +52,7 @@ const ViewControls = ({
             </div>
 
             {/* Row 2: Controls */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4">
                 {/* Left side: Layout toggle */}
                 <GridLayoutControls
                     isMdUp={isMdUp}

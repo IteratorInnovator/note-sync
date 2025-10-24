@@ -94,8 +94,8 @@ const MyPlaylistView = () => {
 
   // Grid layout classes
   const gridColumnsClass = isCondensedLayout
-    ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-2"
-    : "grid-cols-2 md:grid-cols-3 lg:grid-cols-3";
+    ? "grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2"
+    : "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
