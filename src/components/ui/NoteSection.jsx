@@ -13,6 +13,7 @@ import {
     Clock,
     BookOpen,
     X,
+    Sparkles,
     Plus,
     CheckCircle,
 } from "lucide-react";
@@ -121,10 +122,14 @@ const NoteSection = ({ videoId, playerRef }) => {
                         <h2 className="text-xl font-bold text-slate-800">
                             Study Notes
                         </h2>
-                        <p className="text-xs text-slate-500">
-                            {notes.length}{" "}
-                            {notes.length === 1 ? "note" : "notes"} saved
-                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                                <div className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1 shadow-sm border border-slate-200">
+                                    <Sparkles className="h-3 w-3 text-amber-500" />
+                                    <span className="text-xs font-semibold text-slate-600">
+                                        {notes.length} {notes.length === 1 ? "note" : "notes"}
+                                    </span>
+                                </div>
+                            </div>
                     </div>
                 </div>
 
