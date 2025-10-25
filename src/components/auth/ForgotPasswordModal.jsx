@@ -5,7 +5,6 @@ import User from "../../assets/user.svg";
 
 const ForgotPasswordModal = ({ switchToLoginView }) => {
     const [email, setEmail] = useState("");
-    const [message, setMessage] = useState("");
     const [error, setError] = useState("");
 
     const handleReset = async (event) => {
@@ -17,12 +16,13 @@ const ForgotPasswordModal = ({ switchToLoginView }) => {
         }
 
         try {
-            await sendPasswordResetEmail(auth, email.trim().toLowerCase());
-            setMessage("Password reset email sent! Check your inbox.");
-            setError("");
-        } catch (error) {
-            setError("Unable to send reset email. Please check your email.");
-            setMessage("");
+            await sendPasswordResetEmail(auth, email.trim().toLowerCase(), {url: "https://localhost:5173/reset-password", handleCodeInApp: true});
+            alert(
+                "Password reset email sent! Check your inbox."
+            );
+        } catch (err) {
+            setError("Unable to send reset email.");
+            return;
         }
     };
 
@@ -51,8 +51,11 @@ const ForgotPasswordModal = ({ switchToLoginView }) => {
                             className="w-[1.25em] pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
                         />
                     </div>
-                {error && <p className="text-sm text-red-400 pl-2">{error}</p>}
-                {message && <p className="text-sm text-green-500 pl-2">{message}</p>}
+                {error && (
+                    <p className="text-sm text-red-400 pl-2 mt-1">
+                        {error}
+                    </p>
+                )}
                 </div>
                 <button
                     type="submit"

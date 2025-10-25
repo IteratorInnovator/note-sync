@@ -5,6 +5,7 @@ import { auth } from ".";
 import "./App.css";
 import Index from "./pages/Index";
 import Main from "./pages/Main";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { Loader2 } from "lucide-react";
 import { DEFAULT_SETTINGS, useSettings } from "./stores/useSettings";
 import { getUserSettings } from "./utils/firestore";
@@ -61,6 +62,10 @@ function App() {
                 <Route
                     path="/"
                     element={isVerifiedUser ? <Navigate to="/videos" /> : <Index />}
+                />
+                <Route
+                    path="/reset-password"
+                    element={ <ResetPasswordPage /> }
                 />
 
                 {/* Private routes. Only for signed-in users. Otherwise send to root. */}
