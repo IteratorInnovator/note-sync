@@ -3,15 +3,11 @@
 @import "tailwindcss";
 
 :root {
-    --font-gwendolyn: 'Gwendolyn', sans-serif;
-    --font-mont: 'Montserrat', sans-serif;
-    --font-playpen: 'Playpen Sans Deva', sans-serif;
-    --font-poppins: 'Poppins', sans-serif;
-    --font-jetbrains: 'JetBrains Mono', monospace;
-}
-
-.note-content li[data-list] {
-    margin-left: 1.25rem;
+    --font-gwendolyn: "Gwendolyn", sans-serif;
+    --font-mont: "Montserrat", sans-serif;
+    --font-playpen: "Playpen Sans Deva", sans-serif;
+    --font-poppins: "Poppins", sans-serif;
+    --font-jetbrains: "JetBrains Mono", monospace;
 }
 
 .note-content li[data-list="bullet"] {
