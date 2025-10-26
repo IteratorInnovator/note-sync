@@ -2,7 +2,7 @@ import { initializeApp } from "firebase/app";
 import {
     getAuth,
     GoogleAuthProvider,
-    FacebookAuthProvider,
+    GithubAuthProvider,
     setPersistence,
     browserLocalPersistence
 } from "firebase/auth";
@@ -26,8 +26,10 @@ auth.languageCode = "en";
 await setPersistence(auth, browserLocalPersistence);
 
 export const GoogleProvider = new GoogleAuthProvider();
-export const FacebookProvider = new FacebookAuthProvider();
-FacebookProvider.addScope("email");
+export const GithubProvider = new GithubAuthProvider();
+GoogleProvider.addScope('email');
+GithubProvider.addScope("read:user");
+GithubProvider.addScope("user:email");
 
 export const functions = getFunctions(app, FIREBASE_CLOUD_FUNCTIONS_REGION);
 

@@ -44,25 +44,23 @@ export const getVideoById = async (uid, videoId) => {
 /**
  * Add a video to a user's subcollection "videos"
  */
-export const addVideo = async (
-    uid,
-    videoId,
-    title,
-    channelTitle,
-    thumbnail
-) => {
-    const ref = doc(db, "users", uid, "videos", videoId);
-
-    // optional: you could remove this check too if you always want to overwrite
-    if ((await getDoc(ref)).exists()) throw new VideoAlreadySavedError();
-
-    await setDoc(ref, {
-        title,
-        channelTitle,
-        thumbnailUrl: thumbnail,
-        progresSec: 0,
-        addedAt: serverTimestamp(),
+export const addVideo = async (uid, videoId, title, channelTitle, thumbnailUrl, progressSec = 0, category) => {
+  try {
+    const videoRef = doc(db, "users", uid, "videos", videoId);
+    await setDoc(videoRef, {
+      videoId,
+      title,
+      channelTitle,
+      thumbnailUrl,
+      progressSec,
+      category: (category || channelTitle || "Uncategorized").trim(),
+      addedAt: serverTimestamp(),
     });
+    console.log("Video added successfully");
+  } catch (error) {
+    console.error("Error adding video:", error);
+    throw error;
+  }
 };
 
 export const removeVideo = async (uid, videoId) => {

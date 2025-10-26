@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import GoogleButton from "../ui/GoogleButton.jsx";
-import FacebookButton from "../ui/FacebookButton.jsx";
+import GithubButton from "../ui/GithubButton.jsx";
 import Separator from "../ui/Separator.jsx";
 import { auth } from "../../index.js";
 import {
@@ -33,11 +33,19 @@ const LoginModal = ({ switchToSignUpView }) => {
         const password = credentials.get("password");
 
         try {
-            await signInWithEmailAndPassword(
+            const { user } = await signInWithEmailAndPassword(
                 auth,
                 email.trim().toLowerCase(),
                 password.trim()
             );
+            if (!user.emailVerified) {
+                setError({
+                    type: "email",
+                    message:
+                        "Verify your email to sign in.",
+                });
+                return;
+            }
             // success: redirect to main page
             navigate("/videos");
         } catch (err) {
@@ -45,7 +53,7 @@ const LoginModal = ({ switchToSignUpView }) => {
                 if (methods.includes("google.com")) {
                     setError({
                         type: "email",
-                        message: "Use Google or Facebook for this email.",
+                        message: "Login with Google for this email.",
                     });
                     return;
                 }
@@ -64,7 +72,7 @@ const LoginModal = ({ switchToSignUpView }) => {
             {/* Buttons to sign in using OAuth */}
             <div className="flex justify-center gap-3 w-full mt-6 mb-2">
                 <GoogleButton text="Google"></GoogleButton>
-                <FacebookButton text="Facebook"></FacebookButton>
+                <GithubButton text="Github"></GithubButton>
             </div>
             {/* Divider */}
             <div className="flex items-center gap-2 w-full my-2">
@@ -136,11 +144,7 @@ const LoginModal = ({ switchToSignUpView }) => {
                                 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 grid place-items-center"
                             >
                                 <img
-                                    src={
-                                        !showPassword
-                                            ? EyeOff
-                                            : EyeShow
-                                    }
+                                    src={!showPassword ? EyeOff : EyeShow}
                                     className="h-4 w-4 text-slate-500"
                                     alt=""
                                 />
