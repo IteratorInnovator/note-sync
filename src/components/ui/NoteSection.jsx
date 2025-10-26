@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+// NoteSection.jsx
+import { useState, useEffect, useMemo } from "react";
 import {
     getNotesByVideoId,
     createNote,
     updateNote,
     deleteNote,
 } from "../../utils/firestore";
-import { auth } from "../../";
+import { auth } from "../..";
 import {
     Trash2,
     Edit3,
@@ -14,11 +15,14 @@ import {
     BookOpen,
     X,
     Sparkles,
-    Plus,
-    CheckCircle,
+    CircleCheck,
 } from "lucide-react";
-import { ToastContainer } from "../ui/toast";
+import { ToastContainer } from "./toast";
+import Editor from "./Editor";
+import { hasMeaningfulText, sanitizeHtmlString } from "../../utils/htmlHelpers";
 
+const MAX_NOTE_LENGTH = 1000;
+let toastId = 0;
 
 const formatTime = (sec) => {
     const m = Math.floor(sec / 60);
@@ -28,20 +32,56 @@ const formatTime = (sec) => {
 
 const NoteSection = ({ videoId, playerRef }) => {
     const [notes, setNotes] = useState([]);
-    const [newNote, setNewNote] = useState("");
     const [loading, setLoading] = useState(true);
+
+    const [currentTimestamp, setCurrentTimestamp] = useState(0);
+
+    // New note state
+    const [newNote, setNewNote] = useState("");
+    const canSaveNew = hasMeaningfulText(newNote);
+    const [newEditorResetSignal, setNewEditorResetSignal] = useState(0);
+
+    // Edit state
     const [editingId, setEditingId] = useState(null);
     const [editedContent, setEditedContent] = useState("");
+    const editingHasContent = hasMeaningfulText(editedContent);
+
     const [toasts, setToasts] = useState([]);
 
-    const uid = auth.currentUser?.uid;
+    // Fetch notes
+    useEffect(() => {
+        const uid = auth.currentUser?.uid;
+        if (!uid || !videoId) return;
+        let active = true;
+        (async () => {
+            setLoading(true);
+            const fetched = await getNotesByVideoId(uid, videoId);
+            if (active) {
+                setNotes(fetched);
+                setLoading(false);
+            }
+        })();
+        return () => {
+            active = false;
+        };
+    }, [videoId]);
+
+    // Track current player time
+    useEffect(() => {
+        const id = setInterval(() => {
+            const t = playerRef?.current?.getCurrentTime?.();
+            if (typeof t === "number")
+                setCurrentTimestamp(Math.max(0, Math.floor(t)));
+        }, 500);
+        return () => clearInterval(id);
+    }, [playerRef]);
 
     const addToast = (
         message,
-        Icon = CheckCircle,
+        Icon = CircleCheck,
         iconColour = "text-emerald-400"
     ) => {
-        const id = Date.now();
+        const id = toastId++;
         setToasts((prev) => [...prev, { id, message, Icon, iconColour }]);
         setTimeout(() => removeToast(id), 3000);
     };
@@ -50,65 +90,76 @@ const NoteSection = ({ videoId, playerRef }) => {
         setToasts((prev) => prev.filter((t) => t.id !== id));
     };
 
-    // Fetch notes
-    useEffect(() => {
-        if (!uid || !videoId) return;
-        const fetchNotes = async () => {
-            setLoading(true);
-            const fetched = await getNotesByVideoId(uid, videoId);
-            setNotes(fetched);
-            setLoading(false);
-        };
-        fetchNotes();
-    }, [uid, videoId]);
-
     // Create a note
     const handleAddNote = async () => {
-        if (!newNote.trim()) return;
+        const uid = auth.currentUser?.uid;
+        if (!uid) return;
+        const htmlContent = sanitizeHtmlString(newNote).trim();
+        if (!hasMeaningfulText(htmlContent)) return;
+
         const timeSec = playerRef.current?.getCurrentTime?.() || 0;
-        const id = await createNote(uid, videoId, newNote.trim(), timeSec);
+        const id = await createNote(uid, videoId, htmlContent, timeSec);
         setNotes((prev) => [
             ...prev,
-            { noteId: id, content: newNote.trim(), timeSec },
+            { noteId: id, content: htmlContent, timeSec },
         ]);
-        setNewNote("");
-
+        handleCancelNewNote();
         addToast("Note successfully created");
+    };
+
+    const handleCancelNewNote = () => {
+        setNewNote("");
+        setNewEditorResetSignal((k) => k + 1);
     };
 
     // Delete a note
     const handleDelete = async (noteId) => {
+        const uid = auth.currentUser?.uid;
+        if (!uid) return;
         await deleteNote(uid, videoId, noteId);
         setNotes((prev) => prev.filter((n) => n.noteId !== noteId));
-
         addToast("Note successfully deleted");
     };
 
     // Edit + save note
     const handleEdit = (noteId, content) => {
         setEditingId(noteId);
-        setEditedContent(content);
+        setEditedContent(sanitizeHtmlString(content));
+    };
+
+    const handleCancelEdit = () => {
+        setEditingId(null);
+        setEditedContent("");
     };
 
     const handleSave = async (noteId) => {
-        await updateNote(uid, videoId, noteId, editedContent);
+        const uid = auth.currentUser?.uid;
+        if (!uid) return;
+        const htmlContent = sanitizeHtmlString(editedContent).trim();
+        if (!hasMeaningfulText(htmlContent)) return;
+
+        await updateNote(uid, videoId, noteId, htmlContent);
         setNotes((prev) =>
             prev.map((n) =>
-                n.noteId === noteId ? { ...n, content: editedContent } : n
+                n.noteId === noteId ? { ...n, content: htmlContent } : n
             )
         );
         setEditingId(null);
         setEditedContent("");
-        addToast("Note updated");
+        addToast("Note updated", CircleCheck);
     };
 
-    // Timestamp click → seek + play
     const handleSeek = (sec) => {
         const player = playerRef.current;
         if (!player) return;
         player.seekTo(sec, true);
-        player.playVideo();
+        player.playVideo?.();
     };
+
+    const sortedNotes = useMemo(
+        () => [...notes].sort((a, b) => a.timeSec - b.timeSec),
+        [notes]
+    );
 
     return (
         <>
@@ -123,45 +174,58 @@ const NoteSection = ({ videoId, playerRef }) => {
                             Study Notes
                         </h2>
                         <div className="flex items-center gap-2 mt-1">
-                                <div className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1 shadow-sm border border-slate-200">
-                                    <Sparkles className="h-3 w-3 text-amber-500" />
-                                    <span className="text-xs font-semibold text-slate-600">
-                                        {notes.length} {notes.length === 1 ? "note" : "notes"}
-                                    </span>
-                                </div>
+                            <div className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1 shadow-sm border border-slate-200">
+                                <Sparkles className="h-3 w-3 text-amber-500" />
+                                <span className="text-xs font-semibold text-slate-600">
+                                    {notes.length}{" "}
+                                    {notes.length === 1 ? "note" : "notes"}
+                                </span>
                             </div>
+                        </div>
                     </div>
                 </div>
 
                 {/* Input Section */}
                 <div className="mb-6 rounded-xl bg-white p-4 shadow-sm border border-slate-200">
-                    <div className="flex flex-col gap-3">
-                        <textarea
-                            rows={4}
-                            placeholder="Add a new note at current timestamp..."
-                            className="flex-1 rounded-lg border border-slate-300 p-2 text-sm focus:border-indigo-500 focus:outline-none resize-none"
-                            value={newNote}
-                            onChange={(e) => setNewNote(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter" && !e.shiftKey) {
-                                    e.preventDefault();
-                                    handleAddNote();
-                                }
-                            }}
-                        />
-                        <button
-                            onClick={handleAddNote}
-                            className="self-end flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-md transition-all hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg active:scale-95"
-                        >
-                            <Plus size={18} />
-                            Add
-                        </button>
+                    <div className="flex w-full flex-col md:flex-row items-start gap-4">
+                        <div className="flex h-10 min-w-[64px] items-center justify-center rounded-full bg-slate-900 px-2 text-xs font-semibold text-white shadow-sm">
+                            {formatTime(currentTimestamp)}
+                        </div>
+
+                        {/* Right column */}
+                        <div className="flex-1 w-full min-w-0 flex flex-col gap-4">
+                            <Editor
+                                className="w-full"
+                                resetSignal={newEditorResetSignal}
+                                placeholder="Add a new note at the current timestamp..."
+                                maxLength={MAX_NOTE_LENGTH}
+                                onChange={({ html }) => setNewNote(html)}
+                            />
+
+                            <div className="mt-1 flex items-center justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={handleCancelNewNote}
+                                    className="text-sm font-medium text-slate-500 transition-colors hover:text-slate-700"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleAddNote}
+                                    disabled={!canSaveNew}
+                                    className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-indigo-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+                                >
+                                    Save note
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 {loading ? (
                     <div className="rounded-xl bg-white p-8 text-center shadow-sm">
-                        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600"></div>
+                        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600" />
                         <p className="mt-3 text-sm text-slate-500">
                             Loading your notes...
                         </p>
@@ -177,119 +241,117 @@ const NoteSection = ({ videoId, playerRef }) => {
                         </p>
                     </div>
                 ) : (
-                    <ul className="space-y-3">
-                        {notes
-                            .sort((a, b) => a.timeSec - b.timeSec)
-                            .map((note) => (
-                                <li
-                                    key={note.noteId}
-                                    className="group rounded-xl bg-white p-4 shadow-sm transition-all hover:shadow-md border border-slate-200 hover:border-blue-200"
-                                >
-                                    <div className="flex items-start gap-4">
-                                        {/* Timestamp Badge */}
-                                        <div
-                                            onClick={() =>
-                                                handleSeek(note.timeSec)
-                                            }
-                                            className="flex shrink-0 cursor-pointer items-center gap-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 px-3 py-2 shadow-sm transition-all hover:shadow-md hover:scale-105 active:scale-95"
-                                        >
-                                            <Clock className="h-3.5 w-3.5 text-white" />
-                                            <span className="text-xs font-bold text-white">
-                                                {formatTime(note.timeSec)}
-                                            </span>
-                                        </div>
+                    <ul className="space-y-6">
+                        {sortedNotes.map((note) => (
+                            <li
+                                key={note.noteId}
+                                className="group rounded-xl bg-white p-4 shadow-sm transition-all hover:shadow-md border border-slate-200 hover:border-blue-200"
+                            >
+                                <div className="flex flex-col md:flex-row w-full min-w-0 items-start gap-4">
+                                    <button
+                                        onClick={() => handleSeek(note.timeSec)}
+                                        className="flex shrink-0 items-center gap-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 px-3 py-2 shadow-sm transition-all hover:shadow-md hover:scale-105 active:scale-95"
+                                        title="Seek to timestamp"
+                                    >
+                                        <Clock className="h-3.5 w-3.5 text-white" />
+                                        <span className="text-xs font-bold text-white">
+                                            {formatTime(note.timeSec)}
+                                        </span>
+                                    </button>
 
-                                        {/* Content */}
-                                        <div className="flex-1 min-w-0">
-                                            {editingId === note.noteId ? (
-                                                <div className="flex-1 flex flex-col gap-2">
-                                                    <textarea
-                                                        rows={4}
-                                                        value={editedContent}
-                                                        onChange={(e) =>
-                                                            setEditedContent(
-                                                                e.target.value
+                                    <div className="flex-1 min-w-0 w-full">
+                                        {editingId === note.noteId ? (
+                                            <div className="flex min-w-0 flex-col gap-3">
+                                                <Editor
+                                                    className="w-full"
+                                                    initialHtml={editedContent}
+                                                    placeholder="Update your note..."
+                                                    maxLength={MAX_NOTE_LENGTH}
+                                                    onChange={({ html }) =>
+                                                        setEditedContent(html)
+                                                    }
+                                                />
+                                                <div className="mt-2 flex items-center justify-end gap-2">
+                                                    <button
+                                                        onClick={() =>
+                                                            handleSave(
+                                                                note.noteId
                                                             )
                                                         }
-                                                        className="flex-1 rounded-lg border-2 border-blue-300 bg-blue-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 resize-none"
-                                                    />
-                                                    <div className="flex gap-2 justify-end">
-                                                        <button
-                                                            onClick={() =>
-                                                                handleSave(
-                                                                    note.noteId
-                                                                )
-                                                            }
-                                                            className="group/save relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg transition-all hover:shadow-xl hover:scale-110 active:scale-95 overflow-hidden"
-                                                            title="Save changes"
-                                                        >
-                                                            <div className="absolute inset-0 bg-gradient-to-br from-green-600 to-emerald-700 opacity-0 transition-opacity group-hover/save:opacity-100"></div>
-                                                            <Save
-                                                                size={18}
-                                                                strokeWidth={
-                                                                    2
-                                                                }
-                                                                className="relative z-10"
-                                                            />
-                                                        </button>
-                                                        <button
-                                                            onClick={() =>
-                                                                setEditingId(
-                                                                    null
-                                                                )
-                                                            }
-                                                            className="group/cancel flex h-9 w-9 items-center justify-center rounded-xl bg-slate-200 text-slate-600 shadow-md transition-all hover:bg-slate-300 hover:shadow-lg hover:scale-110 active:scale-95"
-                                                            title="Cancel editing"
-                                                        >
-                                                            <X className="text-lg font-bold leading-none transition-transform group-hover/cancel:rotate-90" />
-                                                        
-                                                        </button>
-                                                    </div>
+                                                        disabled={
+                                                            !editingHasContent
+                                                        }
+                                                        className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-emerald-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+                                                        title="Save changes"
+                                                    >
+                                                        <Save
+                                                            size={16}
+                                                            strokeWidth={2}
+                                                        />
+                                                        Save
+                                                    </button>
+                                                    <button
+                                                        onClick={
+                                                            handleCancelEdit
+                                                        }
+                                                        className="inline-flex items-center gap-1 rounded-lg bg-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 shadow-md transition-all hover:bg-slate-300 hover:text-slate-700"
+                                                        title="Cancel editing"
+                                                    >
+                                                        <X size={16} />
+                                                        Cancel
+                                                    </button>
                                                 </div>
-                                            ) : (
-                                                <div className="relative">
-                                                    <p className="text-sm leading-relaxed text-slate-700 pr-4 whitespace-pre-wrap">
-                                                        {note.content}
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {editingId !== note.noteId && (
-                                            <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                                                <button
-                                                    onClick={() =>
-                                                        handleEdit(
-                                                            note.noteId,
+                                            </div>
+                                        ) : (
+                                            <div className="relative rounded-lg bg-white/40">
+                                                <div
+                                                    className="note-content break-words [overflow-wrap:anywhere]  bg-gray-100/90 p-6 text-sm leading-relaxed text-slate-700
+    [&_ol]:ml-4 [&_ol]:list-decimal
+    [&_ul]:ml-4 [&_ul]:list-disc
+    [&_.ql-syntax]:whitespace-pre-wrap [&_.ql-syntax]:font-mono
+  "
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: sanitizeHtmlString(
                                                             note.content
-                                                        )
-                                                    }
-                                                    className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-blue-100 hover:text-blue-600"
-                                                    title="Edit note"
-                                                >
-                                                    <Edit3 size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() =>
-                                                        handleDelete(
-                                                            note.noteId
-                                                        )
-                                                    }
-                                                    className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-red-100 hover:text-red-600"
-                                                    title="Delete note"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
+                                                        ),
+                                                    }}
+                                                />
                                             </div>
                                         )}
                                     </div>
-                                </li>
-                            ))}
+
+                                    {editingId !== note.noteId && (
+                                        <div className="flex w-full justify-end shrink-0 gap-1 opacity-100 md:w-auto md:justify-start md:opacity-0 md:transition-opacity md:group-hover:opacity-100">
+                                            <button
+                                                onClick={() =>
+                                                    handleEdit(
+                                                        note.noteId,
+                                                        note.content
+                                                    )
+                                                }
+                                                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-blue-100 hover:text-blue-600"
+                                                title="Edit note"
+                                            >
+                                                <Edit3 size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() =>
+                                                    handleDelete(note.noteId)
+                                                }
+                                                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-red-100 hover:text-red-600"
+                                                title="Delete note"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </li>
+                        ))}
                     </ul>
                 )}
             </div>
 
-            {/* Toast container bottom-left */}
             <ToastContainer toasts={toasts} removeToast={removeToast} />
         </>
     );
