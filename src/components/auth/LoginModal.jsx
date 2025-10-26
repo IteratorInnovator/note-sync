@@ -158,10 +158,10 @@ const LoginModal = ({ switchToSignUpView, switchToForgotPasswordView }) => {
                         {/* Forget Password button */}
                         <button
                             type="button"
-                            className="text-sm text-slate-500 mt-2 hover:underline"
+                            className="text-right w-full text-[0.8rem] text-slate-900 font-medium mt-2 hover:underline"
                             onClick={switchToForgotPasswordView}
                         >
-                            Forget Password?
+                            Forgot Password?
                         </button>
                     </div>
                 </div>
