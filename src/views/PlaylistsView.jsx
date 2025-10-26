@@ -3,6 +3,7 @@ import { getVideosByUserId } from "../utils/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import ViewControls from "../components/ui/ViewControls";
 import SavedVideoList from "../components/SavedVideoList";
+import { useNavigate } from "react-router-dom";
 
 // Utility to highlight search matches
 const highlightMatch = (text, query) => {
@@ -28,6 +29,7 @@ const MyPlaylistView = () => {
     const [user, setUser] = useState(null);
 
     const auth = getAuth();
+    const navigate = useNavigate();
 
     // Listen to auth state and fetch videos
     useEffect(() => {
@@ -203,9 +205,12 @@ const MyPlaylistView = () => {
                     </div>
                 )}
 
-                {/* Empty Playlist State */}
+                {/* Empty Playlist State (Clickable) */}
                 {!loading && user && !hasVideos && (
-                    <div className="flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[60vh] px-4">
+                    <div
+                        onClick={() => navigate("/search")}
+                        className="flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[60vh] px-4 cursor-pointer transition-transform hover:scale-[1.02]"
+                    >
                         <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-6 sm:p-8 md:p-12 max-w-md w-full text-center">
                             <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                                 <svg
@@ -225,26 +230,10 @@ const MyPlaylistView = () => {
                             <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
                                 No Playlists Yet
                             </h2>
-                            <p className="text-sm sm:text-base text-gray-600 mb-5 sm:mb-6 leading-relaxed">
-                                Start organizing your videos into playlists. Add
-                                videos and categorize them for easy access.
+                            <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
+                                Start organizing your videos into playlists. Tap
+                                anywhere to explore and add videos!
                             </p>
-                            <button className="inline-flex items-center justify-center px-5 sm:px-6 py-2.5 sm:py-3 bg-purple-600 text-white text-sm sm:text-base font-medium rounded-lg hover:bg-purple-700 hover:scale-110 duration-200 ease-in-out transition-all sm:w-auto">
-                                <svg
-                                    className="w-4 h-4 sm:w-5 sm:h-5 mr-2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 4v16m8-8H4"
-                                    />
-                                </svg>
-                                Add your First Video
-                            </button>
                         </div>
                     </div>
                 )}

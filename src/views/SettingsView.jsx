@@ -19,7 +19,7 @@ import {
     resetUserSettings,
     deleteAllVideos,
 } from "../utils/firestore";
-import { ToastContainer } from "../components/ui/Toast";
+import { ToastContainer } from "../components/ui/toast"
 
 const safeSearchOptions = [
     { value: "strict", label: "Strict (hide mature content)" },
