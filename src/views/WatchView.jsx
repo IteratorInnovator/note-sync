@@ -380,6 +380,34 @@ const WatchView = ({ onTitleChange }) => {
         [clearHideControlsTimeout, clearManualControlsTimeout]
     );
 
+    // Brings user to their last watched duration within the video.
+    useEffect(() => {
+        if (!videoId) return;
+
+        const savedTime = localStorage.getItem(`watch-progress-${videoId}`);
+        if (savedTime && playerInstanceRef.current && isPlayerReady) {
+            playerInstanceRef.current.seekTo(parseFloat(savedTime), true);
+        }
+    }, [videoId, isPlayerReady]);
+
+    // Save progress every 5000ms aka 5sec
+    useEffect(() => {
+        if (!isPlayerReady) return;
+
+        const interval = setInterval(() => {
+            const player = playerInstanceRef.current;
+            if (player) {
+                const current = player.getCurrentTime?.();
+                if (Number.isFinite(current)) {
+                    localStorage.setItem(`watch-progress-${videoId}`, current.toString());
+                }
+            }
+        }, 5000);
+
+        return () => clearInterval(interval);
+    }, [videoId, isPlayerReady]);
+
+
     if (!videoId) return null;
 
     if (loading) {
