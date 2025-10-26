@@ -38,4 +38,3 @@ export const searchVideos = async (searchTerm, { signal }) => {
     }));
 }
 
-export const getVideoById = (videoId) => {};

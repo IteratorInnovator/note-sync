@@ -801,9 +801,8 @@ const WatchView = ({ onTitleChange }) => {
                     </p>
                 ) : null}
             </div>
-            
-            <NoteSection videoId={videoId} playerRef={playerInstanceRef} />
 
+            <NoteSection videoId={videoId} playerRef={playerInstanceRef} />
         </div>
     );
 };

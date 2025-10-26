@@ -9,3 +9,15 @@
     --font-poppins: 'Poppins', sans-serif;
     --font-jetbrains: 'JetBrains Mono', monospace;
 }
+
+.note-content li[data-list] {
+    margin-left: 1.25rem;
+}
+
+.note-content li[data-list="bullet"] {
+    list-style-type: disc;
+}
+
+.note-content li[data-list="ordered"] {
+    list-style-type: decimal;
+}
