@@ -108,6 +108,20 @@ export const updateVideoProgress = async (uid, videoId, progressSec) => {
     });
 };
 
+/**
+ * Get the last saved video progress
+ *
+ * @param {string} uid - User ID
+ * @param {string} videoId - Video ID
+ * @returns {Promise<number>} The saved playback time in seconds (default 0)
+ */
+export const getVideoProgress = async (uid, videoId) => {
+    if (!uid || !videoId) return 0;
+    const ref = doc(db, "users", uid, "videos", videoId);
+    const snap = await getDoc(ref);
+    return snap.exists() ? snap.data()?.progressSec || 0 : 0;
+}; 
+
 // ---------------- Notes ----------------
 export const getNotesByVideoId = async (uid, videoId) => {
     const snap = await getDocs(
