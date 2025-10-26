@@ -307,39 +307,90 @@ const WatchView = ({ onTitleChange }) => {
             </div>
 
             <div className="flex items-center justify-between">
-              <div className="flex flex-row gap-1.5 sm:gap-3">
-                <button onClick={handleTogglePlay} className="control-btn">
-                  {isPlaying ? <Pause className="size-4" /> : <Play className="size-4" />}
+            {/* Left controls */}
+            <div className="flex flex-row items-center gap-2 sm:gap-3">
+                {/* Play / Pause */}
+                <button
+                onClick={handleTogglePlay}
+                className="flex size-10 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-all duration-150"
+                >
+                {isPlaying ? (
+                    <Pause className="size-5 text-white" />
+                ) : (
+                    <Play className="size-5 text-white" />
+                )}
                 </button>
-                <button onClick={handleSeekBackward} className="control-btn">
-                  <SkipBack className="size-4" />
-                </button>
-                <button onClick={handleSeekForward} className="control-btn">
-                  <SkipForward className="size-4" />
-                </button>
-                <button onClick={handleToggleMute} className="control-btn">
-                  {volume === 0 ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
-                </button>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={volume}
-                  onChange={handleVolume}
-                  className="w-16 md:w-32 accent-indigo-500"
-                />
-              </div>
 
-              <div className="flex items-center gap-2 sm:gap-3">
-                <button onClick={handleCyclePlaybackRate} className="control-btn text-xs">
-                  {`${playbackRate}x`}
+                {/* Backward 10s */}
+                <button
+                onClick={handleSeekBackward}
+                className="flex size-10 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-all duration-150"
+                title="Rewind 10 seconds"
+                >
+                <SkipBack className="size-5 text-white" />
                 </button>
-                <button onClick={handleToggleFullscreen} className="control-btn">
-                  {isFullscreen ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+
+                {/* Forward 10s */}
+                <button
+                onClick={handleSeekForward}
+                className="flex size-10 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-all duration-150"
+                title="Forward 10 seconds"
+                >
+                <SkipForward className="size-5 text-white" />
                 </button>
-              </div>
+
+                {/* Mute or Volume */}
+                <button
+                onClick={handleToggleMute}
+                className="flex size-10 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-all duration-150"
+                title="Toggle mute"
+                >
+                {volume === 0 ? (
+                    <VolumeX className="size-5 text-white" />
+                ) : (
+                    <Volume2 className="size-5 text-white" />
+                )}
+                </button>
+
+                {/* Volume Slider */}
+                <input
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={volume}
+                onChange={handleVolume}
+                className="ml-1 w-20 md:w-32 accent-indigo-500 cursor-pointer"
+                title="Volume"
+                />
             </div>
+
+            {/* Right controls */}
+            <div className="flex items-center gap-2 sm:gap-3">
+                {/* Playback Speed */}
+                <button
+                onClick={handleCyclePlaybackRate}
+                className="flex size-10 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-[11px] font-semibold text-white transition-all duration-150"
+                title="Change playback speed"
+                >
+                {`${playbackRate}x`}
+                </button>
+
+                {/* Fullscreen */}
+                <button
+                onClick={handleToggleFullscreen}
+                className="flex size-10 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-all duration-150"
+                title="Toggle fullscreen"
+                >
+                {isFullscreen ? (
+                    <Minimize2 className="size-5 text-white" />
+                ) : (
+                    <Maximize2 className="size-5 text-white" />
+                )}
+                </button>
+            </div>
+            </div>
+
           </div>
         </div>
       </div>
