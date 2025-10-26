@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { auth } from "..";
 import NoteSection from "../components/ui/NoteSection";
-import { getVideoById } from "../utils/firestore";
+import { getVideoById, updateVideoProgress } from "../utils/firestore";
 import {
     Maximize2,
     Minimize2,
@@ -229,6 +229,23 @@ const WatchView = ({ onTitleChange }) => {
         }
     }, []);
 
+    // Save progress to Firestore (throttled)
+    const saveProgressToFirestore = useCallback(() => {
+        const uid = auth.currentUser?.uid;
+        const player = playerInstanceRef.current;
+        if (!uid || !player) return;
+        const current = Math.floor(player.getCurrentTime?.() || 0);
+        updateVideoProgress(uid, videoId, current);
+    }, [videoId]);
+
+    // Periodically save progress every 10 seconds
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (isPlayerReady) saveProgressToFirestore();
+        }, 10000);
+        return () => clearInterval(interval);
+    }, [isPlayerReady, saveProgressToFirestore]);
+
     useEffect(() => {
         if (!videoId) return undefined;
 
@@ -259,7 +276,7 @@ const WatchView = ({ onTitleChange }) => {
                     enablejsapi: 0,
                 },
                 events: {
-                    onReady: (event) => {
+                    onReady: async (event) => {
                         if (cancelled) return;
                         setIsPlayerReady(true);
                         const player = event.target;
@@ -269,6 +286,20 @@ const WatchView = ({ onTitleChange }) => {
                         setVolume(initialVolume);
                         lastVolumeRef.current = initialVolume || 100;
                         player.setPlaybackRate?.(playbackRate);
+
+                        // Load saved progress
+                        const uid = auth.currentUser?.uid;
+                        if (uid) {
+                            try {
+                                const saved = await getVideoById(uid, videoId);
+                                if (saved?.progressSec && saved.progressSec > 0) {
+                                    player.seekTo(saved.progressSec, true);
+                                }
+                            } catch (err) {
+                                console.warn("Failed to load video progress:", err);
+                            }
+                        }
+
                         startProgressTracking();
                     },
                     onStateChange: (event) => {
@@ -290,12 +321,18 @@ const WatchView = ({ onTitleChange }) => {
                             ) {
                                 showManualControls();
                             }
-                            if (state === window.YT.PlayerState.ENDED) {
-                                setCurrentTime(
-                                    playerInstanceRef.current?.getDuration() ??
-                                        0
-                                );
+
+                            // Save progress on pause or end
+                            const uid = auth.currentUser?.uid;
+                            if (uid && playerInstanceRef.current) {
+                                const pos = Math.floor(playerInstanceRef.current.getCurrentTime() || 0);
+                                updateVideoProgress(uid, videoId, pos);
                             }
+
+                            if (state === window.YT.PlayerState.ENDED) {
+                                setCurrentTime(playerInstanceRef.current?.getDuration() ?? 0);
+                            }
+
                             stopProgressTracking();
                         }
                     },
@@ -320,6 +357,23 @@ const WatchView = ({ onTitleChange }) => {
         clearManualControlsTimeout,
         showManualControls,
     ]);
+
+    // Save progress when user leaves page
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            const uid = auth.currentUser?.uid;
+            const player = playerInstanceRef.current;
+            if (uid && player) {
+                const current = Math.floor(player.getCurrentTime?.() || 0);
+                updateVideoProgress(uid, videoId, current);
+            }
+        };
+
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+        };
+    }, [videoId]);
 
     useEffect(() => {
         const handler = () => {
@@ -352,7 +406,6 @@ const WatchView = ({ onTitleChange }) => {
         }
 
         showFullscreenControls();
-
         return () => {
             clearHideControlsTimeout();
         };
@@ -360,16 +413,9 @@ const WatchView = ({ onTitleChange }) => {
 
     useEffect(() => {
         if (!isFullscreen) return undefined;
-
         const handleMouseMove = () => showFullscreenControls();
-
-        window.addEventListener("mousemove", handleMouseMove, {
-            passive: true,
-        });
-
-        return () => {
-            window.removeEventListener("mousemove", handleMouseMove);
-        };
+        window.addEventListener("mousemove", handleMouseMove, { passive: true });
+        return () => window.removeEventListener("mousemove", handleMouseMove);
     }, [isFullscreen, showFullscreenControls]);
 
     useEffect(
@@ -550,260 +596,100 @@ const WatchView = ({ onTitleChange }) => {
             if (event.pointerType === "touch" || event.pointerType === "pen") {
                 const handled = handleTouchIntent(true);
                 skipNextClickRef.current = handled;
-                if (handled) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
             }
         },
         [handleTouchIntent]
     );
 
-    const handleOverlayTouchStart = useCallback(
-        (event) => {
-            skipNextClickRef.current = false;
-            const handled = handleTouchIntent(true);
-            skipNextClickRef.current = handled;
-            if (handled) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-        },
-        [handleTouchIntent]
-    );
-
-    const handleVideoClick = () => {
-        if (!isPlayerReady) return;
+    const handleOverlayClick = useCallback(() => {
         if (skipNextClickRef.current) {
             skipNextClickRef.current = false;
             return;
         }
-        if (isTouchDevice && shouldInterceptOverlay) {
-            if (!isFullscreen && !manualControlsVisible) {
-                showManualControls();
-                return;
-            }
-            if (isFullscreen && !controlsVisible) {
-                showFullscreenControls();
-                return;
-            }
-        }
-        if (isFullscreen) showFullscreenControls();
-        handleTogglePlay();
-    };
 
-    const inlineControlsVisibilityClass = manualControlsVisible
-        ? "pointer-events-auto opacity-100"
-        : "pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100";
+        if (isTouchDevice) {
+            const handled = handleTouchIntent(false);
+            if (handled) return;
+        }
+
+        handleTogglePlay();
+    }, [handleTouchIntent, handleTogglePlay, isTouchDevice]);
+
+    const showControls =
+        isFullscreen && controlsVisible
+            ? true
+            : !isFullscreen && manualControlsVisible;
 
     return (
-        <div className="space-y-6">
+        <div className="max-w-5xl mx-auto">
             <div
                 ref={videoContainerRef}
-                className={`group relative overflow-hidden border border-slate-200 shadow-xl transition-[border-radius] ${
-                    isFullscreen ? "h-full w-full rounded-none" : "rounded-2xl"
-                }`}
-                onMouseEnter={() => {
-                    if (isFullscreen) showFullscreenControls();
-                }}
-                onMouseMove={() => {
-                    if (isFullscreen) showFullscreenControls();
-                }}
-                onFocus={() => {
-                    if (isFullscreen) showFullscreenControls();
-                }}
-                onBlur={(event) => {
-                    if (
-                        isFullscreen &&
-                        !event.currentTarget.contains(event.relatedTarget)
-                    ) {
-                        showFullscreenControls();
-                    }
-                }}
+                className="relative aspect-video bg-black rounded-xl overflow-hidden group"
             >
+                <div ref={playerRef} className="w-full h-full"></div>
                 <div
-                    className={`relative w-full ${
-                        isFullscreen ? "h-full" : "aspect-video"
+                    className={`absolute inset-0 transition-opacity duration-300 ${
+                        showControls ? "opacity-100" : "opacity-0"
                     }`}
-                    role="presentation"
                 >
                     <div
-                        className={`absolute inset-0 z-10 ${
-                            shouldInterceptOverlay
-                                ? "pointer-events-auto cursor-pointer"
-                                : "pointer-events-none"
-                        }`}
-                        onPointerDown={handleOverlayPointerDown}
-                        onTouchStart={handleOverlayTouchStart}
-                        onClick={handleVideoClick}
-                        aria-hidden="true"
-                    />
-                    <div
-                        ref={playerRef}
-                        className="absolute inset-0 h-full w-full"
-                    />
-                </div>
-
-                <div
-                    className={`absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/60 via-black/40 to-transparent px-3 pb-3 pt-6 transition-opacity duration-200 sm:px-6 sm:pb-5 ${
-                        isFullscreen
-                            ? controlsVisible
-                                ? "pointer-events-auto opacity-100"
-                                : "pointer-events-none opacity-0"
-                            : inlineControlsVisibilityClass
-                    }`}
-                    onClick={(event) => {
-                        refreshManualControls();
-                        event.stopPropagation();
-                    }}
-                    onMouseDown={(event) => {
-                        refreshManualControls();
-                        event.stopPropagation();
-                    }}
-                    onTouchStart={(event) => {
-                        refreshManualControls();
-                        event.stopPropagation();
-                    }}
-                    onPointerDown={(event) => {
-                        refreshManualControls();
-                        event.stopPropagation();
-                    }}
-                >
-                    <div className="flex flex-col gap-2.5">
-                        <div className="flex items-center gap-2 text-[10px] font-medium text-white/80 sm:text-xs">
-                            <span className="tabular-nums">
-                                {formatTime(currentTime)}
-                            </span>
+                        className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent text-white"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center gap-3 mb-2">
+                            <button onClick={handleTogglePlay}>
+                                {isPlaying ? <Pause /> : <Play />}
+                            </button>
+                            <button onClick={handleSeekBackward}>
+                                <SkipBack />
+                            </button>
+                            <button onClick={handleSeekForward}>
+                                <SkipForward />
+                            </button>
+                            <button onClick={handleToggleMute}>
+                                {volume === 0 ? <VolumeX /> : <Volume2 />}
+                            </button>
                             <input
                                 type="range"
-                                min={0}
-                                max={duration || 0}
-                                step={0.5}
-                                value={
-                                    Number.isFinite(currentTime)
-                                        ? currentTime
-                                        : 0
-                                }
-                                onChange={handleSeek}
-                                className="w-full accent-indigo-500"
-                                disabled={!isPlayerReady}
+                                min="0"
+                                max="100"
+                                value={volume}
+                                onChange={handleVolume}
                             />
-                            <span className="tabular-nums">
-                                {formatTime(duration)}
+                            <button onClick={handleCyclePlaybackRate}>
+                                {PLAYBACK_RATES[playbackRateIndex]}x
+                            </button>
+                            <button onClick={handleToggleFullscreen}>
+                                {isFullscreen ? <Minimize2 /> : <Maximize2 />}
+                            </button>
+                            <span>
+                                {formatTime(currentTime)} / {formatTime(duration)}
                             </span>
                         </div>
-
-                        <div className="flex items-center justify-between">
-                            <div className="flex flex-row gap-1.5 sm:gap-3">
-                                <button
-                                    type="button"
-                                    onClick={handleTogglePlay}
-                                    className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
-                                    aria-label={isPlaying ? "Pause" : "Play"}
-                                    disabled={!isPlayerReady}
-                                >
-                                    {isPlaying ? (
-                                        <Pause className="size-3 md:size-5" />
-                                    ) : (
-                                        <Play className="size-3 md:size-5" />
-                                    )}
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={handleSeekBackward}
-                                    className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
-                                    aria-label="Seek backward 10 seconds"
-                                    disabled={!isPlayerReady}
-                                >
-                                    <SkipBack className="size-3 md:size-5" />
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={handleSeekForward}
-                                    className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
-                                    aria-label="Seek forward 10 seconds"
-                                    disabled={!isPlayerReady}
-                                >
-                                    <SkipForward className="size-3 md:size-5" />
-                                </button>
-
-                                <div className="flex items-center gap-2 sm:w-auto sm:gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={handleToggleMute}
-                                        className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
-                                        aria-label={
-                                            volume === 0 ? "Unmute" : "Mute"
-                                        }
-                                        disabled={!isPlayerReady}
-                                    >
-                                        {volume === 0 ? (
-                                            <VolumeX className="size-3 md:size-5" />
-                                        ) : (
-                                            <Volume2 className="size-3 md:size-5" />
-                                        )}
-                                    </button>
-                                    <input
-                                        type="range"
-                                        min={0}
-                                        max={100}
-                                        step={1}
-                                        value={volume}
-                                        onChange={handleVolume}
-                                        className="w-16 md:w-32 flex-1 accent-indigo-500"
-                                        disabled={!isPlayerReady}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="order-6 flex items-center justify-between gap-2 sm:order-none sm:w-auto sm:gap-3 sm:ml-auto">
-                                <button
-                                    type="button"
-                                    onClick={handleCyclePlaybackRate}
-                                    className="flex h-6 md:h-9 min-w-[2rem] md:min-w-[2.75rem] items-center justify-center rounded-full bg-white/15 text-[8px] md:text-xs font-semibold text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
-                                    aria-label="Change playback speed"
-                                    disabled={!isPlayerReady}
-                                >
-                                    {`${playbackRate}x`}
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={handleToggleFullscreen}
-                                    className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
-                                    aria-label={
-                                        isFullscreen
-                                            ? "Exit fullscreen"
-                                            : "Enter fullscreen"
-                                    }
-                                >
-                                    {isFullscreen ? (
-                                        <Minimize2 className="size-3 md:size-5" />
-                                    ) : (
-                                        <Maximize2 className="size-3 md:size-5" />
-                                    )}
-                                </button>
-                            </div>
-                        </div>
+                        <input
+                            type="range"
+                            min="0"
+                            max={duration}
+                            step="1"
+                            value={currentTime}
+                            onChange={handleSeek}
+                            className="w-full"
+                        />
                     </div>
                 </div>
+                <div
+                    className="absolute inset-0 cursor-pointer"
+                    onPointerDown={handleOverlayPointerDown}
+                    onClick={handleOverlayClick}
+                />
             </div>
 
-            <div className="space-y-2">
-                <h1 className="text-2xl font-semibold text-slate-900">
-                    {video?.title || "YouTube Video"}
-                </h1>
-                {video?.channelTitle ? (
-                    <p className="text-sm text-slate-500">
-                        {video.channelTitle}
-                    </p>
-                ) : null}
+            <div className="mt-4">
+                <h1 className="text-lg font-semibold">{video?.title}</h1>
+                <p className="text-sm text-slate-500">{video?.channelTitle}</p>
             </div>
-            
-            <NoteSection videoId={videoId} playerRef={playerInstanceRef} />
 
+            <NoteSection uid={auth.currentUser?.uid} videoId={videoId} />
         </div>
     );
 };

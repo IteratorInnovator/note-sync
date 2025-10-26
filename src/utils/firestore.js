@@ -85,6 +85,21 @@ export const deleteAllVideos = async (uid) => {
   }
 };
 
+/**
+ * Update the saved playback position of a video.
+ * 
+ * @param {string} uid - The user's ID.
+ * @param {string} videoId - The video's ID.
+ * @param {number} progressSec - Current playback time in seconds.
+ */
+export const updateVideoProgress = async (uid, videoId, progressSec) => {
+  const ref = doc(db, "users", uid, "videos", videoId);
+  try {
+    await updateDoc(ref, { progressSec });
+  } catch (err) {
+  }
+};
+
 // ---------------- Notes ----------------
 export const getNotesByVideoId = async (uid, videoId) => {
   const snap = await getDocs(query(collection(db, "users", uid, "videos", videoId, "notes"), orderBy("timeSec", "asc")));
