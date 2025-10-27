@@ -818,7 +818,7 @@ const WatchView = ({ onTitleChange }) => {
                                                             <div
                                                                 className={`pointer-events-none absolute bottom-full mb-3 flex flex-col ${tooltipAlignmentClass}`}
                                                             >
-                                                                <div className="w-auto min-w-[180px] max-w-[min(75vw,500px)] rounded-xl border border-slate-200 bg-white/95 p-4 text-left text-xs text-slate-600 shadow-2xl ring-1 ring-black/5">
+                                                                <div className="w-auto min-w-[180px] max-w-[min(75vw,500px)] max-h-[min(50vw,300px)] rounded-xl border border-slate-200 bg-white/95 p-4 text-left text-xs text-slate-600 shadow-2xl ring-1 ring-black/5">
                                                                     <div className="mb-3 inline-flex items-center rounded-full bg-slate-900 px-2.5 py-0.5 text-[10px] font-semibold text-white shadow">
                                                                         {formatTime(
                                                                             marker.timeSec
@@ -826,7 +826,7 @@ const WatchView = ({ onTitleChange }) => {
                                                                     </div>
                                                                     {marker.safeContent ? (
                                                                         <div
-                                                                            className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm leading-relaxed text-slate-700"
+                                                                            className="note-marker-content whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-xs leading-relaxed text-slate-700"
                                                                             dangerouslySetInnerHTML={{
                                                                                 __html: marker.safeContent,
                                                                             }}

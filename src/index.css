@@ -17,3 +17,13 @@
 .note-content li[data-list="ordered"] {
     list-style-type: decimal;
 }
+
+.note-marker-content li[data-list="bullet"] {
+    list-style-type: disc;
+    @apply ml-4;
+}
+
+.note-marker-content li[data-list="ordered"] {
+    list-style-type: decimal;
+    @apply ml-4;
+}
