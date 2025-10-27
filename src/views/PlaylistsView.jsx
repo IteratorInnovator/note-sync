@@ -175,10 +175,10 @@ const MyPlaylistView = () => {
 
                 {/* Empty Playlist State (Clickable) */}
                 {!loading && !hasVideos && (
-                    <div className="flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[60vh] px-4 cursor-pointer transition-transform hover:scale-[1.02]">
+                    <div className="flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[60vh] px-4">
                         <div
                             onClick={() => navigate("/search")}
-                            className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-6 sm:p-8 md:p-12 max-w-md w-full text-center"
+                            className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-6 sm:p-8 md:p-12 max-w-md w-full text-center  cursor-pointer transition-transform hover:scale-[1.02]"
                         >
                             <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                                 <svg
@@ -207,7 +207,7 @@ const MyPlaylistView = () => {
                 )}
 
                 {/* No Search Results State */}
-                {!loading && user && hasVideos && !hasResults && (
+                {!loading && hasVideos && !hasResults && (
                     <div className="flex flex-col items-center justify-center min-h-[40vh] sm:min-h-[50vh] px-4">
                         <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-6 sm:p-8 md:p-12 max-w-md w-full text-center">
                             <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-amber-100 to-amber-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">

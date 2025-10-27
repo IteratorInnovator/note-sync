@@ -152,7 +152,7 @@ const MyVideosView = () => {
 
                 {/* Empty Library */}
                 {!loading && !hasVideosInLibrary && (
-                    <div className="flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[60vh] px-4 cursor-pointer transition-transform hover:scale-[1.02]">
+                    <div className="flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[60vh] px-4">
                         <div
                             onClick={() => navigate("/search")}
                             className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-6 sm:p-8 md:p-12 max-w-md w-full text-center cursor-pointer transition-transform hover:scale-[1.02]"
