@@ -172,46 +172,14 @@ const MyPlaylistView = () => {
                     </div>
                 )}
 
-                {/* Not Logged In State */}
-                {!loading && !user && (
-                    <div className="flex flex-col items-center justify-center min-h-[60vh]">
-                        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-12 max-w-md text-center">
-                            <div className="w-20 h-20 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto mb-6">
-                                <svg
-                                    className="w-10 h-10 text-red-600"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                                    />
-                                </svg>
-                            </div>
-                            <h2 className="text-2xl font-bold text-gray-900 mb-3">
-                                Authentication Required
-                            </h2>
-                            <p className="text-gray-600 mb-6">
-                                Please log in to access your playlist and manage
-                                your saved videos.
-                            </p>
-                            <button className="inline-flex items-center px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors">
-                                Log In
-                            </button>
-                        </div>
-                    </div>
-                )}
 
                 {/* Empty Playlist State (Clickable) */}
-                {!loading && user && !hasVideos && (
-                    <div
-                        onClick={() => navigate("/search")}
-                        className="flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[60vh] px-4 cursor-pointer transition-transform hover:scale-[1.02]"
-                    >
-                        <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-6 sm:p-8 md:p-12 max-w-md w-full text-center">
+                {!loading && !hasVideos && (
+                    <div className="flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[60vh] px-4 cursor-pointer transition-transform hover:scale-[1.02]">
+                        <div
+                            onClick={() => navigate("/search")}
+                            className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-6 sm:p-8 md:p-12 max-w-md w-full text-center"
+                        >
                             <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                                 <svg
                                     className="w-8 h-8 sm:w-10 sm:h-10 text-purple-600"
