@@ -771,7 +771,7 @@ const WatchView = ({ onTitleChange }) => {
                                                 >
                                                     <button
                                                         type="button"
-                                                        className="pointer-events-auto relative flex h-4 w-[4px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-yellow-200 shadow-[0_0_8px_rgba(234,179,8,0.75)] ring-1 ring-yellow-500 transition hover:scale-110 focus-visible:scale-110 focus-visible:outline-none"
+                                                        className="pointer-events-auto relative flex h-3 w-[3px] md:h-4 md:w-[4px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-yellow-200 shadow-[0_0_8px_rgba(234,179,8,0.75)] ring-1 ring-yellow-500 transition hover:scale-110 focus-visible:scale-110 focus-visible:outline-none"
                                                         onClick={(event) => {
                                                             event.preventDefault();
                                                             handleJumpToNote(
