@@ -19,9 +19,13 @@ import {
 } from "lucide-react";
 import { ToastContainer } from "./toast";
 import Editor from "./Editor";
-import { hasMeaningfulText, sanitizeHtmlString } from "../../utils/htmlHelpers";
+import {
+    getPlainTextLength,
+    hasMeaningfulText,
+    sanitizeHtmlString,
+} from "../../utils/htmlHelpers";
 
-const MAX_NOTE_LENGTH = 1000;
+const MAX_NOTE_LENGTH = 500;
 let toastId = 0;
 
 const formatTime = (sec) => {
@@ -30,7 +34,11 @@ const formatTime = (sec) => {
     return `${m}:${s.toString().padStart(2, "0")}`;
 };
 
-const NoteSection = ({ videoId, playerRef }) => {
+const NoteSection = ({
+    videoId,
+    playerRef,
+    onNotesChange = () => undefined,
+}) => {
     const [notes, setNotes] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -38,13 +46,15 @@ const NoteSection = ({ videoId, playerRef }) => {
 
     // New note state
     const [newNote, setNewNote] = useState("");
-    const canSaveNew = hasMeaningfulText(newNote);
+    const [newNoteLength, setNewNoteLength] = useState(0);
+    const canSaveNew = newNoteLength > 0;
     const [newEditorResetSignal, setNewEditorResetSignal] = useState(0);
 
     // Edit state
     const [editingId, setEditingId] = useState(null);
     const [editedContent, setEditedContent] = useState("");
-    const editingHasContent = hasMeaningfulText(editedContent);
+    const [editedContentLength, setEditedContentLength] = useState(0);
+    const editingHasContent = editedContentLength > 0;
 
     const [toasts, setToasts] = useState([]);
 
@@ -65,6 +75,10 @@ const NoteSection = ({ videoId, playerRef }) => {
             active = false;
         };
     }, [videoId]);
+
+    useEffect(() => {
+        onNotesChange(notes);
+    }, [notes, onNotesChange]);
 
     // Track current player time
     useEffect(() => {
@@ -109,6 +123,7 @@ const NoteSection = ({ videoId, playerRef }) => {
 
     const handleCancelNewNote = () => {
         setNewNote("");
+        setNewNoteLength(0);
         setNewEditorResetSignal((k) => k + 1);
     };
 
@@ -124,12 +139,15 @@ const NoteSection = ({ videoId, playerRef }) => {
     // Edit + save note
     const handleEdit = (noteId, content) => {
         setEditingId(noteId);
-        setEditedContent(sanitizeHtmlString(content));
+        const sanitized = sanitizeHtmlString(content);
+        setEditedContent(sanitized);
+        setEditedContentLength(getPlainTextLength(sanitized));
     };
 
     const handleCancelEdit = () => {
         setEditingId(null);
         setEditedContent("");
+        setEditedContentLength(0);
     };
 
     const handleSave = async (noteId) => {
@@ -146,6 +164,7 @@ const NoteSection = ({ videoId, playerRef }) => {
         );
         setEditingId(null);
         setEditedContent("");
+        setEditedContentLength(0);
         addToast("Note updated", CircleCheck);
     };
 
@@ -199,8 +218,19 @@ const NoteSection = ({ videoId, playerRef }) => {
                                 resetSignal={newEditorResetSignal}
                                 placeholder="Add a new note at the current timestamp..."
                                 maxLength={MAX_NOTE_LENGTH}
-                                onChange={({ html }) => setNewNote(html)}
+                                onChange={({ html, plainTextLength = 0 }) => {
+                                    setNewNote(html);
+                                    setNewNoteLength(plainTextLength);
+                                }}
                             />
+                            <div className="text-left text-xs font-medium text-slate-500">
+                                {Math.max(
+                                    0,
+                                    MAX_NOTE_LENGTH -
+                                        Math.min(newNoteLength, MAX_NOTE_LENGTH)
+                                )}{" "}
+                                characters remaining
+                            </div>
 
                             <div className="mt-1 flex items-center justify-end gap-3">
                                 <button
@@ -267,10 +297,27 @@ const NoteSection = ({ videoId, playerRef }) => {
                                                     initialHtml={editedContent}
                                                     placeholder="Update your note..."
                                                     maxLength={MAX_NOTE_LENGTH}
-                                                    onChange={({ html }) =>
-                                                        setEditedContent(html)
-                                                    }
+                                                    onChange={({
+                                                        html,
+                                                        plainTextLength = 0,
+                                                    }) => {
+                                                        setEditedContent(html);
+                                                        setEditedContentLength(
+                                                            plainTextLength
+                                                        );
+                                                    }}
                                                 />
+                                                <div className="text-left text-xs font-medium text-slate-500">
+                                                    {Math.max(
+                                                        0,
+                                                        MAX_NOTE_LENGTH -
+                                                            Math.min(
+                                                                editedContentLength,
+                                                                MAX_NOTE_LENGTH
+                                                            )
+                                                    )}{" "}
+                                                    characters remaining
+                                                </div>
                                                 <div className="mt-2 flex items-center justify-end gap-2">
                                                     <button
                                                         onClick={() =>
