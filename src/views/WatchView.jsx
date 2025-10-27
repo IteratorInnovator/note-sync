@@ -20,6 +20,8 @@ import {
 
 let youtubeApiPromise = null;
 
+const MAX_NOTE_LENGTH = 500;
+
 const loadYouTubeIframeAPI = () => {
     if (typeof window === "undefined") return Promise.resolve(null);
 
@@ -59,8 +61,6 @@ const formatTime = (seconds) => {
     const remaining = total % 60;
     return `${minutes}:${remaining.toString().padStart(2, "0")}`;
 };
-
-const QUICK_NOTE_MAX_LENGTH = 1000;
 
 const WatchView = ({ onTitleChange }) => {
     const { videoId } = useParams();
@@ -143,6 +143,7 @@ const WatchView = ({ onTitleChange }) => {
         setQuickNoteError("");
         setQuickNoteContent("");
         setQuickNoteLength(0);
+        playerInstanceRef.current?.playVideo?.();
     }, []);
 
     const handleQuickNoteChange = useCallback(
@@ -202,12 +203,19 @@ const WatchView = ({ onTitleChange }) => {
             setIsQuickNoteOpen(false);
             setQuickNoteContent("");
             setQuickNoteLength(0);
-        } catch (error) {
+        } catch {
             setQuickNoteError("Could not save the note. Please try again.");
         } finally {
             setIsSavingQuickNote(false);
+            playerInstanceRef.current?.playVideo?.();
         }
-    }, [isSavingQuickNote, quickNoteContent, quickNoteTimestamp, videoId]);
+    }, [
+        isSavingQuickNote,
+        quickNoteContent,
+        quickNoteTimestamp,
+        videoId,
+        playerInstanceRef,
+    ]);
 
     useEffect(() => {
         setNotes((prev) => (prev.length ? [] : prev));
@@ -269,8 +277,7 @@ const WatchView = ({ onTitleChange }) => {
 
     const quickNoteCharactersRemaining = Math.max(
         0,
-        QUICK_NOTE_MAX_LENGTH -
-            Math.min(quickNoteLength, QUICK_NOTE_MAX_LENGTH)
+        MAX_NOTE_LENGTH - Math.min(quickNoteLength, MAX_NOTE_LENGTH)
     );
 
     const canSaveQuickNote =
@@ -1100,7 +1107,7 @@ const WatchView = ({ onTitleChange }) => {
                                 </button>
                             </div>
                         </div>
-                        {isQuickNoteOpen && isFullscreen? (
+                        {isQuickNoteOpen && isFullscreen ? (
                             <div
                                 className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
                                 role="dialog"
@@ -1126,7 +1133,7 @@ const WatchView = ({ onTitleChange }) => {
                                     <Editor
                                         className="w-full"
                                         placeholder="Capture a quick thought..."
-                                        maxLength={QUICK_NOTE_MAX_LENGTH}
+                                        maxLength={MAX_NOTE_LENGTH}
                                         resetSignal={quickNoteResetSignal}
                                         onChange={handleQuickNoteChange}
                                     />
@@ -1146,7 +1153,7 @@ const WatchView = ({ onTitleChange }) => {
                                             <button
                                                 type="button"
                                                 onClick={handleCloseQuickNote}
-                                                className="rounded-lg bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-300 hover:text-slate-700"
+                                                className="px-4 py-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700"
                                             >
                                                 Cancel
                                             </button>
@@ -1213,7 +1220,7 @@ const WatchView = ({ onTitleChange }) => {
                         <Editor
                             className="w-full"
                             placeholder="Capture a quick thought..."
-                            maxLength={QUICK_NOTE_MAX_LENGTH}
+                            maxLength={MAX_NOTE_LENGTH}
                             resetSignal={quickNoteResetSignal}
                             onChange={handleQuickNoteChange}
                         />
@@ -1226,13 +1233,14 @@ const WatchView = ({ onTitleChange }) => {
 
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                             <div className="text-xs font-medium text-slate-500">
-                                {quickNoteCharactersRemaining} characters remaining
+                                {quickNoteCharactersRemaining} characters
+                                remaining
                             </div>
                             <div className="flex items-center justify-end gap-2">
                                 <button
                                     type="button"
                                     onClick={handleCloseQuickNote}
-                                    className="rounded-lg bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-300 hover:text-slate-700"
+                                    className="px-4 py-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700"
                                 >
                                     Cancel
                                 </button>
@@ -1242,7 +1250,9 @@ const WatchView = ({ onTitleChange }) => {
                                     className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-indigo-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
                                     disabled={!canSaveQuickNote}
                                 >
-                                    {isSavingQuickNote ? "Saving..." : "Save note"}
+                                    {isSavingQuickNote
+                                        ? "Saving..."
+                                        : "Save note"}
                                 </button>
                             </div>
                         </div>
