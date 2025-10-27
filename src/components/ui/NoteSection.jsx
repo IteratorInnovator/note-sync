@@ -30,7 +30,11 @@ const formatTime = (sec) => {
     return `${m}:${s.toString().padStart(2, "0")}`;
 };
 
-const NoteSection = ({ videoId, playerRef }) => {
+const NoteSection = ({
+    videoId,
+    playerRef,
+    onNotesChange = () => undefined,
+}) => {
     const [notes, setNotes] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -65,6 +69,10 @@ const NoteSection = ({ videoId, playerRef }) => {
             active = false;
         };
     }, [videoId]);
+
+    useEffect(() => {
+        onNotesChange(notes);
+    }, [notes, onNotesChange]);
 
     // Track current player time
     useEffect(() => {
