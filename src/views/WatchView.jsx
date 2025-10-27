@@ -2,17 +2,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { auth } from "..";
 import NoteSection from "../components/ui/NoteSection";
-import { getVideoById } from "../utils/firestore";
-import { sanitizeHtmlString } from "../utils/htmlHelpers";
+import Editor from "../components/ui/Editor";
+import { createNote, getVideoById } from "../utils/firestore";
+import { hasMeaningfulText, sanitizeHtmlString } from "../utils/htmlHelpers";
 import {
     Maximize2,
     Minimize2,
     Pause,
+    Pencil,
     Play,
     SkipBack,
     SkipForward,
     Volume2,
     VolumeX,
+    X,
 } from "lucide-react";
 
 let youtubeApiPromise = null;
@@ -57,6 +60,8 @@ const formatTime = (seconds) => {
     return `${minutes}:${remaining.toString().padStart(2, "0")}`;
 };
 
+const QUICK_NOTE_MAX_LENGTH = 1000;
+
 const WatchView = ({ onTitleChange }) => {
     const { videoId } = useParams();
     const location = useLocation();
@@ -81,6 +86,14 @@ const WatchView = ({ onTitleChange }) => {
     const [isTouchDevice, setIsTouchDevice] = useState(false);
     const [activeMarkerId, setActiveMarkerId] = useState(null);
     const [notes, setNotes] = useState([]);
+    const [notesRefreshTrigger, setNotesRefreshTrigger] = useState(0);
+    const [isQuickNoteOpen, setIsQuickNoteOpen] = useState(false);
+    const [quickNoteContent, setQuickNoteContent] = useState("");
+    const [quickNoteLength, setQuickNoteLength] = useState(0);
+    const [quickNoteResetSignal, setQuickNoteResetSignal] = useState(0);
+    const [quickNoteTimestamp, setQuickNoteTimestamp] = useState(0);
+    const [isSavingQuickNote, setIsSavingQuickNote] = useState(false);
+    const [quickNoteError, setQuickNoteError] = useState("");
     const PLAYBACK_RATES = [0.25, 0.5, 1, 1.25, 1.5, 1.75, 2];
     const [playbackRateIndex, setPlaybackRateIndex] = useState(
         PLAYBACK_RATES.indexOf(1)
@@ -109,6 +122,112 @@ const WatchView = ({ onTitleChange }) => {
         setNotes(Array.isArray(nextNotes) ? nextNotes : []);
     }, []);
 
+    const handleOpenQuickNote = useCallback(() => {
+        if (!isPlayerReady) return;
+
+        const rawTime =
+            playerInstanceRef.current?.getCurrentTime?.() ?? currentTime;
+        const safeTime = Number.isFinite(rawTime) ? rawTime : 0;
+
+        setQuickNoteTimestamp(safeTime);
+        setQuickNoteContent("");
+        setQuickNoteLength(0);
+        setQuickNoteResetSignal((signal) => signal + 1);
+        setQuickNoteError("");
+        setIsQuickNoteOpen(true);
+        playerInstanceRef.current?.pauseVideo?.();
+    }, [currentTime, isPlayerReady]);
+
+    const handleCloseQuickNote = useCallback(() => {
+        setIsQuickNoteOpen(false);
+        setQuickNoteError("");
+        setQuickNoteContent("");
+        setQuickNoteLength(0);
+    }, []);
+
+    const handleQuickNoteChange = useCallback(
+        ({ html, plainTextLength = 0 }) => {
+            setQuickNoteContent(html);
+            setQuickNoteLength(plainTextLength);
+            if (quickNoteError) {
+                setQuickNoteError("");
+            }
+        },
+        [quickNoteError]
+    );
+
+    const handleQuickNoteBackdropClick = useCallback(
+        (event) => {
+            if (event.target === event.currentTarget) {
+                handleCloseQuickNote();
+            }
+        },
+        [handleCloseQuickNote]
+    );
+
+    const handleSaveQuickNote = useCallback(async () => {
+        if (isSavingQuickNote) return;
+
+        const uid = auth.currentUser?.uid;
+        if (!uid) {
+            setQuickNoteError("You need to sign in to save notes.");
+            return;
+        }
+
+        const htmlContent = sanitizeHtmlString(quickNoteContent).trim();
+        if (!hasMeaningfulText(htmlContent)) {
+            setQuickNoteError("Add some note text before saving.");
+            return;
+        }
+
+        const timestamp = Number.isFinite(quickNoteTimestamp)
+            ? quickNoteTimestamp
+            : 0;
+
+        setIsSavingQuickNote(true);
+        setQuickNoteError("");
+
+        try {
+            const noteId = await createNote(
+                uid,
+                videoId,
+                htmlContent,
+                timestamp
+            );
+            setNotes((prev) => [
+                ...prev,
+                { noteId, content: htmlContent, timeSec: timestamp },
+            ]);
+            setNotesRefreshTrigger((value) => value + 1);
+            setIsQuickNoteOpen(false);
+            setQuickNoteContent("");
+            setQuickNoteLength(0);
+        } catch (error) {
+            setQuickNoteError("Could not save the note. Please try again.");
+        } finally {
+            setIsSavingQuickNote(false);
+        }
+    }, [isSavingQuickNote, quickNoteContent, quickNoteTimestamp, videoId]);
+
+    useEffect(() => {
+        setNotes((prev) => (prev.length ? [] : prev));
+        setNotesRefreshTrigger(0);
+    }, [videoId]);
+
+    useEffect(() => {
+        if (!isQuickNoteOpen) return;
+
+        const handleKeyDown = (event) => {
+            if (event.key === "Escape") {
+                event.preventDefault();
+                handleCloseQuickNote();
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [handleCloseQuickNote, isQuickNoteOpen]);
+
     const EDGE_THRESHOLD_PERCENT = 15;
 
     const noteMarkers = useMemo(() => {
@@ -130,8 +249,8 @@ const WatchView = ({ onTitleChange }) => {
                 position < EDGE_THRESHOLD_PERCENT
                     ? "left"
                     : position > 100 - EDGE_THRESHOLD_PERCENT
-                      ? "right"
-                      : "center";
+                    ? "right"
+                    : "center";
 
             return {
                 id: note.noteId ?? `note-marker-${index}`,
@@ -142,6 +261,22 @@ const WatchView = ({ onTitleChange }) => {
             };
         });
     }, [notes, duration]);
+
+    const quickNoteSanitizedContent = useMemo(
+        () => sanitizeHtmlString(quickNoteContent).trim(),
+        [quickNoteContent]
+    );
+
+    const quickNoteCharactersRemaining = Math.max(
+        0,
+        QUICK_NOTE_MAX_LENGTH -
+            Math.min(quickNoteLength, QUICK_NOTE_MAX_LENGTH)
+    );
+
+    const canSaveQuickNote =
+        hasMeaningfulText(quickNoteSanitizedContent) && !isSavingQuickNote;
+
+    const quickNoteDisplayTime = formatTime(quickNoteTimestamp ?? 0);
 
     const clearHideControlsTimeout = useCallback(() => {
         if (hideControlsTimeoutRef.current) {
@@ -759,8 +894,8 @@ const WatchView = ({ onTitleChange }) => {
                                                 marker.anchor === "left"
                                                     ? "items-start left-1/2 translate-x-0"
                                                     : marker.anchor === "right"
-                                                      ? "items-end left-1/2 -translate-x-full"
-                                                      : "items-center left-1/2 -translate-x-1/2";
+                                                    ? "items-end left-1/2 -translate-x-full"
+                                                    : "items-center left-1/2 -translate-x-1/2";
                                             return (
                                                 <div
                                                     key={marker.id}
@@ -810,9 +945,7 @@ const WatchView = ({ onTitleChange }) => {
                                                         aria-label={`Jump to note at ${formatTime(
                                                             marker.timeSec
                                                         )}`}
-                                                        aria-expanded={
-                                                            isActive
-                                                        }
+                                                        aria-expanded={isActive}
                                                     >
                                                         {isActive ? (
                                                             <div
@@ -857,7 +990,7 @@ const WatchView = ({ onTitleChange }) => {
                                 <button
                                     type="button"
                                     onClick={handleTogglePlay}
-                                    title={isPlaying ? 'Pause' : 'Play'}
+                                    title={isPlaying ? "Pause" : "Play"}
                                     className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
                                     aria-label={isPlaying ? "Pause" : "Play"}
                                     disabled={!isPlayerReady}
@@ -924,6 +1057,17 @@ const WatchView = ({ onTitleChange }) => {
                             <div className="order-6 flex items-center justify-between gap-2 sm:order-none sm:w-auto sm:gap-3 sm:ml-auto">
                                 <button
                                     type="button"
+                                    onClick={handleOpenQuickNote}
+                                    title="Add quick note"
+                                    className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                    aria-label="Add quick note"
+                                    disabled={!isPlayerReady}
+                                >
+                                    <Pencil className="size-3 md:size-5" />
+                                </button>
+
+                                <button
+                                    type="button"
                                     onClick={handleCyclePlaybackRate}
                                     title="Playback rate"
                                     className="flex h-7 min-w-[2rem] md:min-w-[2.75rem] items-center justify-center bg-white/15 text-[8px] md:text-xs font-semibold text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
@@ -936,7 +1080,11 @@ const WatchView = ({ onTitleChange }) => {
                                 <button
                                     type="button"
                                     onClick={handleToggleFullscreen}
-                                    title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+                                    title={
+                                        isFullscreen
+                                            ? "Exit fullscreen"
+                                            : "Enter fullscreen"
+                                    }
                                     className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
                                     aria-label={
                                         isFullscreen
@@ -952,6 +1100,71 @@ const WatchView = ({ onTitleChange }) => {
                                 </button>
                             </div>
                         </div>
+                        {isQuickNoteOpen && isFullscreen? (
+                            <div
+                                className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+                                role="dialog"
+                                aria-modal="true"
+                                aria-label="Quick note"
+                                onClick={handleQuickNoteBackdropClick}
+                            >
+                                <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl space-y-5">
+                                    <div className="flex items-start justify-between gap-4">
+                                        <span className="inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
+                                            {quickNoteDisplayTime}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={handleCloseQuickNote}
+                                            className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700"
+                                            aria-label="Close quick note"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </button>
+                                    </div>
+
+                                    <Editor
+                                        className="w-full"
+                                        placeholder="Capture a quick thought..."
+                                        maxLength={QUICK_NOTE_MAX_LENGTH}
+                                        resetSignal={quickNoteResetSignal}
+                                        onChange={handleQuickNoteChange}
+                                    />
+
+                                    {quickNoteError ? (
+                                        <p className="text-sm font-medium text-red-500">
+                                            {quickNoteError}
+                                        </p>
+                                    ) : null}
+
+                                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                        <div className="text-xs font-medium text-slate-500">
+                                            {quickNoteCharactersRemaining}{" "}
+                                            characters remaining
+                                        </div>
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={handleCloseQuickNote}
+                                                className="rounded-lg bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-300 hover:text-slate-700"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={handleSaveQuickNote}
+                                                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-indigo-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+                                                disabled={!canSaveQuickNote}
+                                            >
+                                                {isSavingQuickNote
+                                                    ? "Saving..."
+                                                    : "Save note"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : null}
                     </div>
                 </div>
             </div>
@@ -971,7 +1184,71 @@ const WatchView = ({ onTitleChange }) => {
                 videoId={videoId}
                 playerRef={playerInstanceRef}
                 onNotesChange={handleNotesChange}
+                refreshTrigger={notesRefreshTrigger}
             />
+
+            {isQuickNoteOpen && !isFullscreen ? (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Quick note"
+                    onClick={handleQuickNoteBackdropClick}
+                >
+                    <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl space-y-5">
+                        <div className="flex items-start justify-between gap-4">
+                            <span className="inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
+                                {quickNoteDisplayTime}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={handleCloseQuickNote}
+                                className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700"
+                                aria-label="Close quick note"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        </div>
+
+                        <Editor
+                            className="w-full"
+                            placeholder="Capture a quick thought..."
+                            maxLength={QUICK_NOTE_MAX_LENGTH}
+                            resetSignal={quickNoteResetSignal}
+                            onChange={handleQuickNoteChange}
+                        />
+
+                        {quickNoteError ? (
+                            <p className="text-sm font-medium text-red-500">
+                                {quickNoteError}
+                            </p>
+                        ) : null}
+
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="text-xs font-medium text-slate-500">
+                                {quickNoteCharactersRemaining} characters remaining
+                            </div>
+                            <div className="flex items-center justify-end gap-2">
+                                <button
+                                    type="button"
+                                    onClick={handleCloseQuickNote}
+                                    className="rounded-lg bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-300 hover:text-slate-700"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleSaveQuickNote}
+                                    className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-indigo-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+                                    disabled={!canSaveQuickNote}
+                                >
+                                    {isSavingQuickNote ? "Saving..." : "Save note"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
         </div>
     );
 };
