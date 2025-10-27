@@ -857,6 +857,7 @@ const WatchView = ({ onTitleChange }) => {
                                 <button
                                     type="button"
                                     onClick={handleTogglePlay}
+                                    title={isPlaying ? 'Pause' : 'Play'}
                                     className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
                                     aria-label={isPlaying ? "Pause" : "Play"}
                                     disabled={!isPlayerReady}
@@ -871,6 +872,7 @@ const WatchView = ({ onTitleChange }) => {
                                 <button
                                     type="button"
                                     onClick={handleSeekBackward}
+                                    title="Skip backward 10s"
                                     className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
                                     aria-label="Seek backward 10 seconds"
                                     disabled={!isPlayerReady}
@@ -881,6 +883,7 @@ const WatchView = ({ onTitleChange }) => {
                                 <button
                                     type="button"
                                     onClick={handleSeekForward}
+                                    title="Skip forward 10s"
                                     className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
                                     aria-label="Seek forward 10 seconds"
                                     disabled={!isPlayerReady}
@@ -891,6 +894,7 @@ const WatchView = ({ onTitleChange }) => {
                                 <div className="flex items-center gap-2 sm:w-auto sm:gap-3">
                                     <button
                                         type="button"
+                                        title="Volume"
                                         onClick={handleToggleMute}
                                         className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
                                         aria-label={
@@ -921,7 +925,8 @@ const WatchView = ({ onTitleChange }) => {
                                 <button
                                     type="button"
                                     onClick={handleCyclePlaybackRate}
-                                    className="flex h-6 md:h-9 min-w-[2rem] md:min-w-[2.75rem] items-center justify-center rounded-full bg-white/15 text-[8px] md:text-xs font-semibold text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                    title="Playback rate"
+                                    className="flex h-7 min-w-[2rem] md:min-w-[2.75rem] items-center justify-center bg-white/15 text-[8px] md:text-xs font-semibold text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
                                     aria-label="Change playback speed"
                                     disabled={!isPlayerReady}
                                 >
@@ -931,6 +936,7 @@ const WatchView = ({ onTitleChange }) => {
                                 <button
                                     type="button"
                                     onClick={handleToggleFullscreen}
+                                    title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
                                     className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
                                     aria-label={
                                         isFullscreen
