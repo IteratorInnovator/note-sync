@@ -162,6 +162,8 @@ export const resetUserSettings = async (uid) =>
     await updateDoc(doc(db, "users", uid), { settings: DEFAULT_SETTINGS });
 
 // ---------------- Playlists ----------------
+
+// Get all playlists for a user
 export const getPlaylistsByUserId = async (uid) => {
     const snap = await getDocs(
         query(
@@ -172,6 +174,7 @@ export const getPlaylistsByUserId = async (uid) => {
     return snap.docs.map((doc) => ({ playlistId: doc.id, ...doc.data() }));
 };
 
+// Create new playlist
 export const createPlaylist = async (uid, title, description = "") =>
     (
         await addDoc(collection(db, "users", uid, "playlists"), {
@@ -181,5 +184,50 @@ export const createPlaylist = async (uid, title, description = "") =>
         })
     ).id;
 
+// Delete a playlist entirely
 export const deletePlaylist = async (uid, playlistId) =>
     await deleteDoc(doc(db, "users", uid, "playlists", playlistId));
+
+// Get a single playlist by ID
+export const getPlaylistById = async (uid, playlistId) => {
+    const ref = doc(db, "users", uid, "playlists", playlistId);
+    const snap = await getDoc(ref);
+    return snap.exists() ? { playlistId: snap.id, ...snap.data() } : null;
+};
+
+
+// Update an existing playlist (e.g., rename or edit description)
+export const updatePlaylist = async (uid, playlistId, updates) => {
+    const ref = doc(db, "users", uid, "playlists", playlistId);
+    await updateDoc(ref, {
+        ...updates,
+        updatedAt: serverTimestamp(),
+    });
+    return playlistId;
+};
+
+// Add a video to a specific playlist
+export const addVideoToPlaylist = async (uid, playlistId, videoData) => {
+    const ref = collection(db, "users", uid, "playlists", playlistId, "videos");
+    await addDoc(ref, {
+        ...videoData,
+        addedAt: serverTimestamp(),
+    });
+};
+
+// Get all videos within a specific playlist
+export const getVideosInPlaylist = async (uid, playlistId) => {
+    const snap = await getDocs(
+        query(
+            collection(db, "users", uid, "playlists", playlistId, "videos"),
+            orderBy("addedAt", "desc")
+        )
+    );
+    return snap.docs.map((doc) => ({ videoId: doc.id, ...doc.data() }));
+};
+
+// Remove a video from a specific playlist
+export const removeVideoFromPlaylist = async (uid, playlistId, videoId) => {
+    const ref = doc(db, "users", uid, "playlists", playlistId, "videos", videoId);
+    await deleteDoc(ref);
+};

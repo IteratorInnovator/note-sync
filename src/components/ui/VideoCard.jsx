@@ -52,10 +52,15 @@ const VideoCard = ({
                 </div>
             </a>
             <EllipsisButton
-                open={open}
-                onOpenChange={onOpenChange}
-                onSave={() => onSave(videoId, title, channelTitle, thumbnail)}
-                onAddToPlaylist={() => onAddToPlaylist(videoId)}
+            open={open}
+            onOpenChange={onOpenChange}
+            onSave={() => onSave(videoId, title, channelTitle, thumbnail)}
+            onAddToPlaylist={() => ({
+                videoId,
+                title,
+                channelTitle,
+                thumbnail,
+            })}
             />
         </li>
     );
