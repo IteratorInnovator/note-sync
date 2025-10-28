@@ -4,7 +4,7 @@ import {
     getNotesByVideoId,
     createNote,
     updateNote,
-    deleteNote,
+    deleteNote
 } from "../../utils/firestore";
 import { auth } from "../..";
 import {
@@ -16,6 +16,7 @@ import {
     X,
     Sparkles,
     CircleCheck,
+    Download
 } from "lucide-react";
 import { ToastContainer } from "./toast";
 import Editor from "./Editor";
@@ -24,6 +25,7 @@ import {
     hasMeaningfulText,
     sanitizeHtmlString,
 } from "../../utils/htmlHelpers";
+import jsPDF from "jspdf";
 
 const MAX_NOTE_LENGTH = 500;
 let toastId = 0;
@@ -36,6 +38,7 @@ const formatTime = (sec) => {
 
 const NoteSection = ({
     videoId,
+    video,
     playerRef,
     onNotesChange = () => undefined,
 }) => {
@@ -79,6 +82,85 @@ const NoteSection = ({
     useEffect(() => {
         onNotesChange(notes);
     }, [notes, onNotesChange]);
+
+    const handleDownload = async () => {
+        if (!notes || notes.length === 0) {
+            alert("No notes available to download.");
+            return;
+        }
+
+        const doc = new jsPDF();
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const margin = 15;
+        let y = 20;
+
+        // --- Video Header ---
+        if (video) {
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(16);
+            doc.text(video.title || "Untitled Video", margin, y);
+            y += 8;
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(12);
+            doc.text(`Channel: ${video.channelTitle || "Unknown"}`, margin, y);
+            y += 6;
+
+            if (video.addedAt) {
+            doc.text(`Date Added: ${video.addedAt}`, margin, y);
+            y += 10;
+            }
+        }
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text("Notes:", margin, y);
+        y += 8;
+
+        const sortedNotes = [...notes].sort((a, b) => a.timeSec - b.timeSec);
+
+        // --- For each note ---
+        for (let i = 0; i < sortedNotes.length; i++) {
+            const note = sortedNotes[i];
+            if (y > 260) {
+            doc.addPage();
+            y = 20;
+            }
+
+            const minutes = Math.floor(note.timeSec / 60);
+            const seconds = Math.floor(note.timeSec % 60)
+            .toString()
+            .padStart(2, "0");
+            const timestamp = `${minutes}:${seconds}`;
+
+            // Timestamp line
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(12);
+            doc.text(`${i + 1}. [${timestamp}]`, margin, y);
+            y += 6;
+
+            // Render HTML content
+            const container = document.createElement("div");
+            container.innerHTML = note.content || "";
+            container.style.fontSize = "12px";
+            container.style.lineHeight = "1.4";
+            container.style.width = "500px";
+
+            await doc.html(container, {
+            x: margin,
+            y,
+            html2canvas: { scale: 0.3 }, // lower scale for better fit
+            autoPaging: "text",
+            width: pageWidth - margin * 2,
+            });
+
+            y += 25; // Rough spacing between notes
+        }
+
+        doc.save(
+            `${video?.title?.replace(/[\\/:*?"<>|]/g, "") || "Study_Notes"}.pdf`
+        );
+    };
 
     // Track current player time
     useEffect(() => {
@@ -202,6 +284,13 @@ const NoteSection = ({
                             </div>
                         </div>
                     </div>
+                    <button
+                        onClick={handleDownload}
+                        className="ml-auto flex h-10 min-w-[64px] items-center justify-center rounded-full bg-slate-900 px-2 text-xs font-semibold text-white shadow-sm hover:bg-slate-700 active:scale-90 transition"
+                    >
+                        <Download className="h-5 w-5 mr-2 text-white" />
+                        Download Notes
+                    </button>
                 </div>
 
                 {/* Input Section */}
