@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "../../index.js";
 import User from "../../assets/user.svg";
-import { APP_BASE_URL } from "../../index.js";
+// import { APP_BASE_URL } from "../../index.js";
 
 const ForgotPasswordModal = ({ switchToLoginView }) => {
     const [email, setEmail] = useState("");
@@ -17,12 +17,13 @@ const ForgotPasswordModal = ({ switchToLoginView }) => {
         }
 
         try {
-            await sendPasswordResetEmail(auth, email.trim().toLowerCase(), {url: `${APP_BASE_URL}/reset-password`, handleCodeInApp: true});
+            await sendPasswordResetEmail(auth, email.trim().toLowerCase())
             alert(
                 "Password reset email sent! Check your inbox."
             );
-        } catch {
+        } catch(error) {
             setError("Unable to send reset email.");
+            console.log(error)
             return;
         }
     };
