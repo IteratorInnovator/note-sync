@@ -134,7 +134,7 @@ const NoteSection = ({
         const safeTitle = video?.title?.replace(/[\\/:*?"<>|]/g, "") || "Study_Notes";
         
         const opt = {
-            margin: 15,
+            margin: 16,
             filename: `${safeTitle}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true },
