@@ -22,14 +22,15 @@ const SavedVideoCard = ({
           className="block overflow-hidden rounded-xl border border-slate-200 bg-white group-hover:shadow-lg"
         >
           <div className="relative aspect-video bg-slate-100">
-            <img
-              src={thumbnail}
+              <img
+              src={thumbnail || "/fallback-thumbnail.png"}
               alt={title || "Video thumbnail"}
               loading="lazy"
               decoding="async"
               onError={(e) => { e.currentTarget.src = "/fallback-thumbnail.png"; }}
               className="h-full w-full object-cover"
             />
+
           </div>
           <div className="p-4">
             <h3>{highlightFunc ? highlightFunc(title) : title}</h3>

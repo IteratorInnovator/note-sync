@@ -8,6 +8,8 @@ import Main from "./pages/Main";
 import { Loader2 } from "lucide-react";
 import { DEFAULT_SETTINGS, useSettings } from "./stores/useSettings";
 import { getUserSettings } from "./utils/firestore";
+import WatchView from "./views/WatchView";
+
 
 const FEDERATED_VERIFIED_PROVIDERS = new Set(["google.com", "github.com"]);
 
@@ -82,8 +84,9 @@ function App() {
                 />
                 <Route
                     path="/watch/:videoId"
-                    element={isVerifiedUser ? <Main /> : <Navigate to="/" />}
+                    element={isVerifiedUser ? <WatchView /> : <Navigate to="/" />}
                 />
+
 
                 {/* Catch-all. Redirect unknown paths based on auth state. */}
                 <Route
