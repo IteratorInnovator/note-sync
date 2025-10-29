@@ -107,7 +107,7 @@ const LoginModal = ({ switchToSignUpView, switchToForgotPasswordView }) => {
                         )}
                     </div>
 
-                    <div>
+                    <div className="flex flex-col">
                         <h3 className="text-sm font-semibold mb-2">Password</h3>
                         <div className="relative">
                             <input
@@ -158,7 +158,7 @@ const LoginModal = ({ switchToSignUpView, switchToForgotPasswordView }) => {
                         {/* Forget Password button */}
                         <button
                             type="button"
-                            className="text-right w-full text-[0.8rem] text-slate-900 font-medium mt-2 hover:underline"
+                            className="self-end w-auto text-[0.8rem] text-slate-900 font-medium mt-2 hover:underline"
                             onClick={switchToForgotPasswordView}
                         >
                             Forgot Password?
