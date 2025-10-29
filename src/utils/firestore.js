@@ -183,3 +183,18 @@ export const createPlaylist = async (uid, title, description = "") =>
 
 export const deletePlaylist = async (uid, playlistId) =>
     await deleteDoc(doc(db, "users", uid, "playlists", playlistId));
+
+export const addVideoToPlaylist = async (uid, playlistId, videoId) => {
+  const db = getFirestore();
+  const playlistRef = doc(db, "users", uid, "playlists", playlistId);
+  const playlistSnap = await getDoc(playlistRef);
+
+  if (!playlistSnap.exists()) throw new Error("Playlist not found");
+
+  const playlistData = playlistSnap.data();
+  const videos = playlistData.videos || [];
+  if (!videos.includes(videoId)) videos.push(videoId);
+
+  await updateDoc(playlistRef, { videos });
+};
+

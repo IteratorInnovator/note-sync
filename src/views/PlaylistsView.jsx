@@ -600,105 +600,123 @@ const MyPlaylistView = () => {
                 {!loading && user && hasResults && (
                     <div className="space-y-10">
                         <h2 className="text-2xl font-bold text-gray-900">All Videos</h2>
-                        {Object.entries(groupedVideos).map(
-                            ([category, vids]) => (
-                                <div key={category} className="animate-fadeIn">
-                                    {/* Category Header */}
-                                    <div className="mb-6">
-                                        <div className="flex items-center gap-3">
-                                            <h3 className="text-xl font-bold text-gray-900">
-                                                {category}
-                                            </h3>
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                                                {vids.length}
-                                            </span>
-                                        </div>
-                                        <div className="mt-2 h-1 w-20 bg-gradient-to-r from-purple-500 to-purple-300 rounded-full"></div>
+                        {Object.entries(groupedVideos).map(([category, vids]) => (
+                            <div key={category} className="animate-fadeIn">
+                                {/* Category Header */}
+                                <div className="mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <h3 className="text-xl font-bold text-gray-900">{category}</h3>
+                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                            {vids.length}
+                                        </span>
                                     </div>
+                                    <div className="mt-2 h-1 w-20 bg-gradient-to-r from-purple-500 to-purple-300 rounded-full"></div>
+                                </div>
 
-                                    {/* Videos Grid */}
-                                    {selectionMode ? (
-                                        <div className={`grid ${gridColumnsClass} gap-4`}>
-                                            {vids.map((video) => (
-                                                <div
-                                                    key={video.videoId}
-                                                    onClick={() => toggleVideoSelection(video.videoId)}
-                                                    className={`relative cursor-pointer rounded-lg border-2 transition-all ${selectedVideos.has(video.videoId)
-                                                        ? "border-purple-500 bg-purple-50"
-                                                        : "border-gray-200 hover:border-gray-300"
-                                                        }`}
-                                                >
-                                                    <div className="p-4">
-                                                        <img
-                                                            src={video.thumbnail}
-                                                            alt={video.title}
-                                                            className="w-full aspect-video object-cover rounded-lg mb-2"
-                                                        />
-                                                        <h4 className="font-medium text-sm line-clamp-2">{video.title}</h4>
-                                                        <p className="text-xs text-gray-500 mt-1">{video.channelTitle}</p>
-                                                    </div>
+                                {/* Videos Grid */}
+                                {selectionMode ? (
+                                    <div className={`grid ${gridColumnsClass} gap-4`}>
+                                        {vids.map((video) => (
+                                            <div
+                                                key={video.videoId}
+                                                onClick={() => toggleVideoSelection(video.videoId)}
+                                                className={`relative cursor-pointer rounded-xl overflow-hidden border-2 transition-all duration-200 ${selectedVideos.has(video.videoId)
+                                                    ? "border-purple-500 ring-2 ring-purple-300"
+                                                    : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
+                                                    }`}
+                                            >
+                                                {/* Thumbnail */}
+                                                <div className="relative w-full aspect-video overflow-hidden bg-gray-100">
+                                                    <img
+                                                        src={
+                                                            video.thumbnail ||
+                                                            video.thumbnailUrl ||
+                                                            `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`
+                                                        }
+                                                        alt={video.title}
+                                                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                                                        onError={(e) => {
+                                                            e.target.src = `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
+                                                        }}
+                                                    />
+
+                                                    {/* Circular tick icon overlay (only when selected) */}
                                                     {selectedVideos.has(video.videoId) && (
-                                                        <div className="absolute top-2 right-2 w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center">
-                                                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                        <div className="absolute top-3 right-3 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                                                            <svg
+                                                                className="w-5 h-5 text-white"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                strokeWidth={2.5}
+                                                                viewBox="0 0 24 24"
+                                                            >
+                                                                <path
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                    d="M5 13l4 4L19 7"
+                                                                />
                                                             </svg>
                                                         </div>
                                                     )}
                                                 </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <SavedVideoList
-                                            videoList={vids}
-                                            gridClassName={gridColumnsClass}
-                                            highlightFunc={(text) =>
-                                                highlightMatch(text, searchQuery)
-                                            }
-                                            onRemoveSuccess={(removedId) =>
-                                                setVideos((prev) =>
-                                                    prev.filter(
-                                                        (video) =>
-                                                            video.videoId !==
-                                                            removedId
-                                                    )
-                                                )
-                                            }
-                                        />
-                                    )}
+
+                                                {/* Video info */}
+                                                <div className="p-3">
+                                                    <h4 className="font-medium text-sm line-clamp-2 text-gray-900">
+                                                        {video.title}
+                                                    </h4>
+                                                    <p className="text-xs text-gray-500 mt-1">
+                                                        {video.channelTitle}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <SavedVideoList
+                                        videoList={vids}
+                                        gridClassName={gridColumnsClass}
+                                        highlightFunc={(text) => highlightMatch(text, searchQuery)}
+                                        onRemoveSuccess={(removedId) =>
+                                            setVideos((prev) =>
+                                                prev.filter((v) => v.videoId !== removedId)
+                                            )
+                                        }
+                                    />
+                                )}
+                            </div>
+                        ))}
+
+                        {/* Delete Playlist Modal */}
+                        {showConfirmDelete && (
+                            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
+                                <div className="bg-white rounded-xl p-6 max-w-sm w-full text-center shadow-xl">
+                                    <h3 className="text-xl font-bold mb-3 text-gray-900">
+                                        Delete Playlist?
+                                    </h3>
+                                    <p className="text-gray-600 mb-6 text-sm">
+                                        This action cannot be undone. Are you sure you want to delete this playlist?
+                                    </p>
+                                    <div className="flex justify-center gap-3">
+                                        <button
+                                            onClick={cancelDelete}
+                                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={confirmDelete}
+                                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                        >
+                                            Yes, Delete
+                                        </button>
+                                    </div>
                                 </div>
-                            )
+                            </div>
                         )}
                     </div>
-                )}
-
-                {/* Modern Delete Confirmation Modal */}
-                {showConfirmDelete && (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
-                        <div className="bg-white rounded-xl p-6 max-w-sm w-full text-center shadow-xl">
-                            <h3 className="text-xl font-bold mb-3 text-gray-900">Delete Playlist?</h3>
-                            <p className="text-gray-600 mb-6 text-sm">
-                                This action cannot be undone. Are you sure you want to delete this playlist?
-                            </p>
-                            <div className="flex justify-center gap-3">
-                                <button
-                                    onClick={cancelDelete}
-                                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={confirmDelete}
-                                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                                >
-                                    Yes, Delete
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
+                )}</div>
+        </div>);
 };
 
 export default MyPlaylistView;

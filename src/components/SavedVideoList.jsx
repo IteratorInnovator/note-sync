@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import SavedVideoCard from "../components/ui/SavedVideoCard";
 import { ToastContainer } from "./ui/Toast";
-import { removeVideo, hasNotes } from "../utils/firestore";
+import { removeVideo, hasNotes, addVideoToPlaylist } from "../utils/firestore";
 import { auth } from "..";
 import { CircleCheck, CircleX } from "lucide-react";
 import { Button } from "./ui/button";
@@ -17,7 +17,7 @@ const ConfirmDialog = ({ open, onConfirm, onCancel }) => {
           This video has notes attached to it.
         </p>
         <p className="text-sm text-gray-600">
-          Deleting will permanently remove the video and every note linked to it. 
+          Deleting will permanently remove the video and every note linked to it.
           This cannot be undone.
         </p>
         <div className="flex justify-center gap-4 mt-4">
@@ -29,8 +29,36 @@ const ConfirmDialog = ({ open, onConfirm, onCancel }) => {
   );
 };
 
+const PlaylistSelectDialog = ({ open, playlists, onSelect, onCancel }) => {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-2xl p-6 shadow-xl w-[90%] max-w-sm space-y-4">
+        <h2 className="text-lg font-semibold">Add to Playlist</h2>
+        {playlists.length === 0 ? (
+          <p className="text-sm text-gray-500">You don’t have any playlists yet.</p>
+        ) : (
+          <ul className="space-y-2 max-h-48 overflow-y-auto">
+            {playlists.map((p) => (
+              <li key={p.id}>
+                <Button className="w-full justify-start" variant="outline" onClick={() => onSelect(p.id)}>
+                  {p.name}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="flex justify-end gap-2 mt-2">
+          <Button variant="secondary" onClick={onCancel}>Cancel</Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const SavedVideoList = ({
   videoList,
+  playlists = [], // pass from parent if available
   onRemoveSuccess,
   gridClassName = "grid-cols-2 md:grid-cols-3 lg:grid-cols-3",
   highlightFunc,
@@ -39,18 +67,15 @@ const SavedVideoList = ({
   const [toasts, setToasts] = useState([]);
   const [confirmingId, setConfirmingId] = useState(null);
   const [selectedVideos, setSelectedVideos] = useState(new Set());
+  const [playlistDialogVideo, setPlaylistDialogVideo] = useState(null);
 
-  const handleOpenChange = useCallback(
-    (id, isOpen) => setOpenMenuId(isOpen ? id : null),
-    []
-  );
+  const handleOpenChange = useCallback((id, isOpen) => setOpenMenuId(isOpen ? id : null), []);
 
   const addToast = (message, Icon = null, iconColour = "", duration = 3000) => {
     const id = toastId++;
-    setToasts(prev => [...prev, { id, message, Icon, iconColour, duration }]);
+    setToasts((prev) => [...prev, { id, message, Icon, iconColour, duration }]);
   };
-
-  const removeToast = (id) => setToasts(prev => prev.filter(t => t.id !== id));
+  const removeToast = (id) => setToasts((prev) => prev.filter((t) => t.id !== id));
 
   const handleRemove = useCallback(async (videoId) => {
     try {
@@ -85,7 +110,6 @@ const SavedVideoList = ({
     if (!videoId) return;
     await handleRemove(videoId);
   };
-
   const cancelRemove = () => setConfirmingId(null);
 
   const toggleSelection = (videoId) => {
@@ -95,38 +119,64 @@ const SavedVideoList = ({
     setSelectedVideos(newSet);
   };
 
-  // Safe thumbnail helper
-  const getThumbnail = (video) => {
+  // robust thumbnail resolver (used everywhere)
+  const getSafeThumbnail = (video) => {
+    if (!video) return `/fallback-thumbnail.png`;
     return (
       video.thumbnailUrl ||
       video.thumbnail ||
-      video.thumbnails?.default?.url ||
-      "/fallback-thumbnail.png"
+      (video.thumbnails && (video.thumbnails.high?.url || video.thumbnails.medium?.url || video.thumbnails.default?.url)) ||
+      `/fallback-thumbnail.png` ||
+      `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`
     );
+  };
+
+  const handleAddToPlaylist = (videoId) => {
+    setPlaylistDialogVideo(videoId);
+    setOpenMenuId(null);
+  };
+
+  const handlePlaylistSelect = async (playlistId) => {
+    try {
+      const uid = auth.currentUser.uid;
+      await addVideoToPlaylist(uid, playlistId, playlistDialogVideo);
+      addToast("Added to playlist", CircleCheck, "text-emerald-400");
+    } catch {
+      addToast("Failed to add to playlist", CircleX, "text-red-400");
+    } finally {
+      setPlaylistDialogVideo(null);
+    }
   };
 
   return (
     <>
       <ul className={`grid ${gridClassName} gap-4`}>
-        {videoList.map(v => (
+        {videoList.map((v) => (
           <SavedVideoCard
             key={v.videoId}
             videoId={v.videoId}
-            thumbnail={getThumbnail(v)} // always safe
+            thumbnail={getSafeThumbnail(v)}
             title={v.title}
             channelTitle={v.channelTitle}
             highlightFunc={highlightFunc}
             open={openMenuId === v.videoId}
             onOpenChange={(isOpen) => handleOpenChange(v.videoId, isOpen)}
             onRemove={() => handleRemoveRequest(v.videoId)}
-            onAddToPlaylist={() => console.log("Add to playlist", v.videoId)}
-            isSelected={selectedVideos.has(v.videoId)} // pass selection state
-            onSelectToggle={toggleSelection} // toggle selection
+            onAddToPlaylist={() => handleAddToPlaylist(v.videoId)}
+            isSelected={selectedVideos.has(v.videoId)}
+            onSelectToggle={toggleSelection}
           />
         ))}
       </ul>
 
       <ConfirmDialog open={!!confirmingId} onConfirm={confirmRemove} onCancel={cancelRemove} />
+
+      <PlaylistSelectDialog
+        open={!!playlistDialogVideo}
+        playlists={playlists}
+        onSelect={handlePlaylistSelect}
+        onCancel={() => setPlaylistDialogVideo(null)}
+      />
 
       <ToastContainer toasts={toasts} removeToast={removeToast} />
     </>
