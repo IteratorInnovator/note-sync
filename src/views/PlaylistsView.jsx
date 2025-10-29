@@ -27,25 +27,26 @@ const MyPlaylistView = () => {
     const [isCondensedLayout, setIsCondensedLayout] = useState(false);
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
-    
+
     // Custom playlist states
     const [customPlaylists, setCustomPlaylists] = useState({});
     const [showCreatePlaylist, setShowCreatePlaylist] = useState(false);
     const [newPlaylistName, setNewPlaylistName] = useState("");
+    const [playlistError, setPlaylistError] = useState(""); // error state
     const [editingPlaylistId, setEditingPlaylistId] = useState(null);
     const [editingPlaylistName, setEditingPlaylistName] = useState("");
     const [selectedVideos, setSelectedVideos] = useState(new Set());
     const [selectionMode, setSelectionMode] = useState(false);
     const [showAddToPlaylist, setShowAddToPlaylist] = useState(false);
 
-    // New: delete confirmation modal states
+    // Delete confirmation modal states
     const [showConfirmDelete, setShowConfirmDelete] = useState(false);
     const [playlistToDelete, setPlaylistToDelete] = useState(null);
 
     const auth = getAuth();
     const navigate = useNavigate();
 
-    // Load custom playlists from storage
+    // Load custom playlists from localStorage
     useEffect(() => {
         if (user) {
             const stored = localStorage.getItem(`playlists_${user.uid}`);
@@ -55,14 +56,14 @@ const MyPlaylistView = () => {
         }
     }, [user]);
 
-    // Save custom playlists to storage
+    // Save playlists to localStorage
     const savePlaylistsToStorage = (playlists) => {
         if (user) {
             localStorage.setItem(`playlists_${user.uid}`, JSON.stringify(playlists));
         }
     };
 
-    // Listen to auth state and fetch videos
+    // Listen for auth changes and fetch videos
     useEffect(() => {
         let active = true;
         const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -89,52 +90,61 @@ const MyPlaylistView = () => {
         };
     }, [auth]);
 
-    // Create new playlist
+    // Create new playlist with duplicate check
     const handleCreatePlaylist = () => {
-        if (!newPlaylistName.trim()) return;
-        
+        const name = newPlaylistName.trim();
+        if (!name) return;
+
+        const nameExists = Object.values(customPlaylists).some(
+            (pl) => pl.name.toLowerCase() === name.toLowerCase()
+        );
+        if (nameExists) {
+            setPlaylistError("A playlist with this name already exists.");
+            return;
+        }
+
         const playlistId = `playlist_${Date.now()}`;
         const newPlaylists = {
             ...customPlaylists,
             [playlistId]: {
                 id: playlistId,
-                name: newPlaylistName.trim(),
+                name,
                 videoIds: [],
-                createdAt: Date.now()
-            }
+                createdAt: Date.now(),
+            },
         };
-        
+
         setCustomPlaylists(newPlaylists);
         savePlaylistsToStorage(newPlaylists);
         setNewPlaylistName("");
+        setPlaylistError("");
         setShowCreatePlaylist(false);
     };
 
     // Rename playlist
     const handleRenamePlaylist = (playlistId) => {
         if (!editingPlaylistName.trim()) return;
-        
+
         const newPlaylists = {
             ...customPlaylists,
             [playlistId]: {
                 ...customPlaylists[playlistId],
-                name: editingPlaylistName.trim()
-            }
+                name: editingPlaylistName.trim(),
+            },
         };
-        
+
         setCustomPlaylists(newPlaylists);
         savePlaylistsToStorage(newPlaylists);
         setEditingPlaylistId(null);
         setEditingPlaylistName("");
     };
 
-    // Show modern confirmation modal instead of window.confirm
+    // Delete playlist
     const handleDeletePlaylist = (playlistId) => {
         setPlaylistToDelete(playlistId);
         setShowConfirmDelete(true);
     };
 
-    // Confirm deletion
     const confirmDelete = () => {
         if (!playlistToDelete) return;
         const newPlaylists = { ...customPlaylists };
@@ -159,12 +169,11 @@ const MyPlaylistView = () => {
                 videoIds: [
                     ...new Set([
                         ...customPlaylists[playlistId].videoIds,
-                        ...Array.from(selectedVideos)
-                    ])
-                ]
-            }
+                        ...Array.from(selectedVideos),
+                    ]),
+                ],
+            },
         };
-        
         setCustomPlaylists(newPlaylists);
         savePlaylistsToStorage(newPlaylists);
         setSelectedVideos(new Set());
@@ -178,10 +187,11 @@ const MyPlaylistView = () => {
             ...customPlaylists,
             [playlistId]: {
                 ...customPlaylists[playlistId],
-                videoIds: customPlaylists[playlistId].videoIds.filter(id => id !== videoId)
-            }
+                videoIds: customPlaylists[playlistId].videoIds.filter(
+                    (id) => id !== videoId
+                ),
+            },
         };
-        
         setCustomPlaylists(newPlaylists);
         savePlaylistsToStorage(newPlaylists);
     };
@@ -189,15 +199,12 @@ const MyPlaylistView = () => {
     // Toggle video selection
     const toggleVideoSelection = (videoId) => {
         const newSelection = new Set(selectedVideos);
-        if (newSelection.has(videoId)) {
-            newSelection.delete(videoId);
-        } else {
-            newSelection.add(videoId);
-        }
+        if (newSelection.has(videoId)) newSelection.delete(videoId);
+        else newSelection.add(videoId);
         setSelectedVideos(newSelection);
     };
 
-    // Filter videos by search query
+    // Filter videos
     const filteredVideos = useMemo(() => {
         const q = searchQuery.trim().toLowerCase();
         return videos.filter(
@@ -209,53 +216,43 @@ const MyPlaylistView = () => {
 
     // Sort videos
     const sortedVideos = useMemo(() => {
-        const vids = [...filteredVideos];
-        switch (sortOption) {
-            case "recent":
-                return vids.sort(
-                    (a, b) =>
-                        (b.addedAt?.seconds || 0) - (a.addedAt?.seconds || 0)
-                );
-            case "earliest":
-                return vids.sort(
-                    (a, b) =>
-                        (a.addedAt?.seconds || 0) - (b.addedAt?.seconds || 0)
-                );
-            case "title-asc":
-                return vids.sort((a, b) => a.title.localeCompare(b.title));
-            case "title-desc":
-                return vids.sort((a, b) => b.title.localeCompare(a.title));
-            default:
-                return vids;
-        }
+        return filteredVideos.slice().sort((a, b) => {
+            switch (sortOption) {
+                case "recent":
+                    return (b.addedAt?.seconds || 0) - (a.addedAt?.seconds || 0);
+                case "earliest":
+                    return (a.addedAt?.seconds || 0) - (b.addedAt?.seconds || 0);
+                case "title-asc":
+                    return a.title.localeCompare(b.title);
+                case "title-desc":
+                    return b.title.localeCompare(a.title);
+                default:
+                    return 0;
+            }
+        });
     }, [filteredVideos, sortOption]);
 
-    // Group videos by category or channel
+
+    // Grouped videos
     const groupedVideos = useMemo(() => {
         return sortedVideos.reduce((acc, video) => {
-            const key = (
-                video.category ||
-                video.channelTitle ||
-                "Uncategorized"
-            ).trim();
+            const key = (video.category || video.channelTitle || "Uncategorized").trim();
             if (!acc[key]) acc[key] = [];
             acc[key].push(video);
             return acc;
         }, {});
     }, [sortedVideos]);
 
-    // Get videos for a custom playlist
     const getPlaylistVideos = (playlistId) => {
         const playlist = customPlaylists[playlistId];
         if (!playlist) return [];
-        
-        return videos.filter(v => playlist.videoIds.includes(v.videoId));
+        return sortedVideos.filter((v) => playlist.videoIds.includes(v.videoId));
     };
+
 
     const hasVideos = videos.length > 0;
     const hasResults = sortedVideos.length > 0;
 
-    // Determine grid columns for layout - optimized for mobile
     const gridColumnsClass = isCondensedLayout
         ? "grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2"
         : "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3";
@@ -263,18 +260,16 @@ const MyPlaylistView = () => {
     return (
         <div className="min-h-screen rounded-lg bg-gradient-to-br from-gray-50 to-gray-100">
             <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
-                {/* Header Section */}
+                {/* Header */}
                 {!loading && hasVideos && (
                     <div className="mb-8">
                         <div className="flex items-center gap-3 mb-4 flex-wrap">
                             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-                                {videos.length}{" "}
-                                {videos.length === 1 ? "video" : "videos"}
+                                {videos.length} {videos.length === 1 ? "video" : "videos"}
                             </span>
                             {searchQuery && hasResults && (
                                 <span className="text-sm text-gray-600">
-                                    {sortedVideos.length} result
-                                    {sortedVideos.length !== 1 ? "s" : ""} found
+                                    {sortedVideos.length} result{sortedVideos.length !== 1 ? "s" : ""} found
                                 </span>
                             )}
                             <span className="text-sm text-gray-600">
@@ -296,11 +291,10 @@ const MyPlaylistView = () => {
                                         setSelectionMode(!selectionMode);
                                         setSelectedVideos(new Set());
                                     }}
-                                    className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
-                                        selectionMode
-                                            ? "bg-gray-600 text-white hover:bg-gray-700"
-                                            : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                                    }`}
+                                    className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${selectionMode
+                                        ? "bg-gray-600 text-white hover:bg-gray-700"
+                                        : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                                        }`}
                                 >
                                     {selectionMode ? "Cancel Selection" : "Select Videos"}
                                 </button>
@@ -315,7 +309,7 @@ const MyPlaylistView = () => {
                             )}
                         </div>
 
-                        {/* Controls */}
+                        {/* View Controls */}
                         <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 overflow-hidden">
                             <ViewControls
                                 searchQuery={searchQuery}
@@ -343,17 +337,25 @@ const MyPlaylistView = () => {
                             <input
                                 type="text"
                                 value={newPlaylistName}
-                                onChange={(e) => setNewPlaylistName(e.target.value)}
+                                onChange={(e) => {
+                                    setNewPlaylistName(e.target.value);
+                                    if (playlistError) setPlaylistError("");
+                                }}
                                 placeholder="Enter playlist name..."
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                className={`w-full px-4 py-2 mb-2 rounded-lg focus:outline-none focus:ring-2 ${playlistError
+                                    ? "border-red-500 ring-red-300"
+                                    : "border-gray-300 focus:ring-purple-500"
+                                    }`}
                                 onKeyPress={(e) => e.key === "Enter" && handleCreatePlaylist()}
                                 autoFocus
                             />
+                            {playlistError && <p className="text-sm text-red-600 mb-2">{playlistError}</p>}
                             <div className="flex gap-2 justify-end">
                                 <button
                                     onClick={() => {
                                         setShowCreatePlaylist(false);
                                         setNewPlaylistName("");
+                                        setPlaylistError("");
                                     }}
                                     className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                                 >
@@ -621,11 +623,10 @@ const MyPlaylistView = () => {
                                                 <div
                                                     key={video.videoId}
                                                     onClick={() => toggleVideoSelection(video.videoId)}
-                                                    className={`relative cursor-pointer rounded-lg border-2 transition-all ${
-                                                        selectedVideos.has(video.videoId)
-                                                            ? "border-purple-500 bg-purple-50"
-                                                            : "border-gray-200 hover:border-gray-300"
-                                                    }`}
+                                                    className={`relative cursor-pointer rounded-lg border-2 transition-all ${selectedVideos.has(video.videoId)
+                                                        ? "border-purple-500 bg-purple-50"
+                                                        : "border-gray-200 hover:border-gray-300"
+                                                        }`}
                                                 >
                                                     <div className="p-4">
                                                         <img
@@ -701,3 +702,4 @@ const MyPlaylistView = () => {
 };
 
 export default MyPlaylistView;
+
