@@ -1,21 +1,20 @@
 import { Link } from "react-router-dom";
-import SavedEllipsisButton from "./SavedEllipsisButton";
+import SavedEllipsisButton from "./RemoveButton";
 
 const SavedVideoCard = ({
   videoId,
   thumbnail,
   title,
   channelTitle,
-  open, // boolean: controlled by parent
-  onOpenChange, // (boolean) => void
+  open, 
+  onOpenChange, 
   onRemove,
   onAddToPlaylist,
-  highlightFunc, // optional: (text) => JSX with highlights
+  highlightFunc,
 }) => {
   return (
     <li className="relative group">
       <div className="relative">
-        {/* Video Navigation */}
         <Link
           to={`/watch/${videoId}`}
           state={{ video: { videoId, thumbnailUrl: thumbnail, title, channelTitle } }}
@@ -39,7 +38,6 @@ const SavedVideoCard = ({
         </Link>
       </div>
 
-      {/* Ellipsis Button */}
       <SavedEllipsisButton
         open={open}
         onOpenChange={onOpenChange}
