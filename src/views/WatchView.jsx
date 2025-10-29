@@ -1104,21 +1104,29 @@ const WatchView = ({ onTitleChange }) => {
                                         <>
                                             <div
                                                 className="fixed inset-0 z-40 bg-black/30"
-                                                onClick={handleQuickNoteBackdropClick}
+                                                onClick={
+                                                    handleQuickNoteBackdropClick
+                                                }
                                             />
                                             <div
                                                 className="absolute bottom-full right-0 z-50 mb-3 w-[92vw] max-w-[22rem] sm:max-w-[24rem] md:max-w-[26rem] origin-bottom-right animate-fadeIn"
-                                                onClick={(event) => event.stopPropagation()}
+                                                onClick={(event) =>
+                                                    event.stopPropagation()
+                                                }
                                             >
                                                 <div className="relative flex w-full max-h-[78vh] flex-col rounded-2xl bg-white/95 p-4 shadow-2xl ring-1 ring-black/10 backdrop-blur sm:max-h-[70vh] md:max-h-[64vh]">
                                                     <div className="absolute -bottom-1 right-6 w-0 border-x-[6px] border-t-[6px] border-x-transparent border-t-white/95 drop-shadow-lg" />
                                                     <div className="flex items-center justify-between gap-3">
                                                         <span className="inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-[10px] font-semibold text-white shadow">
-                                                            {quickNoteDisplayTime}
+                                                            {
+                                                                quickNoteDisplayTime
+                                                            }
                                                         </span>
                                                         <button
                                                             type="button"
-                                                            onClick={handleCloseQuickNote}
+                                                            onClick={
+                                                                handleCloseQuickNote
+                                                            }
                                                             className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700"
                                                             aria-label="Close quick note"
                                                         >
@@ -1130,9 +1138,15 @@ const WatchView = ({ onTitleChange }) => {
                                                         <Editor
                                                             className="h-full w-full [&_.ql-container]:h-full [&_.ql-container]:rounded-b-xl [&_.ql-container]:max-h-[52vh] sm:[&_.ql-container]:max-h-[48vh] md:[&_.ql-container]:max-h-[44vh] [&_.ql-editor]:min-h-[6rem] sm:[&_.ql-editor]:min-h-[7rem] md:[&_.ql-editor]:min-h-[8rem] [&_.ql-editor]:max-h-[50vh] sm:[&_.ql-editor]:max-h-[44vh] md:[&_.ql-editor]:max-h-[40vh] [&_.ql-editor]:text-sm [&_.ql-toolbar]:rounded-t-xl [&_.ql-toolbar]:border-none"
                                                             placeholder="Capture a quick thought..."
-                                                            maxLength={MAX_NOTE_LENGTH}
-                                                            resetSignal={quickNoteResetSignal}
-                                                            onChange={handleQuickNoteChange}
+                                                            maxLength={
+                                                                MAX_NOTE_LENGTH
+                                                            }
+                                                            resetSignal={
+                                                                quickNoteResetSignal
+                                                            }
+                                                            onChange={
+                                                                handleQuickNoteChange
+                                                            }
                                                         />
                                                     </div>
 
@@ -1144,23 +1158,34 @@ const WatchView = ({ onTitleChange }) => {
 
                                                     <div className="mt-3 flex items-center justify-between gap-3">
                                                         <span className="text-[11px] font-medium text-slate-500">
-                                                            {quickNoteCharactersRemaining} characters remaining
+                                                            {
+                                                                quickNoteCharactersRemaining
+                                                            }{" "}
+                                                            characters remaining
                                                         </span>
                                                         <div className="flex items-center gap-2">
                                                             <button
                                                                 type="button"
-                                                                onClick={handleCloseQuickNote}
+                                                                onClick={
+                                                                    handleCloseQuickNote
+                                                                }
                                                                 className="px-3 py-1.5 text-xs font-semibold text-slate-500 transition hover:text-slate-700"
                                                             >
                                                                 Cancel
                                                             </button>
                                                             <button
                                                                 type="button"
-                                                                onClick={handleSaveQuickNote}
+                                                                onClick={
+                                                                    handleSaveQuickNote
+                                                                }
                                                                 className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md transition hover:bg-indigo-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
-                                                                disabled={!canSaveQuickNote}
+                                                                disabled={
+                                                                    !canSaveQuickNote
+                                                                }
                                                             >
-                                                                {isSavingQuickNote ? "Saving..." : "Save"}
+                                                                {isSavingQuickNote
+                                                                    ? "Saving..."
+                                                                    : "Save"}
                                                             </button>
                                                         </div>
                                                     </div>
@@ -1204,7 +1229,6 @@ const WatchView = ({ onTitleChange }) => {
                                 </button>
                             </div>
                         </div>
-                        
                     </div>
                 </div>
             </div>
