@@ -263,6 +263,7 @@ const WatchView = ({ onTitleChange }) => {
     }, [handleCloseQuickNote, isQuickNoteOpen]);
 
     const EDGE_THRESHOLD_PERCENT = 15;
+    const CENTER_THRESHOLD_PERCENT = 10;
 
     const noteMarkers = useMemo(() => {
         if (!Array.isArray(notes) || duration <= 0) return [];
@@ -279,12 +280,14 @@ const WatchView = ({ onTitleChange }) => {
                 100,
                 Math.max(0, (safeTime / duration) * 100)
             );
-            const anchor =
-                position < EDGE_THRESHOLD_PERCENT
-                    ? "left"
-                    : position > 100 - EDGE_THRESHOLD_PERCENT
-                    ? "right"
-                    : "center";
+            const anchor = (() => {
+                if (position < EDGE_THRESHOLD_PERCENT) return "left";
+                if (position > 100 - EDGE_THRESHOLD_PERCENT) return "right";
+                if (Math.abs(position - 50) <= CENTER_THRESHOLD_PERCENT)
+                    return "center";
+                if (position < 50) return "center-left";
+                return "center-right";
+            })();
 
             return {
                 id: note.noteId ?? `note-marker-${index}`,
@@ -923,12 +926,20 @@ const WatchView = ({ onTitleChange }) => {
                                         {noteMarkers.map((marker) => {
                                             const isActive =
                                                 activeMarkerId === marker.id;
+                                            const tooltipAlignmentBase =
+                                                "left-1/2 -translate-x-1/2";
                                             const tooltipAlignmentClass =
                                                 marker.anchor === "left"
-                                                    ? "items-start left-1/2 translate-x-0"
+                                                    ? `${tooltipAlignmentBase} items-start translate-x-[-5%]`
+                                                    : marker.anchor ===
+                                                      "center-left"
+                                                    ? `${tooltipAlignmentBase} items-start -translate-x-[40%]`
+                                                    : marker.anchor ===
+                                                      "center-right"
+                                                    ? `${tooltipAlignmentBase} items-end -translate-x-[60%]`
                                                     : marker.anchor === "right"
-                                                    ? "items-end left-1/2 -translate-x-full"
-                                                    : "items-center left-1/2 -translate-x-1/2";
+                                                    ? `${tooltipAlignmentBase} items-end -translate-x-[90%]`
+                                                    : `${tooltipAlignmentBase} items-center`;
                                             return (
                                                 <div
                                                     key={marker.id}
@@ -937,68 +948,89 @@ const WatchView = ({ onTitleChange }) => {
                                                         left: `${marker.position}%`,
                                                     }}
                                                 >
-                                                    <button
-                                                        type="button"
-                                                        className="pointer-events-auto relative flex h-3 w-[3px] md:h-4 md:w-[4px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-yellow-200 shadow-[0_0_8px_rgba(234,179,8,0.75)] ring-1 ring-yellow-500 transition hover:scale-110 focus-visible:scale-110 focus-visible:outline-none"
-                                                        onClick={(event) => {
-                                                            event.preventDefault();
-                                                            handleJumpToNote(
-                                                                marker.timeSec
-                                                            );
-                                                        }}
-                                                        onKeyDown={(event) => {
-                                                            if (
-                                                                event.key ===
-                                                                    "Enter" ||
-                                                                event.key ===
-                                                                    " "
-                                                            ) {
-                                                                event.preventDefault();
-                                                                handleJumpToNote(
-                                                                    marker.timeSec
-                                                                );
-                                                            }
-                                                        }}
+                                                    <div
+                                                        className="pointer-events-auto relative flex h-full"
                                                         onPointerEnter={() =>
                                                             handleMarkerEnter(
                                                                 marker.id
                                                             )
                                                         }
-                                                        onPointerLeave={
-                                                            handleMarkerLeave
-                                                        }
-                                                        onFocus={() =>
+                                                        onPointerLeave={(event) => {
+                                                            if (
+                                                                !event.currentTarget.contains(
+                                                                    event.relatedTarget
+                                                                )
+                                                            ) {
+                                                                handleMarkerLeave();
+                                                            }
+                                                        }}
+                                                        onFocusCapture={() =>
                                                             handleMarkerEnter(
                                                                 marker.id
                                                             )
                                                         }
-                                                        onBlur={
-                                                            handleMarkerLeave
-                                                        }
-                                                        aria-label={`Jump to note at ${formatTime(
-                                                            marker.timeSec
-                                                        )}`}
-                                                        aria-expanded={isActive}
+                                                        onBlurCapture={(event) => {
+                                                            if (
+                                                                !event.currentTarget.contains(
+                                                                    event.relatedTarget
+                                                                )
+                                                            ) {
+                                                                handleMarkerLeave();
+                                                            }
+                                                        }}
                                                     >
+                                                        <button
+                                                            type="button"
+                                                            className="relative flex h-3 w-[3px] md:h-4 md:w-[4px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-yellow-200 shadow-[0_0_8px_rgba(234,179,8,0.75)] ring-1 ring-yellow-500 transition hover:scale-110 focus-visible:scale-110 focus-visible:outline-none"
+                                                            onClick={(event) => {
+                                                                event.preventDefault();
+                                                                handleJumpToNote(
+                                                                    marker.timeSec
+                                                                );
+                                                            }}
+                                                            onKeyDown={(event) => {
+                                                                if (
+                                                                    event.key ===
+                                                                        "Enter" ||
+                                                                    event.key ===
+                                                                        " "
+                                                                ) {
+                                                                    event.preventDefault();
+                                                                    handleJumpToNote(
+                                                                        marker.timeSec
+                                                                    );
+                                                                }
+                                                            }}
+                                                            onFocus={() =>
+                                                                handleMarkerEnter(
+                                                                    marker.id
+                                                                )
+                                                            }
+                                                            aria-label={`Jump to note at ${formatTime(
+                                                                marker.timeSec
+                                                            )}`}
+                                                            aria-expanded={isActive}
+                                                        />
                                                         {isActive ? (
                                                             <div
-                                                                className={`pointer-events-none absolute bottom-full mb-3 flex flex-col ${tooltipAlignmentClass}`}
+                                                                className={`pointer-events-auto absolute bottom-full mb-2 lg:mb-3 flex flex-col ${tooltipAlignmentClass}`}
+                                                                style={{ transform: "translateY(-4px)" }}
                                                             >
-                                                                <div className="w-auto min-w-[180px] max-w-[min(75vw,500px)] max-h-[min(50vw,300px)] rounded-xl border border-slate-200 bg-white/95 p-4 text-left text-xs text-slate-600 shadow-2xl ring-1 ring-black/5">
-                                                                    <div className="mb-3 inline-flex items-center rounded-full bg-slate-900 px-2.5 py-0.5 text-[10px] font-semibold text-white shadow">
+                                                                <div className="w-[min(65vw,260px)] sm:w-[min(55vw,320px)] md:w-[min(45vw,380px)] rounded-xl border border-slate-200 bg-white/95 p-1.5 sm:p-2 md:p-2.5 lg:p-3 xl:max-w-[640px] xl:p-4 text-left text-[9px] sm:text-[9px] md:text-[10px] lg:text-[11px] xl:text-xs text-slate-600 shadow-2xl ring-1 ring-black/5 overflow-y-auto max-h-[35vh] sm:max-h-[40vh] md:max-h-[45vh] lg:max-h-[300px] xl:max-h-[340px]">
+                                                                    <div className="mb-1 inline-flex items-center rounded-full bg-slate-900 px-1 py-0.5 text-[8px] font-semibold text-white shadow sm:mb-1.5 sm:px-1.5 sm:text-[9px] md:text-[10px] lg:mb-2 lg:px-2 lg:text-[10px] xl:text-[11px]">
                                                                         {formatTime(
                                                                             marker.timeSec
                                                                         )}
                                                                     </div>
                                                                     {marker.safeContent ? (
                                                                         <div
-                                                                            className="note-marker-content whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-xs leading-relaxed text-slate-700"
+                                                                            className="note-marker-content whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-[9px] leading-relaxed text-slate-700 sm:text-[9px] md:text-[10px] lg:text-[11px] xl:text-xs"
                                                                             dangerouslySetInnerHTML={{
                                                                                 __html: marker.safeContent,
                                                                             }}
                                                                         />
                                                                     ) : (
-                                                                        <p className="text-sm italic text-slate-400">
+                                                                        <p className="text-[9px] italic text-slate-400 sm:text-[9px] md:text-[10px] lg:text-[11px] xl:text-xs">
                                                                             No
                                                                             content
                                                                         </p>
@@ -1006,7 +1038,7 @@ const WatchView = ({ onTitleChange }) => {
                                                                 </div>
                                                             </div>
                                                         ) : null}
-                                                    </button>
+                                                    </div>
                                                 </div>
                                             );
                                         })}
