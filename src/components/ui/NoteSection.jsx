@@ -4,7 +4,7 @@ import {
     getNotesByVideoId,
     createNote,
     updateNote,
-    deleteNote,
+    deleteNote
 } from "../../utils/firestore";
 import { auth } from "../..";
 import {
@@ -16,6 +16,8 @@ import {
     X,
     Sparkles,
     CircleCheck,
+    CircleX,
+    Download
 } from "lucide-react";
 import { ToastContainer } from "./Toast";
 import Editor from "./Editor";
@@ -24,6 +26,8 @@ import {
     hasMeaningfulText,
     sanitizeHtmlString,
 } from "../../utils/htmlHelpers";
+import Quill from "quill";
+import html2pdf from 'html2pdf.js';
 
 const MAX_NOTE_LENGTH = 500;
 let toastId = 0;
@@ -36,6 +40,7 @@ const formatTime = (sec) => {
 
 const NoteSection = ({
     videoId,
+    video,
     playerRef,
     onNotesChange = () => undefined,
     refreshTrigger = 0,
@@ -91,6 +96,72 @@ const NoteSection = ({
     useEffect(() => {
         onNotesChange(notes);
     }, [notes, onNotesChange]);
+
+    const handleDownload = async () => {
+        if (!notes || notes.length === 0) {
+            addToast("No notes available to download", CircleX, "text-red-400");
+            return;
+        }
+
+        // Create hidden Quill container
+        const container = document.createElement("div");
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+        document.body.appendChild(container);
+        
+        const quill = new Quill(container, { theme: 'snow' });
+
+        // Video Header (as Delta)
+        if (video) {
+            quill.insertText(0, `${video.title || "Untitled Video"}\n`, { bold: true, size: 'large' });
+            const currentLength = quill.getLength();
+            quill.insertText(currentLength, `Channel: ${video.channelTitle || "Unknown"}\n\n`);
+        }
+
+        // Notes section header
+        quill.insertText(quill.getLength(), "Notes:\n", { bold: true, size: 'large' });
+        quill.insertText(quill.getLength(), "\n");
+
+        const sortedNotes = [...notes].sort((a, b) => a.timeSec - b.timeSec);
+        
+        for (let i = 0; i < sortedNotes.length; i++) {
+            const note = sortedNotes[i];
+            
+            // Timestamp
+            const minutes = Math.floor(note.timeSec / 60);
+            const seconds = Math.floor(note.timeSec % 60).toString().padStart(2, "0");
+            
+            const currentLength = quill.getLength();
+            quill.insertText(currentLength, `${i + 1}. [${minutes}:${seconds}]\n`, { bold: true });
+            
+            // Insert note content as HTML using clipboard
+            const currentIndex = quill.getLength();
+            quill.clipboard.dangerouslyPasteHTML(currentIndex, note.content);
+            
+            // Add spacing after note
+            quill.insertText(quill.getLength(), "\n\n");
+        }
+
+        // Generate PDF from Quill's HTML
+        const safeTitle = video?.title?.replace(/[\\/:*?"<>|]/g, "") || "Study_Notes";
+        
+        const opt = {
+            margin: 16,
+            filename: `${safeTitle}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        try {
+            await html2pdf().set(opt).from(quill.root).save();
+        } finally {
+            // Cleanup
+            document.body.removeChild(container);
+        }
+        addToast("Notes successfully downloaded");
+        return;
+    };
 
     // Track current player time
     useEffect(() => {
@@ -214,6 +285,13 @@ const NoteSection = ({
                             </div>
                         </div>
                     </div>
+                    <button
+                        onClick={handleDownload}
+                        className="ml-auto flex h-10 min-w-[64px] items-center justify-center rounded-full bg-slate-900 px-2 text-xs font-semibold text-white shadow-sm hover:bg-slate-700 active:scale-90 transition"
+                    >
+                        <Download className="h-5 w-5 mr-2 text-white" />
+                        Download Notes
+                    </button>
                 </div>
 
                 {/* Input Section */}

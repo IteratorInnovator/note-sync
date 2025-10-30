@@ -1278,6 +1278,7 @@ const WatchView = ({ onTitleChange }) => {
 
             <NoteSection
                 videoId={videoId}
+                video={video}
                 playerRef={playerInstanceRef}
                 onNotesChange={handleNotesChange}
                 refreshTrigger={notesRefreshTrigger}
