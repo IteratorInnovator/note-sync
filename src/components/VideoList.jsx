@@ -60,10 +60,6 @@ const VideoList = ({
         []
     );
 
-    const handleAddToPlaylist = useCallback((videoId) => {
-        console.log("add to playlist", videoId);
-        setOpenMenuId(null);
-    }, []);
 
     return (
         <>
@@ -72,7 +68,7 @@ const VideoList = ({
                     <VideoCard
                         key={v.videoId}
                         videoId={v.videoId}
-                        thumbnail={v.thumbnail}
+                        thumbnailUrl={v.thumbnailUrl}
                         title={v.title}
                         channelTitle={v.channelTitle}
                         open={openMenuId === v.videoId}
@@ -84,10 +80,10 @@ const VideoList = ({
                                 v.videoId,
                                 v.title,
                                 v.channelTitle,
-                                v.thumbnail
+                                v.thumbnailUrl
                             )
                         }
-                        onAddToPlaylist={() => handleAddToPlaylist(v.videoId)}
+                
                     />
                 ))}
             </ul>

@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import SavedVideoCard from "../components/ui/SavedVideoCard";
 import { ToastContainer } from "./ui/Toast";
-import { removeVideo, hasNotes, addVideoToPlaylist } from "../utils/firestore";
+import { removeVideo, hasNotes, addVideosToPlaylist } from "../utils/firestore";
 import { auth } from "..";
 import { CircleCheck, CircleX } from "lucide-react";
 import { Button } from "./ui/button";
@@ -41,21 +41,24 @@ const PlaylistSelectDialog = ({ open, playlists, onSelect, onCancel }) => {
                 <h2 className="text-lg font-semibold">Add to Playlist</h2>
                 {playlists.length === 0 ? (
                     <p className="text-sm text-gray-500">
-                        You don’t have any playlists yet.
+                        You don't have any playlists yet.
                     </p>
                 ) : (
                     <ul className="space-y-2 max-h-48 overflow-y-auto">
-                        {playlists.map((p) => (
-                            <li key={p.id}>
-                                <Button
-                                    className="w-full justify-start"
-                                    variant="outline"
-                                    onClick={() => onSelect(p.id)}
-                                >
-                                    {p.name}
-                                </Button>
-                            </li>
-                        ))}
+                        {playlists.map((p) => {
+                            const playlistId = p.id ?? p.playlistId;
+                            return (
+                                <li key={playlistId}>
+                                    <Button
+                                        className="w-full justify-start"
+                                        variant="outline"
+                                        onClick={() => onSelect(playlistId)}
+                                    >
+                                        {p.name}
+                                    </Button>
+                                </li>
+                            );
+                        })}
                     </ul>
                 )}
                 <div className="flex justify-end gap-2 mt-2">
@@ -160,7 +163,7 @@ const SavedVideoList = ({
     const handlePlaylistSelect = async (playlistId) => {
         try {
             const uid = auth.currentUser.uid;
-            await addVideoToPlaylist(uid, playlistId, playlistDialogVideo);
+            await addVideosToPlaylist(uid, playlistId, [playlistDialogVideo]);
             addToast("Added to playlist", CircleCheck, "text-emerald-400");
         } catch {
             addToast("Failed to add to playlist", CircleX, "text-red-400");

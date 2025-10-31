@@ -1,11 +1,10 @@
 import { Plus } from "lucide-react";
 
-const PlusButton = ({ onSave, onAddToPlaylist }) => {
+const PlusButton = ({ onSave }) => {
   const handleClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
     onSave?.();
-    onAddToPlaylist?.();
   };
 
   return (
