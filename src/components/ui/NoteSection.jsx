@@ -194,7 +194,7 @@ const NoteSection = ({
 
     return (
         <>
-            <div className="mt-6 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 p-6 shadow-lg border border-blue-100">
+            <div className=" rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 p-6 shadow-lg border border-blue-100">
                 {/* Header */}
                 <div className="mb-6 flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-md">
