@@ -5,20 +5,21 @@ import ViewControls from "../components/ui/ViewControls";
 import SavedVideoList from "../components/SavedVideoList";
 import { useNavigate } from "react-router-dom";
 
-// Utility to highlight search matches
+
 const highlightMatch = (text, query) => {
-    if (!query) return text;
-    const regex = new RegExp(`(${query})`, "gi");
-    return text.split(regex).map((part, idx) =>
-        regex.test(part) ? (
-            <span key={idx} className="bg-yellow-200">
-                {part}
-            </span>
-        ) : (
-            part
-        )
-    );
+  if (!query) return text;
+  const regex = new RegExp(`(${query})`, "gi");
+  return text.split(regex).map((part, idx) =>
+    regex.test(part) ? (
+      <span key={idx} className="bg-yellow-200">
+        {part}
+      </span>
+    ) : (
+      part
+    )
+  );
 };
+
 
 const MyPlaylistView = () => {
     const [videos, setVideos] = useState([]);
@@ -59,7 +60,10 @@ const MyPlaylistView = () => {
     // Save playlists to localStorage
     const savePlaylistsToStorage = (playlists) => {
         if (user) {
-            localStorage.setItem(`playlists_${user.uid}`, JSON.stringify(playlists));
+            localStorage.setItem(
+                `playlists_${user.uid}`,
+                JSON.stringify(playlists)
+            );
         }
     };
 
@@ -219,9 +223,13 @@ const MyPlaylistView = () => {
         return filteredVideos.slice().sort((a, b) => {
             switch (sortOption) {
                 case "recent":
-                    return (b.addedAt?.seconds || 0) - (a.addedAt?.seconds || 0);
+                    return (
+                        (b.addedAt?.seconds || 0) - (a.addedAt?.seconds || 0)
+                    );
                 case "earliest":
-                    return (a.addedAt?.seconds || 0) - (b.addedAt?.seconds || 0);
+                    return (
+                        (a.addedAt?.seconds || 0) - (b.addedAt?.seconds || 0)
+                    );
                 case "title-asc":
                     return a.title.localeCompare(b.title);
                 case "title-desc":
@@ -232,11 +240,14 @@ const MyPlaylistView = () => {
         });
     }, [filteredVideos, sortOption]);
 
-
     // Grouped videos
     const groupedVideos = useMemo(() => {
         return sortedVideos.reduce((acc, video) => {
-            const key = (video.category || video.channelTitle || "Uncategorized").trim();
+            const key = (
+                video.category ||
+                video.channelTitle ||
+                "Uncategorized"
+            ).trim();
             if (!acc[key]) acc[key] = [];
             acc[key].push(video);
             return acc;
@@ -246,9 +257,10 @@ const MyPlaylistView = () => {
     const getPlaylistVideos = (playlistId) => {
         const playlist = customPlaylists[playlistId];
         if (!playlist) return [];
-        return sortedVideos.filter((v) => playlist.videoIds.includes(v.videoId));
+        return sortedVideos.filter((v) =>
+            playlist.videoIds.includes(v.videoId)
+        );
     };
-
 
     const hasVideos = videos.length > 0;
     const hasResults = sortedVideos.length > 0;
@@ -265,15 +277,20 @@ const MyPlaylistView = () => {
                     <div className="mb-8">
                         <div className="flex items-center gap-3 mb-4 flex-wrap">
                             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-                                {videos.length} {videos.length === 1 ? "video" : "videos"}
+                                {videos.length}{" "}
+                                {videos.length === 1 ? "video" : "videos"}
                             </span>
                             {searchQuery && hasResults && (
                                 <span className="text-sm text-gray-600">
-                                    {sortedVideos.length} result{sortedVideos.length !== 1 ? "s" : ""} found
+                                    {sortedVideos.length} result
+                                    {sortedVideos.length !== 1 ? "s" : ""} found
                                 </span>
                             )}
                             <span className="text-sm text-gray-600">
-                                • {Object.keys(customPlaylists).length} custom {Object.keys(customPlaylists).length === 1 ? "playlist" : "playlists"}
+                                • {Object.keys(customPlaylists).length} custom{" "}
+                                {Object.keys(customPlaylists).length === 1
+                                    ? "playlist"
+                                    : "playlists"}
                             </span>
                         </div>
 
@@ -291,12 +308,15 @@ const MyPlaylistView = () => {
                                         setSelectionMode(!selectionMode);
                                         setSelectedVideos(new Set());
                                     }}
-                                    className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${selectionMode
-                                        ? "bg-gray-600 text-white hover:bg-gray-700"
-                                        : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                                        }`}
+                                    className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+                                        selectionMode
+                                            ? "bg-gray-600 text-white hover:bg-gray-700"
+                                            : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                                    }`}
                                 >
-                                    {selectionMode ? "Cancel Selection" : "Select Videos"}
+                                    {selectionMode
+                                        ? "Cancel Selection"
+                                        : "Select Videos"}
                                 </button>
                             )}
                             {selectionMode && selectedVideos.size > 0 && (
@@ -333,7 +353,9 @@ const MyPlaylistView = () => {
                 {showCreatePlaylist && (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
                         <div className="bg-white rounded-xl p-6 max-w-md w-full">
-                            <h3 className="text-xl font-bold mb-4">Create New Playlist</h3>
+                            <h3 className="text-xl font-bold mb-4">
+                                Create New Playlist
+                            </h3>
                             <input
                                 type="text"
                                 value={newPlaylistName}
@@ -342,14 +364,21 @@ const MyPlaylistView = () => {
                                     if (playlistError) setPlaylistError("");
                                 }}
                                 placeholder="Enter playlist name..."
-                                className={`w-full px-4 py-2 mb-2 rounded-lg focus:outline-none focus:ring-2 ${playlistError
-                                    ? "border-red-500 ring-red-300"
-                                    : "border-gray-300 focus:ring-purple-500"
-                                    }`}
-                                onKeyPress={(e) => e.key === "Enter" && handleCreatePlaylist()}
+                                className={`w-full px-4 py-2 mb-2 rounded-lg focus:outline-none focus:ring-2 ${
+                                    playlistError
+                                        ? "border-red-500 ring-red-300"
+                                        : "border-gray-300 focus:ring-purple-500"
+                                }`}
+                                onKeyPress={(e) =>
+                                    e.key === "Enter" && handleCreatePlaylist()
+                                }
                                 autoFocus
                             />
-                            {playlistError && <p className="text-sm text-red-600 mb-2">{playlistError}</p>}
+                            {playlistError && (
+                                <p className="text-sm text-red-600 mb-2">
+                                    {playlistError}
+                                </p>
+                            )}
                             <div className="flex gap-2 justify-end">
                                 <button
                                     onClick={() => {
@@ -377,23 +406,36 @@ const MyPlaylistView = () => {
                 {showAddToPlaylist && (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                         <div className="bg-white rounded-xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto">
-                            <h3 className="text-xl font-bold mb-4">Add to Playlist</h3>
+                            <h3 className="text-xl font-bold mb-4">
+                                Add to Playlist
+                            </h3>
                             {Object.keys(customPlaylists).length === 0 ? (
-                                <p className="text-gray-600 mb-4">No playlists yet. Create one first!</p>
+                                <p className="text-gray-600 mb-4">
+                                    No playlists yet. Create one first!
+                                </p>
                             ) : (
                                 <div className="space-y-2 mb-4">
-                                    {Object.values(customPlaylists).map((playlist) => (
-                                        <button
-                                            key={playlist.id}
-                                            onClick={() => handleAddToPlaylist(playlist.id)}
-                                            className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
-                                        >
-                                            <div className="font-medium">{playlist.name}</div>
-                                            <div className="text-sm text-gray-500">
-                                                {playlist.videoIds.length} videos
-                                            </div>
-                                        </button>
-                                    ))}
+                                    {Object.values(customPlaylists).map(
+                                        (playlist) => (
+                                            <button
+                                                key={playlist.id}
+                                                onClick={() =>
+                                                    handleAddToPlaylist(
+                                                        playlist.id
+                                                    )
+                                                }
+                                                className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+                                            >
+                                                <div className="font-medium">
+                                                    {playlist.name}
+                                                </div>
+                                                <div className="text-sm text-gray-500">
+                                                    {playlist.videoIds.length}{" "}
+                                                    videos
+                                                </div>
+                                            </button>
+                                        )
+                                    )}
                                 </div>
                             )}
                             <button
@@ -490,202 +532,359 @@ const MyPlaylistView = () => {
                 )}
 
                 {/* Custom Playlists Section */}
-                {!loading && user && Object.keys(customPlaylists).length > 0 && (
-                    <div className="mb-10">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-6">My Custom Playlists</h2>
-                        <div className="space-y-8">
-                            {Object.values(customPlaylists).map((playlist) => {
-                                const playlistVideos = getPlaylistVideos(playlist.id);
-                                return (
-                                    <div key={playlist.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                                        {/* Playlist Header */}
-                                        <div className="flex items-center justify-between mb-4">
-                                            {editingPlaylistId === playlist.id ? (
-                                                <input
-                                                    type="text"
-                                                    value={editingPlaylistName}
-                                                    onChange={(e) => setEditingPlaylistName(e.target.value)}
-                                                    onKeyPress={(e) => e.key === "Enter" && handleRenamePlaylist(playlist.id)}
-                                                    className="text-xl font-bold px-2 py-1 border border-purple-500 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                                    autoFocus
-                                                />
-                                            ) : (
-                                                <div className="flex items-center gap-3">
-                                                    <h3 className="text-xl font-bold text-gray-900">{playlist.name}</h3>
-                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
-                                                        {playlistVideos.length}
-                                                    </span>
+                {!loading &&
+                    user &&
+                    Object.keys(customPlaylists).length > 0 && (
+                        <div className="mb-10">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                                My Custom Playlists
+                            </h2>
+                            <div className="space-y-8">
+                                {Object.values(customPlaylists).map(
+                                    (playlist) => {
+                                        const playlistVideos =
+                                            getPlaylistVideos(playlist.id);
+                                        return (
+                                            <div
+                                                key={playlist.id}
+                                                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                                            >
+                                                {/* Playlist Header */}
+                                                <div className="flex items-center justify-between mb-4">
+                                                    {editingPlaylistId ===
+                                                    playlist.id ? (
+                                                        <input
+                                                            type="text"
+                                                            value={
+                                                                editingPlaylistName
+                                                            }
+                                                            onChange={(e) =>
+                                                                setEditingPlaylistName(
+                                                                    e.target
+                                                                        .value
+                                                                )
+                                                            }
+                                                            onKeyPress={(e) =>
+                                                                e.key ===
+                                                                    "Enter" &&
+                                                                handleRenamePlaylist(
+                                                                    playlist.id
+                                                                )
+                                                            }
+                                                            className="text-xl font-bold px-2 py-1 border border-purple-500 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                                            autoFocus
+                                                        />
+                                                    ) : (
+                                                        <div className="flex items-center gap-3">
+                                                            <h3 className="text-xl font-bold text-gray-900">
+                                                                {playlist.name}
+                                                            </h3>
+                                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                                                                {
+                                                                    playlistVideos.length
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex gap-2">
+                                                        {editingPlaylistId ===
+                                                        playlist.id ? (
+                                                            <>
+                                                                <button
+                                                                    onClick={() =>
+                                                                        handleRenamePlaylist(
+                                                                            playlist.id
+                                                                        )
+                                                                    }
+                                                                    className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                                                    title="Save"
+                                                                >
+                                                                    <svg
+                                                                        className="w-5 h-5"
+                                                                        fill="none"
+                                                                        stroke="currentColor"
+                                                                        viewBox="0 0 24 24"
+                                                                    >
+                                                                        <path
+                                                                            strokeLinecap="round"
+                                                                            strokeLinejoin="round"
+                                                                            strokeWidth={
+                                                                                2
+                                                                            }
+                                                                            d="M5 13l4 4L19 7"
+                                                                        />
+                                                                    </svg>
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setEditingPlaylistId(
+                                                                            null
+                                                                        );
+                                                                        setEditingPlaylistName(
+                                                                            ""
+                                                                        );
+                                                                    }}
+                                                                    className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                                                                    title="Cancel"
+                                                                >
+                                                                    <svg
+                                                                        className="w-5 h-5"
+                                                                        fill="none"
+                                                                        stroke="currentColor"
+                                                                        viewBox="0 0 24 24"
+                                                                    >
+                                                                        <path
+                                                                            strokeLinecap="round"
+                                                                            strokeLinejoin="round"
+                                                                            strokeWidth={
+                                                                                2
+                                                                            }
+                                                                            d="M6 18L18 6M6 6l12 12"
+                                                                        />
+                                                                    </svg>
+                                                                </button>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setEditingPlaylistId(
+                                                                            playlist.id
+                                                                        );
+                                                                        setEditingPlaylistName(
+                                                                            playlist.name
+                                                                        );
+                                                                    }}
+                                                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                                    title="Rename"
+                                                                >
+                                                                    <svg
+                                                                        className="w-5 h-5"
+                                                                        fill="none"
+                                                                        stroke="currentColor"
+                                                                        viewBox="0 0 24 24"
+                                                                    >
+                                                                        <path
+                                                                            strokeLinecap="round"
+                                                                            strokeLinejoin="round"
+                                                                            strokeWidth={
+                                                                                2
+                                                                            }
+                                                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                                                        />
+                                                                    </svg>
+                                                                </button>
+                                                                <button
+                                                                    onClick={() =>
+                                                                        handleDeletePlaylist(
+                                                                            playlist.id
+                                                                        )
+                                                                    }
+                                                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                                    title="Delete"
+                                                                >
+                                                                    <svg
+                                                                        className="w-5 h-5"
+                                                                        fill="none"
+                                                                        stroke="currentColor"
+                                                                        viewBox="0 0 24 24"
+                                                                    >
+                                                                        <path
+                                                                            strokeLinecap="round"
+                                                                            strokeLinejoin="round"
+                                                                            strokeWidth={
+                                                                                2
+                                                                            }
+                                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                                        />
+                                                                    </svg>
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            )}
-                                            <div className="flex gap-2">
-                                                {editingPlaylistId === playlist.id ? (
-                                                    <>
-                                                        <button
-                                                            onClick={() => handleRenamePlaylist(playlist.id)}
-                                                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                                                            title="Save"
-                                                        >
-                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                                            </svg>
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                setEditingPlaylistId(null);
-                                                                setEditingPlaylistName("");
-                                                            }}
-                                                            className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
-                                                            title="Cancel"
-                                                        >
-                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                            </svg>
-                                                        </button>
-                                                    </>
+
+                                                {/* Playlist Videos */}
+                                                {playlistVideos.length > 0 ? (
+                                                    <SavedVideoList
+                                                        videoList={
+                                                            playlistVideos
+                                                        }
+                                                        gridClassName={
+                                                            gridColumnsClass
+                                                        }
+                                                        highlightFunc={(text) =>
+                                                            highlightMatch(
+                                                                text,
+                                                                searchQuery
+                                                            )
+                                                        }
+                                                        onRemoveSuccess={(
+                                                            removedId
+                                                        ) => {
+                                                            setVideos((prev) =>
+                                                                prev.filter(
+                                                                    (video) =>
+                                                                        video.videoId !==
+                                                                        removedId
+                                                                )
+                                                            );
+                                                            handleRemoveFromPlaylist(
+                                                                playlist.id,
+                                                                removedId
+                                                            );
+                                                        }}
+                                                        enableSelection={true}
+                                                        showPlaylistRemove={
+                                                            true
+                                                        }
+                                                        onPlaylistRemove={(
+                                                            videoId
+                                                        ) =>
+                                                            handleRemoveFromPlaylist(
+                                                                playlist.id,
+                                                                videoId
+                                                            )
+                                                        }
+                                                    />
                                                 ) : (
-                                                    <>
-                                                        <button
-                                                            onClick={() => {
-                                                                setEditingPlaylistId(playlist.id);
-                                                                setEditingPlaylistName(playlist.name);
-                                                            }}
-                                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                            title="Rename"
-                                                        >
-                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                            </svg>
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeletePlaylist(playlist.id)}
-                                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                            title="Delete"
-                                                        >
-                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                            </svg>
-                                                        </button>
-                                                    </>
+                                                    <div className="text-center py-8 text-gray-500">
+                                                        No videos in this
+                                                        playlist yet
+                                                    </div>
                                                 )}
                                             </div>
-                                        </div>
-
-                                        {/* Playlist Videos */}
-                                        {playlistVideos.length > 0 ? (
-                                            <SavedVideoList
-                                                videoList={playlistVideos}
-                                                gridClassName={gridColumnsClass}
-                                                highlightFunc={(text) => highlightMatch(text, searchQuery)}
-                                                onRemoveSuccess={(removedId) => {
-                                                    setVideos((prev) => prev.filter((video) => video.videoId !== removedId));
-                                                    handleRemoveFromPlaylist(playlist.id, removedId);
-                                                }}
-                                                enableSelection={true}
-                                                showPlaylistRemove={true}
-                                                onPlaylistRemove={(videoId) => handleRemoveFromPlaylist(playlist.id, videoId)}
-                                            />
-                                        ) : (
-                                            <div className="text-center py-8 text-gray-500">
-                                                No videos in this playlist yet
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
+                                        );
+                                    }
+                                )}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
                 {/* Grouped Videos (Original Categories) */}
                 {!loading && user && hasResults && (
                     <div className="space-y-10">
-                        <h2 className="text-2xl font-bold text-gray-900">All Videos</h2>
-                        {Object.entries(groupedVideos).map(([category, vids]) => (
-                            <div key={category} className="animate-fadeIn">
-                                {/* Category Header */}
-                                <div className="mb-6">
-                                    <div className="flex items-center gap-3">
-                                        <h3 className="text-xl font-bold text-gray-900">{category}</h3>
-                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                                            {vids.length}
-                                        </span>
+                        <h2 className="text-2xl font-bold text-gray-900">
+                            All Videos
+                        </h2>
+                        {Object.entries(groupedVideos).map(
+                            ([category, vids]) => (
+                                <div key={category} className="animate-fadeIn">
+                                    {/* Category Header */}
+                                    <div className="mb-6">
+                                        <div className="flex items-center gap-3">
+                                            <h3 className="text-xl font-bold text-gray-900">
+                                                {category}
+                                            </h3>
+                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                                {vids.length}
+                                            </span>
+                                        </div>
+                                        <div className="mt-2 h-1 w-20 bg-gradient-to-r from-purple-500 to-purple-300 rounded-full"></div>
                                     </div>
-                                    <div className="mt-2 h-1 w-20 bg-gradient-to-r from-purple-500 to-purple-300 rounded-full"></div>
-                                </div>
 
-                                {/* Videos Grid */}
-                                {selectionMode ? (
-                                    <div className={`grid ${gridColumnsClass} gap-4`}>
-                                        {vids.map((video) => (
-                                            <div
-                                                key={video.videoId}
-                                                onClick={() => toggleVideoSelection(video.videoId)}
-                                                className={`relative cursor-pointer rounded-xl overflow-hidden border-2 transition-all duration-200 ${selectedVideos.has(video.videoId)
-                                                    ? "border-purple-500 ring-2 ring-purple-300"
-                                                    : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
+                                    {/* Videos Grid */}
+                                    {selectionMode ? (
+                                        <div
+                                            className={`grid ${gridColumnsClass}`}
+                                        >
+                                            {vids.map((video) => (
+                                                <div
+                                                    key={video.videoId}
+                                                    onClick={() =>
+                                                        toggleVideoSelection(
+                                                            video.videoId
+                                                        )
+                                                    }
+                                                    className={`relative cursor-pointer rounded-xl overflow-hidden border-2 transition-all duration-200 ${
+                                                        selectedVideos.has(
+                                                            video.videoId
+                                                        )
+                                                            ? "border-purple-500 ring-2 ring-purple-300"
+                                                            : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
                                                     }`}
-                                            >
-                                                {/* Thumbnail */}
-                                                <div className="relative w-full aspect-video overflow-hidden bg-gray-100">
-                                                    <img
-                                                        src={
-                                                            video.thumbnail ||
-                                                            video.thumbnailUrl ||
-                                                            `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`
-                                                        }
-                                                        alt={video.title}
-                                                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
-                                                        onError={(e) => {
-                                                            e.target.src = `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
-                                                        }}
-                                                    />
+                                                >
+                                                    {/* Thumbnail */}
+                                                    <div className="relative w-full aspect-video overflow-hidden bg-gray-100">
+                                                        <img
+                                                            src={
+                                                                video.thumbnailUrl
+                                                            }
+                                                            alt={video.title}
+                                                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                                                            onError={(e) => {
+                                                                e.target.src = `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
+                                                            }}
+                                                        />
 
-                                                    {/* Circular tick icon overlay (only when selected) */}
-                                                    {selectedVideos.has(video.videoId) && (
-                                                        <div className="absolute top-3 right-3 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center shadow-lg">
-                                                            <svg
-                                                                className="w-5 h-5 text-white"
-                                                                fill="none"
-                                                                stroke="currentColor"
-                                                                strokeWidth={2.5}
-                                                                viewBox="0 0 24 24"
-                                                            >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    d="M5 13l4 4L19 7"
-                                                                />
-                                                            </svg>
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                        {/* Circular tick icon overlay (only when selected) */}
+                                                        {selectedVideos.has(
+                                                            video.videoId
+                                                        ) && (
+                                                            <div className="absolute top-3 right-3 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                                                                <svg
+                                                                    className="w-5 h-5 text-white"
+                                                                    fill="none"
+                                                                    stroke="currentColor"
+                                                                    strokeWidth={
+                                                                        2.5
+                                                                    }
+                                                                    viewBox="0 0 24 24"
+                                                                >
+                                                                    <path
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                        d="M5 13l4 4L19 7"
+                                                                    />
+                                                                </svg>
+                                                            </div>
+                                                        )}
+                                                    </div>
 
-                                                {/* Video info */}
-                                                <div className="p-3">
-                                                    <h4 className="font-medium text-sm line-clamp-2 text-gray-900">
-                                                        {video.title}
-                                                    </h4>
-                                                    <p className="text-xs text-gray-500 mt-1">
-                                                        {video.channelTitle}
-                                                    </p>
+                                                    {/* Video info */}
+                                                    <div className="p-4">
+                                                        <h3 className="line-clamp-2 truncate text-xs font-semibold md:text-sm">
+                                                            {highlightMatch
+                                                                ? highlightMatch(
+                                                                      video.title, searchQuery
+                                                                  )
+                                                                : video.title}
+                                                        </h3>
+                                                        <p className="mt-1 truncate text-[10px] text-slate-600">
+                                                            {highlightMatch
+                                                                ? highlightMatch(
+                                                                      video.channelTitle, searchQuery
+                                                                  )
+                                                                : video.channelTitle}
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <SavedVideoList
-                                        videoList={vids}
-                                        gridClassName={gridColumnsClass}
-                                        highlightFunc={(text) => highlightMatch(text, searchQuery)}
-                                        onRemoveSuccess={(removedId) =>
-                                            setVideos((prev) =>
-                                                prev.filter((v) => v.videoId !== removedId)
-                                            )
-                                        }
-                                    />
-                                )}
-                            </div>
-                        ))}
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <SavedVideoList
+                                            videoList={vids}
+                                            gridClassName={gridColumnsClass}
+                                            highlightFunc={(text) =>
+                                                highlightMatch(
+                                                    text,
+                                                    searchQuery
+                                                )
+                                            }
+                                            onRemoveSuccess={(removedId) =>
+                                                setVideos((prev) =>
+                                                    prev.filter(
+                                                        (v) =>
+                                                            v.videoId !==
+                                                            removedId
+                                                    )
+                                                )
+                                            }
+                                        />
+                                    )}
+                                </div>
+                            )
+                        )}
 
                         {/* Delete Playlist Modal */}
                         {showConfirmDelete && (
@@ -695,7 +894,8 @@ const MyPlaylistView = () => {
                                         Delete Playlist?
                                     </h3>
                                     <p className="text-gray-600 mb-6 text-sm">
-                                        This action cannot be undone. Are you sure you want to delete this playlist?
+                                        This action cannot be undone. Are you
+                                        sure you want to delete this playlist?
                                     </p>
                                     <div className="flex justify-center gap-3">
                                         <button
@@ -715,9 +915,10 @@ const MyPlaylistView = () => {
                             </div>
                         )}
                     </div>
-                )}</div>
-        </div>);
+                )}
+            </div>
+        </div>
+    );
 };
 
 export default MyPlaylistView;
-
