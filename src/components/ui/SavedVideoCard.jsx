@@ -7,10 +7,7 @@ const SavedVideoCard = ({
     thumbnail,
     title,
     channelTitle,
-    open,
-    onOpenChange,
     onRemove,
-    onAddToPlaylist,
     highlightFunc,
 }) => {
     return (
@@ -55,12 +52,7 @@ const SavedVideoCard = ({
               sm:opacity-0 sm:scale-95 group-hover:opacity-100 group-hover:scale-100
             "
                     >
-                        <RemoveButton
-                            open={open}
-                            onOpenChange={onOpenChange}
-                            onRemove={() => onRemove(videoId)}
-                            onAddToPlaylist={() => onAddToPlaylist(videoId)}
-                        />
+                        <RemoveButton onRemove={() => onRemove(videoId)} />
                     </div>
                 </div>
 

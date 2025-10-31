@@ -185,12 +185,7 @@ const SavedVideoList = ({
                         title={v.title}
                         channelTitle={v.channelTitle}
                         highlightFunc={highlightFunc}
-                        open={openMenuId === v.videoId}
-                        onOpenChange={(isOpen) =>
-                            handleOpenChange(v.videoId, isOpen)
-                        }
                         onRemove={() => handleRemoveRequest(v.videoId)}
-                        onAddToPlaylist={() => handleAddToPlaylist(v.videoId)}
                         isSelected={selectedVideos.has(v.videoId)}
                         onSelectToggle={toggleSelection}
                     />

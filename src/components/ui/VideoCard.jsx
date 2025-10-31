@@ -1,5 +1,6 @@
 import { Play, X } from "lucide-react";
 import PlusButton from "./PlusButton";
+import { Link } from "react-router-dom";
 
 const VideoCard = ({
     videoId,
@@ -9,14 +10,19 @@ const VideoCard = ({
     onSave,
     onAddToPlaylist,
 }) => {
-    const href = `https://www.youtube.com/watch?v=${videoId}`;
 
     return (
         <li className="relative group">
-            <a
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
+            <Link
+                to={`/watch/${videoId}`}
+                state={{
+                    video: {
+                        videoId,
+                        thumbnailUrl: thumbnail,
+                        title,
+                        channelTitle,
+                    },
+                }}
                 className="block transform overflow-hidden rounded-xl border border-slate-200 bg-white cursor-pointer transition-transform duration-300 ease-out group-hover:shadow-lg group-hover:scale-[1.02] hover:shadow-lg hover:scale-[1.02]"
             >
                 <div className="relative aspect-video bg-slate-100">
@@ -64,7 +70,7 @@ const VideoCard = ({
                         {channelTitle}
                     </p>
                 </div>
-            </a>
+            </Link>
         </li>
     );
 };
