@@ -56,22 +56,22 @@ export const addVideo = async (
     progressSec = 0,
     category
 ) => {
-    try {
-        const videoRef = doc(db, "users", uid, "videos", videoId);
-        await setDoc(videoRef, {
-            videoId,
-            title,
-            channelTitle,
-            thumbnailUrl,
-            progressSec,
-            category: (category || channelTitle || "Uncategorized").trim(),
-            addedAt: serverTimestamp(),
-        });
-        console.log("Video added successfully");
-    } catch (error) {
-        console.error("Error adding video:", error);
-        throw error;
+    const videoRef = doc(db, "users", uid, "videos", videoId);
+
+    const snap = await getDoc(videoRef);
+    if (snap.exists()) {
+        throw new VideoAlreadySavedError();
     }
+    
+    await setDoc(videoRef, {
+        videoId,
+        title,
+        channelTitle,
+        thumbnailUrl,
+        progressSec,
+        category: (category || channelTitle || "Uncategorized").trim(),
+        addedAt: serverTimestamp(),
+    });
 };
 
 export const removeVideo = async (uid, videoId) => {
@@ -183,3 +183,17 @@ export const createPlaylist = async (uid, title, description = "") =>
 
 export const deletePlaylist = async (uid, playlistId) =>
     await deleteDoc(doc(db, "users", uid, "playlists", playlistId));
+
+export const addVideoToPlaylist = async (uid, playlistId, videoId) => {
+    const db = getFirestore();
+    const playlistRef = doc(db, "users", uid, "playlists", playlistId);
+    const playlistSnap = await getDoc(playlistRef);
+
+    if (!playlistSnap.exists()) throw new Error("Playlist not found");
+
+    const playlistData = playlistSnap.data();
+    const videos = playlistData.videos || [];
+    if (!videos.includes(videoId)) videos.push(videoId);
+
+    await updateDoc(playlistRef, { videos });
+};

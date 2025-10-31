@@ -6,20 +6,21 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../";
 import ViewControls from "../components/ui/ViewControls";
 
-// Utility to highlight search matches
+
 const highlightMatch = (text, query) => {
-    if (!query) return text;
-    const regex = new RegExp(`(${query})`, "gi");
-    return text.split(regex).map((part, idx) =>
-        regex.test(part) ? (
-            <span key={idx} className="bg-yellow-200">
-                {part}
-            </span>
-        ) : (
-            part
-        )
-    );
+  if (!query) return text;
+  const regex = new RegExp(`(${query})`, "gi");
+  return text.split(regex).map((part, idx) =>
+    regex.test(part) ? (
+      <span key={idx} className="bg-yellow-200">
+        {part}
+      </span>
+    ) : (
+      part
+    )
+  );
 };
+
 
 const MyVideosView = () => {
     const [videoList, setVideoList] = useState([]);

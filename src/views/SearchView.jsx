@@ -36,7 +36,7 @@ const SearchView = ({
         : "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3";
 
     return (
-        <div className="rounded-lg max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen space-y-6">
+        <div className="rounded-lg max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 min-h-screen space-y-6">
             <Searchbar
                 value={searchTerm}
                 onChange={onSearchTermChange}
