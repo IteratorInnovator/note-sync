@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
 
-const RemoveButton = ({ onRemove }) => {
+const RemoveButton = ({ onRemove, ariaLabel = "Remove from My Videos" }) => {
   const handleClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -19,7 +19,7 @@ const RemoveButton = ({ onRemove }) => {
     >
       <button
         type="button"
-        aria-label="Remove from My Videos"
+        aria-label={ariaLabel}
         onClick={handleClick}
         className="rounded-full p-1.5 text-white bg-black/50 hover:bg-black/70 transform transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
       >

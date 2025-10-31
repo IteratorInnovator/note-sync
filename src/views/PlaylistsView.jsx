@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import {
     getUserVideosAndPlaylists,
     removeVideoIdsFromPlaylist,
@@ -33,7 +33,7 @@ const MyPlaylistView = () => {
     const [isCondensedLayout, setIsCondensedLayout] = useState(false);
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
-    const [firestorePlaylists, setFirestorePlaylists] = useState([]);
+    const [playlists, setPlaylists] = useState([]);
 
     const [showCreatePlaylist, setShowCreatePlaylist] = useState(false);
     const [newPlaylistName, setNewPlaylistName] = useState("");
@@ -94,7 +94,7 @@ const MyPlaylistView = () => {
                 uid
             );
             setVideos(videos);
-            setFirestorePlaylists(playlists);
+            setPlaylists(playlists);
         },
         [fetchUserData]
     );
@@ -109,7 +109,7 @@ const MyPlaylistView = () => {
 
             if (!u) {
                 setVideos([]);
-                setFirestorePlaylists([]);
+                setPlaylists([]);
                 setLoading(false);
                 return;
             }
@@ -121,12 +121,12 @@ const MyPlaylistView = () => {
                 if (!active) return;
 
                 setVideos(libraryVideos);
-                setFirestorePlaylists(playlists);
+                setPlaylists(playlists);
             } catch (error) {
                 console.error("Failed to load videos/playlists:", error);
                 if (active) {
                     setVideos([]);
-                    setFirestorePlaylists([]);
+                    setPlaylists([]);
                 }
             } finally {
                 if (active) setLoading(false);
@@ -232,13 +232,26 @@ const MyPlaylistView = () => {
         if (!uid || !playlistId) return;
 
         try {
-            setLoading(true);
             await removeVideoIdsFromPlaylist(uid, playlistId, [videoId]);
-            await refreshData(uid);
+            setPlaylists((prev) =>
+                prev.map((playlist) => {
+                    if (playlist.playlistId !== playlistId) return playlist;
+                    const nextVideoIds = (playlist.videoIds || []).filter(
+                        (id) => id !== videoId
+                    );
+                    const nextVideos = (playlist.videos || []).filter(
+                        (video) => video.videoId !== videoId
+                    );
+                    return {
+                        ...playlist,
+                        videoIds: nextVideoIds,
+                        videos: nextVideos,
+                    };
+                })
+            );
         } catch (error) {
             console.error("Failed to remove video from playlist:", error);
-        } finally {
-            setLoading(false);
+            throw error;
         }
     };
 
@@ -307,7 +320,7 @@ const MyPlaylistView = () => {
         setVideos((prev) =>
             prev.filter((video) => video.videoId !== removedId)
         );
-        setFirestorePlaylists((prev) =>
+        setPlaylists((prev) =>
             prev.map((playlist) => ({
                 ...playlist,
                 videoIds: (playlist.videoIds || []).filter(
@@ -341,8 +354,8 @@ const MyPlaylistView = () => {
                                 </span>
                             )}
                             <span className="text-sm text-gray-600">
-                                • {firestorePlaylists.length}{" "}
-                                {firestorePlaylists.length === 1
+                                • {playlists.length}{" "}
+                                {playlists.length === 1
                                     ? "playlist"
                                     : "playlists"}
                             </span>
@@ -453,13 +466,13 @@ const MyPlaylistView = () => {
                             <h3 className="text-xl font-bold mb-4">
                                 Add to Playlist
                             </h3>
-                            {firestorePlaylists.length === 0 ? (
+                            {playlists.length === 0 ? (
                                 <p className="text-gray-600 mb-4">
                                     No playlists yet. Create one first!
                                 </p>
                             ) : (
                                 <div className="space-y-2 mb-4">
-                                    {firestorePlaylists.map((playlist) => (
+                                    {playlists.map((playlist) => (
                                         <button
                                             key={playlist.playlistId}
                                             onClick={() =>
@@ -573,13 +586,13 @@ const MyPlaylistView = () => {
                 )}
 
                 {/* My Playlists Section */}
-                {!loading && user && firestorePlaylists.length > 0 && (
+                {!loading && user && playlists.length > 0 && (
                     <div className="mb-10">
                         <h2 className="text-2xl font-bold text-gray-900 mb-6">
                             My Playlists
                         </h2>
                         <div className="space-y-8">
-                            {firestorePlaylists.map((playlist) => (
+                            {playlists.map((playlist) => (
                                 <div
                                     key={playlist.playlistId}
                                     className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
@@ -736,16 +749,7 @@ const MyPlaylistView = () => {
                                                     searchQuery
                                                 )
                                             }
-                                            playlists={firestorePlaylists}
-                                            onRemoveSuccess={(removedId) => {
-                                                handleVideoRemoved(removedId);
-                                                handleRemoveFromPlaylist(
-                                                    playlist.playlistId,
-                                                    removedId
-                                                );
-                                            }}
-                                            enableSelection={true}
-                                            showPlaylistRemove={true}
+                                            playlists={playlists}
                                             onPlaylistRemove={(videoId) =>
                                                 handleRemoveFromPlaylist(
                                                     playlist.playlistId,
@@ -880,7 +884,7 @@ const MyPlaylistView = () => {
                                                     searchQuery
                                                 )
                                             }
-                                            playlists={firestorePlaylists}
+                                            playlists={playlists}
                                             onRemoveSuccess={handleVideoRemoved}
                                         />
                                     )}

@@ -3,11 +3,11 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { auth } from "..";
 import NoteSection from "../components/ui/NoteSection";
 import Editor from "../components/ui/Editor";
-import { ToastContainer } from "../components/ui/Toast";
 import { createNote, getVideoById } from "../utils/firestore";
 import { hasMeaningfulText, sanitizeHtmlString } from "../utils/htmlHelpers";
 import {
     CircleCheck,
+    CircleX,
     Maximize2,
     Minimize2,
     Pause,
@@ -19,6 +19,7 @@ import {
     VolumeX,
     X,
 } from "lucide-react";
+import { useToasts } from "../stores/useToasts";
 
 let youtubeApiPromise = null;
 
@@ -96,7 +97,6 @@ const WatchView = ({ onTitleChange }) => {
     const [quickNoteTimestamp, setQuickNoteTimestamp] = useState(0);
     const [isSavingQuickNote, setIsSavingQuickNote] = useState(false);
     const [quickNoteError, setQuickNoteError] = useState("");
-    const [quickNoteToasts, setQuickNoteToasts] = useState([]);
     const PLAYBACK_RATES = [0.25, 0.5, 1, 1.25, 1.5, 1.75, 2];
     const [playbackRateIndex, setPlaybackRateIndex] = useState(
         PLAYBACK_RATES.indexOf(1)
@@ -112,7 +112,7 @@ const WatchView = ({ onTitleChange }) => {
     const manualControlsTimeoutRef = useRef(null);
     const skipNextClickRef = useRef(false);
     const isTouchDeviceRef = useRef(false);
-    const quickNoteToastIdRef = useRef(0);
+    const { addToast } = useToasts();
 
     const shouldInterceptOverlay = useMemo(
         () =>
@@ -126,25 +126,6 @@ const WatchView = ({ onTitleChange }) => {
         setNotes(Array.isArray(nextNotes) ? nextNotes : []);
     }, []);
 
-    const removeQuickNoteToast = useCallback((id) => {
-        setQuickNoteToasts((prev) => prev.filter((toast) => toast.id !== id));
-    }, []);
-
-    const addQuickNoteToast = useCallback(
-        (
-            message,
-            Icon = CircleCheck,
-            iconColour = "text-emerald-400",
-            duration = 3000
-        ) => {
-            const id = quickNoteToastIdRef.current++;
-            setQuickNoteToasts((prev) => [
-                ...prev,
-                { id, message, Icon, iconColour, duration },
-            ]);
-        },
-        []
-    );
 
     const handleOpenQuickNote = useCallback(() => {
         if (!isPlayerReady) return;
@@ -227,9 +208,17 @@ const WatchView = ({ onTitleChange }) => {
             setIsQuickNoteOpen(false);
             setQuickNoteContent("");
             setQuickNoteLength(0);
-            addQuickNoteToast("Note successfully created");
+            addToast({
+                message: "Note saved",
+                Icon: CircleCheck,
+                iconColour: "text-emerald-400",
+            })
         } catch {
-            setQuickNoteError("Could not save the note. Please try again.");
+            addToast({
+                message: "Failed to save note",
+                Icon: CircleX,
+                iconColour: "text-red-400",
+            })
         } finally {
             setIsSavingQuickNote(false);
             playerInstanceRef.current?.playVideo?.();
@@ -239,7 +228,7 @@ const WatchView = ({ onTitleChange }) => {
         quickNoteContent,
         quickNoteTimestamp,
         videoId,
-        addQuickNoteToast,
+        addToast,
         playerInstanceRef,
     ]);
 
@@ -1283,10 +1272,6 @@ const WatchView = ({ onTitleChange }) => {
                 refreshTrigger={notesRefreshTrigger}
             />
 
-            <ToastContainer
-                toasts={quickNoteToasts}
-                removeToast={removeQuickNoteToast}
-            />
 
             {isQuickNoteOpen && !isFullscreen ? (
                 <div

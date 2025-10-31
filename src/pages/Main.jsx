@@ -8,6 +8,8 @@ import SettingsView from "../views/SettingsView";
 import WatchView from "../views/WatchView";
 import { useIsMdUp } from "../utils/breakpoint";
 import PlaylistsView from "../views/PlaylistsView";
+import { useToasts } from "../stores/useToasts";
+import { ToastContainer } from "../components/ui/Toast";
 
 const VALID_PATHS = new Set(["videos", "search", "playlists", "settings", "watch"]);
 
@@ -18,6 +20,7 @@ export default function Main() {
     const [mobileOpen, setMobileOpen] = useState(false); // mobile
     const [searchTerm, setSearchTerm] = useState("");
     const [searchResults, setSearchResults] = useState([]);
+    const { toasts, removeToast } = useToasts();
     const sidebarW = collapsed ? "3.5rem" : "16rem";
 
     const sidebarVisible = useMemo(
@@ -84,6 +87,7 @@ export default function Main() {
                 />
                 <main className="p-4">{view}</main>
             </div>
+            <ToastContainer toasts={toasts} removeToast={removeToast} />
         </div>
     );
 }

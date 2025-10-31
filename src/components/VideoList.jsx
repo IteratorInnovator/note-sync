@@ -2,64 +2,52 @@ import { useState, useCallback } from "react";
 import VideoCard from "../components/ui/VideoCard";
 import { addVideo } from "../utils/firestore";
 import { auth } from "..";
-import { ToastContainer } from "./ui/Toast";
 import { VideoAlreadySavedError } from "../utils/errors";
 import { CircleCheck, CircleX, BadgeCheck } from "lucide-react";
-
-let toastId = 0;
+import { useToasts } from "../stores/useToasts";
 
 const VideoList = ({
     videoList,
     gridClassName = "grid-cols-2 md:grid-cols-3 lg:grid-cols-3",
 }) => {
     const [openMenuId, setOpenMenuId] = useState(null);
-    const [toasts, setToasts] = useState([]);
+    const { addToast } = useToasts();
 
     const handleOpenChange = useCallback(
         (id, isOpen) => setOpenMenuId(isOpen ? id : null),
         []
     );
 
-    const addToast = (
-        message,
-        Icon = null,
-        iconColour = "",
-        duration = 3000
-    ) => {
-        const id = toastId++;
-        setToasts((prev) => [
-            ...prev,
-            { id, message, Icon, iconColour, duration },
-        ]);
-    };
-
-    const removeToast = (id) => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
-    };
-
     const handleSave = useCallback(
         async (videoId, title, channelTitle, thumbnail) => {
             try {
                 const uid = auth.currentUser.uid;
                 await addVideo(uid, videoId, title, channelTitle, thumbnail);
-                addToast(`Added to My Videos`, CircleCheck, "text-emerald-400");
+                addToast({
+                    message: "Added to My Videos",
+                    Icon: CircleCheck,
+                    iconColour: "text-emerald-400",
+                });
             } catch (error) {
                 if (error instanceof VideoAlreadySavedError) {
-                    addToast(
-                        "Video has already been added",
-                        BadgeCheck,
-                        "text-emerald-400"
-                    );
+                    addToast({
+                        message: "Video already in My Videos",
+                        Icon: BadgeCheck,
+                        iconColour: "text-emerald-400",
+                    });
                 } else {
-                    addToast("Failed to save video", CircleX, "text-red-400");
+                    addToast({
+                        message: "Failed to add video",
+                        Icon: CircleX,
+                        iconColour: "text-red-400",
+                    });
                 }
             } finally {
                 setOpenMenuId(null);
             }
         },
-        []
+        [addToast]
     );
-
 
     return (
         <>
@@ -83,13 +71,9 @@ const VideoList = ({
                                 v.thumbnailUrl
                             )
                         }
-                
                     />
                 ))}
             </ul>
-
-            {/* Render toast container */}
-            <ToastContainer toasts={toasts} removeToast={removeToast} />
         </>
     );
 };

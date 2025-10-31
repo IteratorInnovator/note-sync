@@ -17,16 +17,15 @@ import {
     Sparkles,
     CircleCheck,
 } from "lucide-react";
-import { ToastContainer } from "./Toast";
 import Editor from "./Editor";
 import {
     getPlainTextLength,
     hasMeaningfulText,
     sanitizeHtmlString,
 } from "../../utils/htmlHelpers";
+import { useToasts } from "../../stores/useToasts";
 
 const MAX_NOTE_LENGTH = 500;
-let toastId = 0;
 
 const formatTime = (sec) => {
     const m = Math.floor(sec / 60);
@@ -57,7 +56,7 @@ const NoteSection = ({
     const [editedContentLength, setEditedContentLength] = useState(0);
     const editingHasContent = editedContentLength > 0;
 
-    const [toasts, setToasts] = useState([]);
+    const { addToast } = useToasts();
 
     // Fetch notes
     useEffect(() => {
@@ -102,19 +101,6 @@ const NoteSection = ({
         return () => clearInterval(id);
     }, [playerRef]);
 
-    const addToast = (
-        message,
-        Icon = CircleCheck,
-        iconColour = "text-emerald-400"
-    ) => {
-        const id = toastId++;
-        setToasts((prev) => [...prev, { id, message, Icon, iconColour }]);
-        setTimeout(() => removeToast(id), 3000);
-    };
-
-    const removeToast = (id) => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
-    };
 
     // Create a note
     const handleAddNote = async () => {
@@ -130,7 +116,11 @@ const NoteSection = ({
             { noteId: id, content: htmlContent, timeSec },
         ]);
         handleCancelNewNote();
-        addToast("Note successfully created");
+        addToast({
+            message: "Note saved",
+            Icon: CircleCheck,
+            iconColour: "text-emerald-400",
+        });
     };
 
     const handleCancelNewNote = () => {
@@ -145,7 +135,11 @@ const NoteSection = ({
         if (!uid) return;
         await deleteNote(uid, videoId, noteId);
         setNotes((prev) => prev.filter((n) => n.noteId !== noteId));
-        addToast("Note successfully deleted");
+        addToast({
+            message: "Note deleted",
+            Icon: CircleCheck,
+            iconColour: "text-emerald-400",
+        });
     };
 
     // Edit + save note
@@ -177,7 +171,11 @@ const NoteSection = ({
         setEditingId(null);
         setEditedContent("");
         setEditedContentLength(0);
-        addToast("Note updated", CircleCheck);
+        addToast({
+            message: "Note updated",
+            Icon: CircleCheck,
+            iconColour: "text-emerald-400",
+        });
     };
 
     const handleSeek = (sec) => {
@@ -410,8 +408,6 @@ const NoteSection = ({
                     </ul>
                 )}
             </div>
-
-            <ToastContainer toasts={toasts} removeToast={removeToast} />
         </>
     );
 };
