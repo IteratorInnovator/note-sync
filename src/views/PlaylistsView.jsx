@@ -5,21 +5,19 @@ import ViewControls from "../components/ui/ViewControls";
 import SavedVideoList from "../components/SavedVideoList";
 import { useNavigate } from "react-router-dom";
 
-
 const highlightMatch = (text, query) => {
-  if (!query) return text;
-  const regex = new RegExp(`(${query})`, "gi");
-  return text.split(regex).map((part, idx) =>
-    regex.test(part) ? (
-      <span key={idx} className="bg-yellow-200">
-        {part}
-      </span>
-    ) : (
-      part
-    )
-  );
+    if (!query) return text;
+    const regex = new RegExp(`(${query})`, "gi");
+    return text.split(regex).map((part, idx) =>
+        regex.test(part) ? (
+            <span key={idx} className="bg-yellow-200">
+                {part}
+            </span>
+        ) : (
+            part
+        )
+    );
 };
-
 
 const MyPlaylistView = () => {
     const [videos, setVideos] = useState([]);
@@ -33,7 +31,6 @@ const MyPlaylistView = () => {
     const [customPlaylists, setCustomPlaylists] = useState({});
     const [showCreatePlaylist, setShowCreatePlaylist] = useState(false);
     const [newPlaylistName, setNewPlaylistName] = useState("");
-    const [playlistError, setPlaylistError] = useState(""); // error state
     const [editingPlaylistId, setEditingPlaylistId] = useState(null);
     const [editingPlaylistName, setEditingPlaylistName] = useState("");
     const [selectedVideos, setSelectedVideos] = useState(new Set());
@@ -78,14 +75,10 @@ const MyPlaylistView = () => {
                 setLoading(false);
                 return;
             }
-            try {
-                const data = await getVideosByUserId(u.uid);
-                setVideos(data);
-            } catch (err) {
-                console.error("Failed to fetch videos:", err);
-            } finally {
-                setLoading(false);
-            }
+
+            const data = await getVideosByUserId(u.uid);
+            setVideos(data);
+            setLoading(false);
         });
 
         return () => {
@@ -98,14 +91,6 @@ const MyPlaylistView = () => {
     const handleCreatePlaylist = () => {
         const name = newPlaylistName.trim();
         if (!name) return;
-
-        const nameExists = Object.values(customPlaylists).some(
-            (pl) => pl.name.toLowerCase() === name.toLowerCase()
-        );
-        if (nameExists) {
-            setPlaylistError("A playlist with this name already exists.");
-            return;
-        }
 
         const playlistId = `playlist_${Date.now()}`;
         const newPlaylists = {
@@ -121,7 +106,6 @@ const MyPlaylistView = () => {
         setCustomPlaylists(newPlaylists);
         savePlaylistsToStorage(newPlaylists);
         setNewPlaylistName("");
-        setPlaylistError("");
         setShowCreatePlaylist(false);
     };
 
@@ -310,7 +294,7 @@ const MyPlaylistView = () => {
                                     }}
                                     className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
                                         selectionMode
-                                            ? "bg-gray-600 text-white hover:bg-gray-700"
+                                            ? "bg-gray-600 border text-white hover:bg-gray-700"
                                             : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
                                     }`}
                                 >
@@ -361,30 +345,20 @@ const MyPlaylistView = () => {
                                 value={newPlaylistName}
                                 onChange={(e) => {
                                     setNewPlaylistName(e.target.value);
-                                    if (playlistError) setPlaylistError("");
                                 }}
                                 placeholder="Enter playlist name..."
-                                className={`w-full px-4 py-2 mb-2 rounded-lg focus:outline-none focus:ring-2 ${
-                                    playlistError
-                                        ? "border-red-500 ring-red-300"
-                                        : "border-gray-300 focus:ring-purple-500"
-                                }`}
+                                className="w-full px-4 py-2 mb-2 rounded-lg focus:outline-none focus:ring-2 border-gray-300 focus:ring-purple-500"
                                 onKeyPress={(e) =>
                                     e.key === "Enter" && handleCreatePlaylist()
                                 }
                                 autoFocus
                             />
-                            {playlistError && (
-                                <p className="text-sm text-red-600 mb-2">
-                                    {playlistError}
-                                </p>
-                            )}
+
                             <div className="flex gap-2 justify-end">
                                 <button
                                     onClick={() => {
                                         setShowCreatePlaylist(false);
                                         setNewPlaylistName("");
-                                        setPlaylistError("");
                                     }}
                                     className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                                 >
@@ -786,10 +760,10 @@ const MyPlaylistView = () => {
                                     {/* Videos Grid */}
                                     {selectionMode ? (
                                         <div
-                                            className={`grid ${gridColumnsClass}`}
+                                            className={`grid ${gridColumnsClass} gap-3.5`}
                                         >
                                             {vids.map((video) => (
-                                                <div
+                                                <li
                                                     key={video.videoId}
                                                     onClick={() =>
                                                         toggleVideoSelection(
@@ -806,16 +780,20 @@ const MyPlaylistView = () => {
                                                 >
                                                     {/* Thumbnail */}
                                                     <div className="relative w-full aspect-video overflow-hidden bg-gray-100">
-                                                        <img
-                                                            src={
-                                                                video.thumbnailUrl
-                                                            }
-                                                            alt={video.title}
-                                                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
-                                                            onError={(e) => {
-                                                                e.target.src = `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
-                                                            }}
-                                                        />
+                                                        {video.thumbnailUrl && (
+                                                            <img
+                                                                src={
+                                                                    video.thumbnailUrl
+                                                                }
+                                                                alt={
+                                                                    video.title ||
+                                                                    "Video thumbnail"
+                                                                }
+                                                                loading="lazy"
+                                                                decoding="async"
+                                                                className="h-full w-full object-cover"
+                                                            />
+                                                        )}
 
                                                         {/* Circular tick icon overlay (only when selected) */}
                                                         {selectedVideos.has(
@@ -846,19 +824,21 @@ const MyPlaylistView = () => {
                                                         <h3 className="line-clamp-2 truncate text-xs font-semibold md:text-sm">
                                                             {highlightMatch
                                                                 ? highlightMatch(
-                                                                      video.title, searchQuery
+                                                                      video.title,
+                                                                      searchQuery
                                                                   )
                                                                 : video.title}
                                                         </h3>
                                                         <p className="mt-1 truncate text-[10px] text-slate-600">
                                                             {highlightMatch
                                                                 ? highlightMatch(
-                                                                      video.channelTitle, searchQuery
+                                                                      video.channelTitle,
+                                                                      searchQuery
                                                                   )
                                                                 : video.channelTitle}
                                                         </p>
                                                     </div>
-                                                </div>
+                                                </li>
                                             ))}
                                         </div>
                                     ) : (
