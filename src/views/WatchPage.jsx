@@ -830,7 +830,8 @@ const WatchPage = ({ onTitleChange }) => {
 
     return (
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 w-full">
-            <div className="group relative overflow-hidden border border-slate-200 shadow-xl transition-[border-radius] md:w-[65%] rounded-2xl" ref={videoContainerRef}
+            <div className="md:w-[65%] flex flex-col gap-4">
+            <div className="group relative overflow-hidden border border-slate-200 shadow-xl transition-[border-radius] rounded-2xl" ref={videoContainerRef}
                 onMouseEnter={() => {
                     if (isFullscreen) showFullscreenControls();
                 }}
@@ -1155,11 +1156,21 @@ const WatchPage = ({ onTitleChange }) => {
                 </div>
             </div>
 
+            <div className="mt-4">
+                <h1 className="text-2xl font-semibold text-slate-900">
+                    {video?.title || "YouTube Video"}
+                </h1>
+                {video?.channelTitle ? (
+                    <p className="text-sm text-slate-500 mt-1">{video.channelTitle}</p>
+                ) : null}
+            </div>
+            </div>
+
             {/* Right column: notes */}
             <div className="w-full md:w-[35%]">
                 <div className="flex flex-col gap-6">
                     {/* Notes content */}
-                    <div className="space-y-6">
+                    <div>
                         <NoteSection
                             videoId={videoId}
                             playerRef={playerInstanceRef}
