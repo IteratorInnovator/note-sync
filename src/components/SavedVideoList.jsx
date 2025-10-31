@@ -157,11 +157,6 @@ const SavedVideoList = ({
         setSelectedVideos(newSet);
     };
 
-    const handleAddToPlaylist = (videoId) => {
-        setPlaylistDialogVideo(videoId);
-        setOpenMenuId(null);
-    };
-
     const handlePlaylistSelect = async (playlistId) => {
         try {
             const uid = auth.currentUser.uid;

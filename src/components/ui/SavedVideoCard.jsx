@@ -61,7 +61,7 @@ const SavedVideoCard = ({
                         {highlightFunc ? highlightFunc(title) : title}
                     </h3>
                     <p className="mt-1 truncate text-[10px] text-slate-600">
-                        {highlightFunc ? highlightFunc(title) : title}
+                        {highlightFunc ? highlightFunc(channelTitle) : channelTitle}
                     </p>
                 </div>
             </Link>

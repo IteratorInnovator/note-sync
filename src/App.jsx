@@ -84,7 +84,7 @@ function App() {
                 />
                 <Route
                     path="/watch/:videoId"
-                    element={isVerifiedUser ? <WatchView /> : <Navigate to="/" />}
+                    element={isVerifiedUser ? <Main /> : <Navigate to="/" />}
                 />
 
 
