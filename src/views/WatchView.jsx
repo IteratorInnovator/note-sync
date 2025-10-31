@@ -2,20 +2,27 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { auth } from "..";
 import NoteSection from "../components/ui/NoteSection";
-import { getVideoById } from "../utils/firestore";
-import { sanitizeHtmlString } from "../utils/htmlHelpers";
+import Editor from "../components/ui/Editor";
+import { ToastContainer } from "../components/ui/Toast";
+import { createNote, getVideoById } from "../utils/firestore";
+import { hasMeaningfulText, sanitizeHtmlString } from "../utils/htmlHelpers";
 import {
+    CircleCheck,
     Maximize2,
     Minimize2,
     Pause,
+    Pencil,
     Play,
     SkipBack,
     SkipForward,
     Volume2,
     VolumeX,
+    X,
 } from "lucide-react";
 
 let youtubeApiPromise = null;
+
+const MAX_NOTE_LENGTH = 500;
 
 const loadYouTubeIframeAPI = () => {
     if (typeof window === "undefined") return Promise.resolve(null);
@@ -81,6 +88,15 @@ const WatchView = ({ onTitleChange }) => {
     const [isTouchDevice, setIsTouchDevice] = useState(false);
     const [activeMarkerId, setActiveMarkerId] = useState(null);
     const [notes, setNotes] = useState([]);
+    const [notesRefreshTrigger, setNotesRefreshTrigger] = useState(0);
+    const [isQuickNoteOpen, setIsQuickNoteOpen] = useState(false);
+    const [quickNoteContent, setQuickNoteContent] = useState("");
+    const [quickNoteLength, setQuickNoteLength] = useState(0);
+    const [quickNoteResetSignal, setQuickNoteResetSignal] = useState(0);
+    const [quickNoteTimestamp, setQuickNoteTimestamp] = useState(0);
+    const [isSavingQuickNote, setIsSavingQuickNote] = useState(false);
+    const [quickNoteError, setQuickNoteError] = useState("");
+    const [quickNoteToasts, setQuickNoteToasts] = useState([]);
     const PLAYBACK_RATES = [0.25, 0.5, 1, 1.25, 1.5, 1.75, 2];
     const [playbackRateIndex, setPlaybackRateIndex] = useState(
         PLAYBACK_RATES.indexOf(1)
@@ -96,6 +112,7 @@ const WatchView = ({ onTitleChange }) => {
     const manualControlsTimeoutRef = useRef(null);
     const skipNextClickRef = useRef(false);
     const isTouchDeviceRef = useRef(false);
+    const quickNoteToastIdRef = useRef(0);
 
     const shouldInterceptOverlay = useMemo(
         () =>
@@ -109,7 +126,144 @@ const WatchView = ({ onTitleChange }) => {
         setNotes(Array.isArray(nextNotes) ? nextNotes : []);
     }, []);
 
+    const removeQuickNoteToast = useCallback((id) => {
+        setQuickNoteToasts((prev) => prev.filter((toast) => toast.id !== id));
+    }, []);
+
+    const addQuickNoteToast = useCallback(
+        (
+            message,
+            Icon = CircleCheck,
+            iconColour = "text-emerald-400",
+            duration = 3000
+        ) => {
+            const id = quickNoteToastIdRef.current++;
+            setQuickNoteToasts((prev) => [
+                ...prev,
+                { id, message, Icon, iconColour, duration },
+            ]);
+        },
+        []
+    );
+
+    const handleOpenQuickNote = useCallback(() => {
+        if (!isPlayerReady) return;
+
+        const rawTime =
+            playerInstanceRef.current?.getCurrentTime?.() ?? currentTime;
+        const safeTime = Number.isFinite(rawTime) ? rawTime : 0;
+
+        setQuickNoteTimestamp(safeTime);
+        setQuickNoteContent("");
+        setQuickNoteLength(0);
+        setQuickNoteResetSignal((signal) => signal + 1);
+        setQuickNoteError("");
+        setIsQuickNoteOpen(true);
+        playerInstanceRef.current?.pauseVideo?.();
+    }, [currentTime, isPlayerReady]);
+
+    const handleCloseQuickNote = useCallback(() => {
+        setIsQuickNoteOpen(false);
+        setQuickNoteError("");
+        setQuickNoteContent("");
+        setQuickNoteLength(0);
+        playerInstanceRef.current?.playVideo?.();
+    }, []);
+
+    const handleQuickNoteChange = useCallback(
+        ({ html, plainTextLength = 0 }) => {
+            setQuickNoteContent(html);
+            setQuickNoteLength(plainTextLength);
+            if (quickNoteError) {
+                setQuickNoteError("");
+            }
+        },
+        [quickNoteError]
+    );
+
+    const handleQuickNoteBackdropClick = useCallback(
+        (event) => {
+            if (event.target === event.currentTarget) {
+                handleCloseQuickNote();
+            }
+        },
+        [handleCloseQuickNote]
+    );
+
+    const handleSaveQuickNote = useCallback(async () => {
+        if (isSavingQuickNote) return;
+
+        const uid = auth.currentUser?.uid;
+        if (!uid) {
+            setQuickNoteError("You need to sign in to save notes.");
+            return;
+        }
+
+        const htmlContent = sanitizeHtmlString(quickNoteContent).trim();
+        if (!hasMeaningfulText(htmlContent)) {
+            setQuickNoteError("Add some note text before saving.");
+            return;
+        }
+
+        const timestamp = Number.isFinite(quickNoteTimestamp)
+            ? quickNoteTimestamp
+            : 0;
+
+        setIsSavingQuickNote(true);
+        setQuickNoteError("");
+
+        try {
+            const noteId = await createNote(
+                uid,
+                videoId,
+                htmlContent,
+                timestamp
+            );
+            setNotes((prev) => [
+                ...prev,
+                { noteId, content: htmlContent, timeSec: timestamp },
+            ]);
+            setNotesRefreshTrigger((value) => value + 1);
+            setIsQuickNoteOpen(false);
+            setQuickNoteContent("");
+            setQuickNoteLength(0);
+            addQuickNoteToast("Note successfully created");
+        } catch {
+            setQuickNoteError("Could not save the note. Please try again.");
+        } finally {
+            setIsSavingQuickNote(false);
+            playerInstanceRef.current?.playVideo?.();
+        }
+    }, [
+        isSavingQuickNote,
+        quickNoteContent,
+        quickNoteTimestamp,
+        videoId,
+        addQuickNoteToast,
+        playerInstanceRef,
+    ]);
+
+    useEffect(() => {
+        setNotes((prev) => (prev.length ? [] : prev));
+        setNotesRefreshTrigger(0);
+    }, [videoId]);
+
+    useEffect(() => {
+        if (!isQuickNoteOpen) return;
+
+        const handleKeyDown = (event) => {
+            if (event.key === "Escape") {
+                event.preventDefault();
+                handleCloseQuickNote();
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [handleCloseQuickNote, isQuickNoteOpen]);
+
     const EDGE_THRESHOLD_PERCENT = 15;
+    const CENTER_THRESHOLD_PERCENT = 10;
 
     const noteMarkers = useMemo(() => {
         if (!Array.isArray(notes) || duration <= 0) return [];
@@ -126,12 +280,14 @@ const WatchView = ({ onTitleChange }) => {
                 100,
                 Math.max(0, (safeTime / duration) * 100)
             );
-            const anchor =
-                position < EDGE_THRESHOLD_PERCENT
-                    ? "left"
-                    : position > 100 - EDGE_THRESHOLD_PERCENT
-                      ? "right"
-                      : "center";
+            const anchor = (() => {
+                if (position < EDGE_THRESHOLD_PERCENT) return "left";
+                if (position > 100 - EDGE_THRESHOLD_PERCENT) return "right";
+                if (Math.abs(position - 50) <= CENTER_THRESHOLD_PERCENT)
+                    return "center";
+                if (position < 50) return "center-left";
+                return "center-right";
+            })();
 
             return {
                 id: note.noteId ?? `note-marker-${index}`,
@@ -142,6 +298,21 @@ const WatchView = ({ onTitleChange }) => {
             };
         });
     }, [notes, duration]);
+
+    const quickNoteSanitizedContent = useMemo(
+        () => sanitizeHtmlString(quickNoteContent).trim(),
+        [quickNoteContent]
+    );
+
+    const quickNoteCharactersRemaining = Math.max(
+        0,
+        MAX_NOTE_LENGTH - Math.min(quickNoteLength, MAX_NOTE_LENGTH)
+    );
+
+    const canSaveQuickNote =
+        hasMeaningfulText(quickNoteSanitizedContent) && !isSavingQuickNote;
+
+    const quickNoteDisplayTime = formatTime(quickNoteTimestamp ?? 0);
 
     const clearHideControlsTimeout = useCallback(() => {
         if (hideControlsTimeoutRef.current) {
@@ -755,12 +926,20 @@ const WatchView = ({ onTitleChange }) => {
                                         {noteMarkers.map((marker) => {
                                             const isActive =
                                                 activeMarkerId === marker.id;
+                                            const tooltipAlignmentBase =
+                                                "left-1/2 -translate-x-1/2";
                                             const tooltipAlignmentClass =
                                                 marker.anchor === "left"
-                                                    ? "items-start left-1/2 translate-x-0"
+                                                    ? `${tooltipAlignmentBase} items-start translate-x-[-5%]`
+                                                    : marker.anchor ===
+                                                      "center-left"
+                                                    ? `${tooltipAlignmentBase} items-start -translate-x-[40%]`
+                                                    : marker.anchor ===
+                                                      "center-right"
+                                                    ? `${tooltipAlignmentBase} items-end -translate-x-[60%]`
                                                     : marker.anchor === "right"
-                                                      ? "items-end left-1/2 -translate-x-full"
-                                                      : "items-center left-1/2 -translate-x-1/2";
+                                                    ? `${tooltipAlignmentBase} items-end -translate-x-[90%]`
+                                                    : `${tooltipAlignmentBase} items-center`;
                                             return (
                                                 <div
                                                     key={marker.id}
@@ -769,70 +948,89 @@ const WatchView = ({ onTitleChange }) => {
                                                         left: `${marker.position}%`,
                                                     }}
                                                 >
-                                                    <button
-                                                        type="button"
-                                                        className="pointer-events-auto relative flex h-3 w-[3px] md:h-4 md:w-[4px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-yellow-200 shadow-[0_0_8px_rgba(234,179,8,0.75)] ring-1 ring-yellow-500 transition hover:scale-110 focus-visible:scale-110 focus-visible:outline-none"
-                                                        onClick={(event) => {
-                                                            event.preventDefault();
-                                                            handleJumpToNote(
-                                                                marker.timeSec
-                                                            );
-                                                        }}
-                                                        onKeyDown={(event) => {
-                                                            if (
-                                                                event.key ===
-                                                                    "Enter" ||
-                                                                event.key ===
-                                                                    " "
-                                                            ) {
-                                                                event.preventDefault();
-                                                                handleJumpToNote(
-                                                                    marker.timeSec
-                                                                );
-                                                            }
-                                                        }}
+                                                    <div
+                                                        className="pointer-events-auto relative flex h-full"
                                                         onPointerEnter={() =>
                                                             handleMarkerEnter(
                                                                 marker.id
                                                             )
                                                         }
-                                                        onPointerLeave={
-                                                            handleMarkerLeave
-                                                        }
-                                                        onFocus={() =>
+                                                        onPointerLeave={(event) => {
+                                                            if (
+                                                                !event.currentTarget.contains(
+                                                                    event.relatedTarget
+                                                                )
+                                                            ) {
+                                                                handleMarkerLeave();
+                                                            }
+                                                        }}
+                                                        onFocusCapture={() =>
                                                             handleMarkerEnter(
                                                                 marker.id
                                                             )
                                                         }
-                                                        onBlur={
-                                                            handleMarkerLeave
-                                                        }
-                                                        aria-label={`Jump to note at ${formatTime(
-                                                            marker.timeSec
-                                                        )}`}
-                                                        aria-expanded={
-                                                            isActive
-                                                        }
+                                                        onBlurCapture={(event) => {
+                                                            if (
+                                                                !event.currentTarget.contains(
+                                                                    event.relatedTarget
+                                                                )
+                                                            ) {
+                                                                handleMarkerLeave();
+                                                            }
+                                                        }}
                                                     >
+                                                        <button
+                                                            type="button"
+                                                            className="relative flex h-3 w-[3px] md:h-4 md:w-[4px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-yellow-200 shadow-[0_0_8px_rgba(234,179,8,0.75)] ring-1 ring-yellow-500 transition hover:scale-110 focus-visible:scale-110 focus-visible:outline-none"
+                                                            onClick={(event) => {
+                                                                event.preventDefault();
+                                                                handleJumpToNote(
+                                                                    marker.timeSec
+                                                                );
+                                                            }}
+                                                            onKeyDown={(event) => {
+                                                                if (
+                                                                    event.key ===
+                                                                        "Enter" ||
+                                                                    event.key ===
+                                                                        " "
+                                                                ) {
+                                                                    event.preventDefault();
+                                                                    handleJumpToNote(
+                                                                        marker.timeSec
+                                                                    );
+                                                                }
+                                                            }}
+                                                            onFocus={() =>
+                                                                handleMarkerEnter(
+                                                                    marker.id
+                                                                )
+                                                            }
+                                                            aria-label={`Jump to note at ${formatTime(
+                                                                marker.timeSec
+                                                            )}`}
+                                                            aria-expanded={isActive}
+                                                        />
                                                         {isActive ? (
                                                             <div
-                                                                className={`pointer-events-none absolute bottom-full mb-3 flex flex-col ${tooltipAlignmentClass}`}
+                                                                className={`pointer-events-auto absolute bottom-full mb-2 lg:mb-3 flex flex-col ${tooltipAlignmentClass}`}
+                                                                style={{ transform: "translateY(-4px)" }}
                                                             >
-                                                                <div className="w-auto min-w-[180px] max-w-[min(75vw,500px)] max-h-[min(50vw,300px)] rounded-xl border border-slate-200 bg-white/95 p-4 text-left text-xs text-slate-600 shadow-2xl ring-1 ring-black/5">
-                                                                    <div className="mb-3 inline-flex items-center rounded-full bg-slate-900 px-2.5 py-0.5 text-[10px] font-semibold text-white shadow">
+                                                                <div className="w-[min(65vw,260px)] sm:w-[min(55vw,320px)] md:w-[min(45vw,380px)] rounded-lg border border-slate-200 bg-white/95 p-1.5 sm:p-2 md:p-2.5 lg:p-3 xl:max-w-[640px] xl:p-4 text-left text-[9px] sm:text-[9px] md:text-[10px] lg:text-[11px] xl:text-xs text-slate-600 shadow-2xl ring-1 ring-black/5 overflow-y-auto max-h-[35vh] sm:max-h-[40vh] md:max-h-[45vh] lg:max-h-[300px] xl:max-h-[340px]">
+                                                                    <div className="mb-1 inline-flex items-center rounded-full bg-slate-900 px-1 py-0.5 text-[8px] font-semibold text-white shadow sm:mb-1.5 sm:px-1.5 sm:text-[9px] md:text-[10px] lg:mb-2 lg:px-2 lg:text-[10px] xl:text-[11px]">
                                                                         {formatTime(
                                                                             marker.timeSec
                                                                         )}
                                                                     </div>
                                                                     {marker.safeContent ? (
                                                                         <div
-                                                                            className="note-marker-content whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-xs leading-relaxed text-slate-700"
+                                                                            className="note-marker-content whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-[9px] leading-relaxed text-slate-700 sm:text-[9px] md:text-[10px] lg:text-[11px] xl:text-xs"
                                                                             dangerouslySetInnerHTML={{
                                                                                 __html: marker.safeContent,
                                                                             }}
                                                                         />
                                                                     ) : (
-                                                                        <p className="text-sm italic text-slate-400">
+                                                                        <p className="text-[9px] italic text-slate-400 sm:text-[9px] md:text-[10px] lg:text-[11px] xl:text-xs">
                                                                             No
                                                                             content
                                                                         </p>
@@ -840,7 +1038,7 @@ const WatchView = ({ onTitleChange }) => {
                                                                 </div>
                                                             </div>
                                                         ) : null}
-                                                    </button>
+                                                    </div>
                                                 </div>
                                             );
                                         })}
@@ -857,7 +1055,7 @@ const WatchView = ({ onTitleChange }) => {
                                 <button
                                     type="button"
                                     onClick={handleTogglePlay}
-                                    title={isPlaying ? 'Pause' : 'Play'}
+                                    title={isPlaying ? "Pause" : "Play"}
                                     className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
                                     aria-label={isPlaying ? "Pause" : "Play"}
                                     disabled={!isPlayerReady}
@@ -922,6 +1120,113 @@ const WatchView = ({ onTitleChange }) => {
                             </div>
 
                             <div className="order-6 flex items-center justify-between gap-2 sm:order-none sm:w-auto sm:gap-3 sm:ml-auto">
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={handleOpenQuickNote}
+                                        title="Add quick note"
+                                        className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                        aria-label="Add quick note"
+                                        disabled={!isPlayerReady}
+                                    >
+                                        <Pencil className="size-3 md:size-5" />
+                                    </button>
+
+                                    {isQuickNoteOpen && isFullscreen ? (
+                                        <>
+                                            <div
+                                                className="fixed inset-0 z-40 bg-black/30"
+                                                onClick={
+                                                    handleQuickNoteBackdropClick
+                                                }
+                                            />
+                                            <div
+                                                className="absolute bottom-full right-0 z-50 mb-3 w-[92vw] max-w-[22rem] sm:max-w-[24rem] md:max-w-[26rem] origin-bottom-right animate-fadeIn"
+                                                onClick={(event) =>
+                                                    event.stopPropagation()
+                                                }
+                                            >
+                                                <div className="relative flex w-full max-h-[78vh] flex-col rounded-2xl bg-white/95 p-4 shadow-2xl ring-1 ring-black/10 backdrop-blur sm:max-h-[70vh] md:max-h-[64vh]">
+                                                    <div className="absolute -bottom-1 right-6 w-0 border-x-[6px] border-t-[6px] border-x-transparent border-t-white/95 drop-shadow-lg" />
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <span className="inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-[10px] font-semibold text-white shadow">
+                                                            {
+                                                                quickNoteDisplayTime
+                                                            }
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={
+                                                                handleCloseQuickNote
+                                                            }
+                                                            className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700"
+                                                            aria-label="Close quick note"
+                                                        >
+                                                            <X className="h-3.5 w-3.5" />
+                                                        </button>
+                                                    </div>
+
+                                                    <div className="mt-3 flex-1 overflow-hidden">
+                                                        <Editor
+                                                            className="h-full w-full [&_.ql-container]:h-full [&_.ql-container]:rounded-b-xl [&_.ql-container]:max-h-[52vh] sm:[&_.ql-container]:max-h-[48vh] md:[&_.ql-container]:max-h-[44vh] [&_.ql-editor]:min-h-[6rem] sm:[&_.ql-editor]:min-h-[7rem] md:[&_.ql-editor]:min-h-[8rem] [&_.ql-editor]:max-h-[50vh] sm:[&_.ql-editor]:max-h-[44vh] md:[&_.ql-editor]:max-h-[40vh] [&_.ql-editor]:text-sm [&_.ql-toolbar]:rounded-t-xl [&_.ql-toolbar]:border-none"
+                                                            placeholder="Capture a quick thought..."
+                                                            maxLength={
+                                                                MAX_NOTE_LENGTH
+                                                            }
+                                                            resetSignal={
+                                                                quickNoteResetSignal
+                                                            }
+                                                            onChange={
+                                                                handleQuickNoteChange
+                                                            }
+                                                        />
+                                                    </div>
+
+                                                    {quickNoteError ? (
+                                                        <p className="mt-2 text-xs font-medium text-red-500">
+                                                            {quickNoteError}
+                                                        </p>
+                                                    ) : null}
+
+                                                    <div className="mt-3 flex items-center justify-between gap-3">
+                                                        <span className="text-[11px] font-medium text-slate-500">
+                                                            {
+                                                                quickNoteCharactersRemaining
+                                                            }{" "}
+                                                            characters remaining
+                                                        </span>
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={
+                                                                    handleCloseQuickNote
+                                                                }
+                                                                className="px-3 py-1.5 text-xs font-semibold text-slate-500 transition hover:text-slate-700"
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={
+                                                                    handleSaveQuickNote
+                                                                }
+                                                                className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md transition hover:bg-indigo-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+                                                                disabled={
+                                                                    !canSaveQuickNote
+                                                                }
+                                                            >
+                                                                {isSavingQuickNote
+                                                                    ? "Saving..."
+                                                                    : "Save"}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : null}
+                                </div>
+
                                 <button
                                     type="button"
                                     onClick={handleCyclePlaybackRate}
@@ -936,7 +1241,11 @@ const WatchView = ({ onTitleChange }) => {
                                 <button
                                     type="button"
                                     onClick={handleToggleFullscreen}
-                                    title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+                                    title={
+                                        isFullscreen
+                                            ? "Exit fullscreen"
+                                            : "Enter fullscreen"
+                                    }
                                     className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
                                     aria-label={
                                         isFullscreen
@@ -971,7 +1280,79 @@ const WatchView = ({ onTitleChange }) => {
                 videoId={videoId}
                 playerRef={playerInstanceRef}
                 onNotesChange={handleNotesChange}
+                refreshTrigger={notesRefreshTrigger}
             />
+
+            <ToastContainer
+                toasts={quickNoteToasts}
+                removeToast={removeQuickNoteToast}
+            />
+
+            {isQuickNoteOpen && !isFullscreen ? (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Quick note"
+                    onClick={handleQuickNoteBackdropClick}
+                >
+                    <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl space-y-5">
+                        <div className="flex items-start justify-between gap-4">
+                            <span className="inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
+                                {quickNoteDisplayTime}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={handleCloseQuickNote}
+                                className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700"
+                                aria-label="Close quick note"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        </div>
+
+                        <Editor
+                            className="w-full"
+                            placeholder="Capture a quick thought..."
+                            maxLength={MAX_NOTE_LENGTH}
+                            resetSignal={quickNoteResetSignal}
+                            onChange={handleQuickNoteChange}
+                        />
+
+                        {quickNoteError ? (
+                            <p className="text-sm font-medium text-red-500">
+                                {quickNoteError}
+                            </p>
+                        ) : null}
+
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="text-xs font-medium text-slate-500">
+                                {quickNoteCharactersRemaining} characters
+                                remaining
+                            </div>
+                            <div className="flex items-center justify-end gap-2">
+                                <button
+                                    type="button"
+                                    onClick={handleCloseQuickNote}
+                                    className="px-4 py-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleSaveQuickNote}
+                                    className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-indigo-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+                                    disabled={!canSaveQuickNote}
+                                >
+                                    {isSavingQuickNote
+                                        ? "Saving..."
+                                        : "Save note"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
         </div>
     );
 };

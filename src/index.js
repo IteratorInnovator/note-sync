@@ -37,4 +37,6 @@ if (import.meta.env.DEV) {
   connectFunctionsEmulator(functions, "localhost", 5001);
 }
 
+export const APP_BASE_URL = import.meta.env.VITE_APP_BASE_URL;
+
 
