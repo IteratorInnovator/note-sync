@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import SavedVideoCard from "../components/ui/SavedVideoCard";
 import { ToastContainer } from "./ui/Toast";
-import { removeVideo, hasNotes, addVideoToPlaylist } from "../utils/firestore";
+import { removeVideo, hasNotes, addVideoToPlaylist, removeVideoFromPlaylist } from "../utils/firestore";
 import { auth } from "..";
 import { CircleCheck, CircleX } from "lucide-react";
 import { Button } from "./ui/button";
@@ -41,7 +41,7 @@ const PlaylistSelectDialog = ({ open, playlists, onSelect, onCancel }) => {
                 <h2 className="text-lg font-semibold">Add to Playlist</h2>
                 {playlists.length === 0 ? (
                     <p className="text-sm text-gray-500">
-                        You don’t have any playlists yet.
+                        You don't have any playlists yet.
                     </p>
                 ) : (
                     <ul className="space-y-2 max-h-48 overflow-y-auto">
@@ -70,10 +70,13 @@ const PlaylistSelectDialog = ({ open, playlists, onSelect, onCancel }) => {
 
 const SavedVideoList = ({
     videoList,
-    playlists = [], // pass from parent if available
+    playlists = [],
     onRemoveSuccess,
     gridClassName = "grid-cols-2 md:grid-cols-3 lg:grid-cols-3",
     highlightFunc,
+    showPlaylistRemove = false,
+    playlistId = null,
+    onPlaylistRemove = null,
 }) => {
     const [openMenuId, setOpenMenuId] = useState(null);
     const [toasts, setToasts] = useState([]);
@@ -81,44 +84,23 @@ const SavedVideoList = ({
     const [selectedVideos, setSelectedVideos] = useState(new Set());
     const [playlistDialogVideo, setPlaylistDialogVideo] = useState(null);
 
-    const handleOpenChange = useCallback(
-        (id, isOpen) => setOpenMenuId(isOpen ? id : null),
-        []
-    );
-
-    const addToast = (
-        message,
-        Icon = null,
-        iconColour = "",
-        duration = 3000
-    ) => {
+    const addToast = (message, Icon = null, iconColour = "", duration = 3000) => {
         const id = toastId++;
-        setToasts((prev) => [
-            ...prev,
-            { id, message, Icon, iconColour, duration },
-        ]);
+        setToasts((prev) => [...prev, { id, message, Icon, iconColour, duration }]);
     };
-    const removeToast = (id) =>
-        setToasts((prev) => prev.filter((t) => t.id !== id));
+    const removeToast = (id) => setToasts((prev) => prev.filter((t) => t.id !== id));
 
+    // --- remove video from "My Videos" (normal remove) ---
     const handleRemove = useCallback(
         async (videoId) => {
             try {
                 const uid = auth.currentUser.uid;
                 const ok = await removeVideo(uid, videoId);
                 if (!ok) throw new Error();
-                addToast(
-                    `Removed from My Videos`,
-                    CircleCheck,
-                    "text-emerald-400"
-                );
+                addToast(`Removed from My Videos`, CircleCheck, "text-emerald-400");
                 onRemoveSuccess?.(videoId);
             } catch {
-                addToast(
-                    `Failed to remove from My Videos`,
-                    CircleX,
-                    "text-red-400"
-                );
+                addToast(`Failed to remove from My Videos`, CircleX, "text-red-400");
             } finally {
                 setOpenMenuId(null);
             }
@@ -126,6 +108,7 @@ const SavedVideoList = ({
         [onRemoveSuccess]
     );
 
+    // --- request confirmation if notes exist ---
     const handleRemoveRequest = useCallback(
         async (videoId) => {
             setOpenMenuId(null);
@@ -157,6 +140,7 @@ const SavedVideoList = ({
         setSelectedVideos(newSet);
     };
 
+    // --- add to playlist ---
     const handlePlaylistSelect = async (playlistId) => {
         try {
             const uid = auth.currentUser.uid;
@@ -168,6 +152,23 @@ const SavedVideoList = ({
             setPlaylistDialogVideo(null);
         }
     };
+
+    // --- remove from playlist ---
+    const handlePlaylistRemoveClick = useCallback(
+        async (videoId) => {
+            try {
+                const uid = auth.currentUser.uid;
+                if (playlistId) {
+                    await removeVideoFromPlaylist(uid, playlistId, videoId);
+                }
+                if (onPlaylistRemove) onPlaylistRemove(videoId);
+                addToast("Removed from playlist", CircleCheck, "text-emerald-400");
+            } catch {
+                addToast("Failed to remove from playlist", CircleX, "text-red-400");
+            }
+        },
+        [playlistId, onPlaylistRemove]
+    );
 
     return (
         <>
@@ -183,23 +184,19 @@ const SavedVideoList = ({
                         onRemove={() => handleRemoveRequest(v.videoId)}
                         isSelected={selectedVideos.has(v.videoId)}
                         onSelectToggle={toggleSelection}
+                        showPlaylistRemove={showPlaylistRemove}
+                        onPlaylistRemove={() => handlePlaylistRemoveClick(v.videoId)}
                     />
                 ))}
             </ul>
 
-            <ConfirmDialog
-                open={!!confirmingId}
-                onConfirm={confirmRemove}
-                onCancel={cancelRemove}
-            />
-
+            <ConfirmDialog open={!!confirmingId} onConfirm={confirmRemove} onCancel={cancelRemove} />
             <PlaylistSelectDialog
                 open={!!playlistDialogVideo}
                 playlists={playlists}
                 onSelect={handlePlaylistSelect}
                 onCancel={() => setPlaylistDialogVideo(null)}
             />
-
             <ToastContainer toasts={toasts} removeToast={removeToast} />
         </>
     );

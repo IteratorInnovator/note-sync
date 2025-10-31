@@ -62,7 +62,7 @@ export const addVideo = async (
     if (snap.exists()) {
         throw new VideoAlreadySavedError();
     }
-    
+
     await setDoc(videoRef, {
         videoId,
         title,
@@ -96,10 +96,6 @@ export const deleteAllVideos = async (uid) => {
 
 /**
  * Update the saved playback position of a video.
- *
- * @param {string} uid - The user's ID.
- * @param {string} videoId - The video's ID.
- * @param {number} progressSec - Current playback time in seconds.
  */
 export const updateVideoProgress = async (uid, videoId, progressSec) => {
     const ref = doc(db, "users", uid, "videos", videoId);
@@ -185,7 +181,6 @@ export const deletePlaylist = async (uid, playlistId) =>
     await deleteDoc(doc(db, "users", uid, "playlists", playlistId));
 
 export const addVideoToPlaylist = async (uid, playlistId, videoId) => {
-    const db = getFirestore();
     const playlistRef = doc(db, "users", uid, "playlists", playlistId);
     const playlistSnap = await getDoc(playlistRef);
 
@@ -196,4 +191,20 @@ export const addVideoToPlaylist = async (uid, playlistId, videoId) => {
     if (!videos.includes(videoId)) videos.push(videoId);
 
     await updateDoc(playlistRef, { videos });
+};
+
+// Removes a specific video from a given playlist.
+export const removeVideoFromPlaylist = async (uid, playlistId, videoId) => {
+    const playlistRef = doc(db, "users", uid, "playlists", playlistId);
+    const playlistSnap = await getDoc(playlistRef);
+
+    if (!playlistSnap.exists()) throw new Error("Playlist not found");
+
+    const playlistData = playlistSnap.data();
+    const videos = playlistData.videos || [];
+
+    // Filter out the video to be removed
+    const updatedVideos = videos.filter((v) => v !== videoId);
+
+    await updateDoc(playlistRef, { videos: updatedVideos });
 };

@@ -8,6 +8,8 @@ const SavedVideoCard = ({
     title,
     channelTitle,
     onRemove,
+    onPlaylistRemove,
+    showPlaylistRemove = false,
     highlightFunc,
 }) => {
     return (
@@ -37,22 +39,20 @@ const SavedVideoCard = ({
 
                     <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100">
                         <div className="rounded-full bg-red-500/90 p-4">
-                            <Play
-                                aria-hidden
-                                className="h-6 w-6 text-white fill-current"
-                            />
+                            <Play aria-hidden className="h-6 w-6 text-white fill-current" />
                         </div>
                     </div>
 
                     <div
-                        className="
-              absolute right-2 top-2 z-20
-              opacity-100 scale-100
-              transition-all duration-300 ease-out
-              sm:opacity-0 sm:scale-95 group-hover:opacity-100 group-hover:scale-100
-            "
+                        className="absolute right-2 top-2 z-20 opacity-100 scale-100
+                        transition-all duration-300 ease-out
+                        sm:opacity-0 sm:scale-95 group-hover:opacity-100 group-hover:scale-100"
                     >
-                        <RemoveButton onRemove={() => onRemove(videoId)} />
+                        {showPlaylistRemove ? (
+                            <RemoveButton onRemove={() => onPlaylistRemove(videoId)} />
+                        ) : (
+                            <RemoveButton onRemove={() => onRemove(videoId)} />
+                        )}
                     </div>
                 </div>
 
