@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import LoginModal from "./LoginModal";
 import SignUpModal from "./SignUpModal";
+import ForgotPasswordModal from "./ForgotPasswordModal.jsx";
 
 const AuthDialog = ({ closeAuthDialog, view, switchAuthView }) => {
     const [show, setShow] = useState(false);
@@ -44,12 +45,19 @@ const AuthDialog = ({ closeAuthDialog, view, switchAuthView }) => {
                     <X className="h-4 w-4 text-slate-500 group-hover:text-black" />
                 </button>
 
-                {view === "login" ? (
+                {view === "login" && (
                     <LoginModal
                         switchToSignUpView={() => switchAuthView("signup")}
+                        switchToForgotPasswordView={() => switchAuthView("forgotPassword")}
                     />
-                ) : (
+                )}
+                {view === "signup" && (
                     <SignUpModal
+                        switchToLoginView={() => switchAuthView("login")}
+                    />
+                )}
+                {view === "forgotPassword" && (
+                    <ForgotPasswordModal
                         switchToLoginView={() => switchAuthView("login")}
                     />
                 )}

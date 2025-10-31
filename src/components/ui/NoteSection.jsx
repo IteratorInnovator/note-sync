@@ -17,7 +17,7 @@ import {
     Sparkles,
     CircleCheck,
 } from "lucide-react";
-import { ToastContainer } from "./toast";
+import { ToastContainer } from "./Toast";
 import Editor from "./Editor";
 import {
     getPlainTextLength,
@@ -38,6 +38,7 @@ const NoteSection = ({
     videoId,
     playerRef,
     onNotesChange = () => undefined,
+    refreshTrigger = 0,
 }) => {
     const [notes, setNotes] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -63,18 +64,29 @@ const NoteSection = ({
         const uid = auth.currentUser?.uid;
         if (!uid || !videoId) return;
         let active = true;
+
+        setLoading((prev) => (refreshTrigger === 0 ? true : prev));
+
         (async () => {
-            setLoading(true);
-            const fetched = await getNotesByVideoId(uid, videoId);
-            if (active) {
-                setNotes(fetched);
-                setLoading(false);
+            try {
+                const fetched = await getNotesByVideoId(uid, videoId);
+                if (active) {
+                    setNotes(fetched);
+                }
+            } catch {
+                if (active) {
+                    setNotes([]);
+                }
+            } finally {
+                if (active) {
+                    setLoading(false);
+                }
             }
         })();
         return () => {
             active = false;
         };
-    }, [videoId]);
+    }, [videoId, refreshTrigger]);
 
     useEffect(() => {
         onNotesChange(notes);

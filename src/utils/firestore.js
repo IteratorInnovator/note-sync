@@ -122,8 +122,8 @@ export const getNotesByVideoId = async (uid, videoId) => {
 export const createNote = async (uid, videoId, content, timeSec) =>
     (
         await addDoc(collection(db, "users", uid, "videos", videoId, "notes"), {
-            timeSec,
-            content,
+            timeSec: timeSec,
+            content: content,
         })
     ).id;
 
