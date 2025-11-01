@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import {
     getUserVideosAndPlaylists,
     removeVideoIdsFromPlaylist,
@@ -7,6 +7,7 @@ import {
     addVideosToPlaylist,
     renamePlaylist,
 } from "../utils/firestore";
+import { Check, X } from "lucide-react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import ViewControls from "../components/ui/ViewControls";
 import SavedVideoList from "../components/SavedVideoList";
@@ -598,7 +599,7 @@ const MyPlaylistView = () => {
                                     className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
                                 >
                                     {/* Playlist Header */}
-                                    <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center justify-between gap-2 mb-4">
                                         {editingPlaylistId ===
                                         playlist.playlistId ? (
                                             <input
@@ -615,7 +616,7 @@ const MyPlaylistView = () => {
                                                         playlist.playlistId
                                                     )
                                                 }
-                                                className="text-xl font-bold px-2 py-1 border border-purple-500 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                                className="max-sm:max-w-40 text-xl font-bold px-2 py-1 border border-purple-500 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
                                                 autoFocus
                                             />
                                         ) : (
@@ -641,19 +642,7 @@ const MyPlaylistView = () => {
                                                         className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                                                         title="Save"
                                                     >
-                                                        <svg
-                                                            className="w-5 h-5"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            viewBox="0 0 24 24"
-                                                        >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                strokeWidth={2}
-                                                                d="M5 13l4 4L19 7"
-                                                            />
-                                                        </svg>
+                                                        <Check className="size-5"/>
                                                     </button>
                                                     <button
                                                         onClick={() => {
@@ -667,19 +656,7 @@ const MyPlaylistView = () => {
                                                         className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
                                                         title="Cancel"
                                                     >
-                                                        <svg
-                                                            className="w-5 h-5"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            viewBox="0 0 24 24"
-                                                        >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                strokeWidth={2}
-                                                                d="M6 18L18 6M6 6l12 12"
-                                                            />
-                                                        </svg>
+                                                        <X className="size-5" />
                                                     </button>
                                                 </>
                                             ) : (
