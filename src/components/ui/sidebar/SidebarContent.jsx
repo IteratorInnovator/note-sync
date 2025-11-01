@@ -76,8 +76,8 @@ const SidebarContent = ({ collapsed, onCloseMobile }) => {
                         title={collapsed ? label : undefined}
                         className={({ isActive }) =>
                             `${itemBase} ${cols} ${gap} ${pad} ${isActive
-                                ? "bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold shadow-lg shadow-red-500/30"
-                                : "hover:bg-red-100 hover:text-red-600"
+                                ? "bg-sky-200 text-sky-700 font-medium"
+                                : "hover:bg-sky-100 hover:text-sky-600"
                             }`
                         }
                     >
