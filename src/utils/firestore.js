@@ -13,6 +13,7 @@ import {
     serverTimestamp,
     limit,
     arrayRemove,
+    onSnapshot,
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { app, functions } from "../";
@@ -180,6 +181,125 @@ export const hasNotes = async (uid, videoId) =>
             )
         )
     ).empty;
+
+// ---------------- Discussions ----------------
+
+const videoDocRef = (videoId) => doc(db, "videos", videoId);
+const videoCommentsCollection = (videoId) =>
+    collection(db, "videos", videoId, "comments");
+const commentRepliesCollection = (videoId, commentId) =>
+    collection(db, "videos", videoId, "comments", commentId, "replies");
+
+export const ensureVideoDiscussionDoc = async (
+    videoId,
+    { title = "", channelTitle = "", thumbnailUrl = "" } = {}
+) => {
+    if (!videoId) return;
+    const ref = videoDocRef(videoId);
+    const snap = await getDoc(ref);
+    if (snap.exists()) {
+        await updateDoc(ref, {
+            title,
+            channelTitle,
+            thumbnailUrl,
+            lastCommentedAt: serverTimestamp(),
+        });
+    } else {
+        await setDoc(ref, {
+            title,
+            channelTitle,
+            thumbnailUrl,
+            createdAt: serverTimestamp(),
+            lastCommentedAt: serverTimestamp(),
+        });
+    }
+};
+
+export const subscribeToVideoComments = (videoId, callback, limitCount) => {
+    if (!videoId || typeof callback !== "function") {
+        return () => undefined;
+    }
+    const constraints = [
+        orderBy("createdAt", "asc"),
+        ...(limitCount ? [limit(limitCount)] : []),
+    ];
+    const q = query(videoCommentsCollection(videoId), ...constraints);
+    return onSnapshot(q, (snapshot) => {
+        const comments = snapshot.docs.map((docSnap) => ({
+            commentId: docSnap.id,
+            ...docSnap.data(),
+        }));
+        callback(comments);
+    });
+};
+
+export const subscribeToCommentReplies = (
+    videoId,
+    commentId,
+    callback,
+    limitCount
+) => {
+    if (!videoId || !commentId || typeof callback !== "function") {
+        return () => undefined;
+    }
+    const constraints = [
+        orderBy("createdAt", "asc"),
+        ...(limitCount ? [limit(limitCount)] : []),
+    ];
+    const q = query(
+        commentRepliesCollection(videoId, commentId),
+        ...constraints
+    );
+    return onSnapshot(q, (snapshot) => {
+        const replies = snapshot.docs.map((docSnap) => ({
+            replyId: docSnap.id,
+            ...docSnap.data(),
+        }));
+        callback(replies);
+    });
+};
+
+export const addVideoComment = async (
+    videoId,
+    { uid, authorName, authorAvatar, content },
+    metadata = {}
+) => {
+    if (!videoId || !uid || !content) {
+        throw new Error("Missing data for comment.");
+    }
+    await ensureVideoDiscussionDoc(videoId, metadata);
+    const ref = await addDoc(videoCommentsCollection(videoId), {
+        uid,
+        authorName,
+        authorAvatar: authorAvatar ?? null,
+        content,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+    });
+    return ref.id;
+};
+
+export const addVideoReply = async (
+    videoId,
+    commentId,
+    { uid, authorName, authorAvatar, content }
+) => {
+    if (!videoId || !commentId || !uid || !content) {
+        throw new Error("Missing data for reply.");
+    }
+    await updateDoc(videoDocRef(videoId), {
+        lastCommentedAt: serverTimestamp(),
+    });
+    const ref = await addDoc(commentRepliesCollection(videoId, commentId), {
+        uid,
+        authorName,
+        authorAvatar: authorAvatar ?? null,
+        content,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+    });
+    return ref.id;
+};
 
 // ---------------- Settings ----------------
 export const getUserSettings = async (uid) => {
