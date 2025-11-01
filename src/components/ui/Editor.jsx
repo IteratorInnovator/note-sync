@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useRef } from "react";
+import {
+    forwardRef,
+    useEffect,
+    useImperativeHandle,
+    useMemo,
+    useRef,
+} from "react";
 import { useQuill } from "react-quilljs";
 import "quill/dist/quill.snow.css";
 
@@ -13,7 +19,7 @@ const MODULES = {
 
 const FORMATS = ["bold", "italic", "underline", "list"];
 
-const Editor = ({
+const Editor = forwardRef(({
     initialHtml = "",
     placeholder = "",
     maxLength,
@@ -21,7 +27,7 @@ const Editor = ({
     readOnly = false,
     resetSignal,
     onChange,
-}) => {
+}, ref) => {
     const options = useMemo(
         () => ({
             theme: "snow",
@@ -34,6 +40,7 @@ const Editor = ({
     );
 
     const { quill, quillRef } = useQuill(options);
+    const toolbarRef = useRef(null);
     const prevHtmlRef = useRef("");
     const didInitRef = useRef(false);
     const resetSignalRef = useRef(resetSignal);
@@ -81,6 +88,17 @@ const Editor = ({
         prevHtmlRef.current = "";
     }, [quill, resetSignal]);
 
+    useImperativeHandle(
+        ref,
+        () => ({
+            focus: () => {
+                quill?.focus();
+            },
+            getQuill: () => quill ?? null,
+        }),
+        [quill]
+    );
+
     return (
         <div className={`w-full min-w-0 ${className}`}>
             <div
@@ -90,13 +108,15 @@ const Editor = ({
         [&_.ql-toolbar]:bg-slate-300/80
         [&_.ql-container]:w-full [&_.ql-container]:min-w-0
         [&_.ql-editor]:whitespace-pre-wrap [&_.ql-editor]:break-words [&_.ql-editor]:[overflow-wrap:anywhere]
-        [&_.ql-editor]:min-h-[10rem] md:[&_.ql-editor]:min-h-[14rem]
+        [&_.ql-editor]:min-h-[10rem] md:[&_.ql-editor]:min-h-[8rem]
         [&_.ql-editor]:max-h-[55vh] lg:[&_.ql-editor]:max-h-[65vh]
         [&_.ql-editor]:overflow-y-auto
       "
             />
         </div>
     );
-};
+});
+
+Editor.displayName = "Editor";
 
 export default Editor;
