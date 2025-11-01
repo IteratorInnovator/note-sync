@@ -97,7 +97,7 @@ const SidebarContent = ({ collapsed, onCloseMobile }) => {
                     onClick={async () => {
                         await signOut(auth);
                     }}
-                    className={`${itemBase} ${cols} ${gap} ${pad} w-full`}
+                    className={`cursor-pointer ${itemBase} ${cols} ${gap} ${pad} w-full`}
                     aria-label="Sign out"
                     title={collapsed ? "Sign out" : undefined}
                 >
