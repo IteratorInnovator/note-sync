@@ -189,18 +189,36 @@ const CommentItem = ({
                                 placeholder="Write a thoughtful reply…"
                                 rows={3}
                             />
-                            <div className="flex justify-end gap-2.5">
+                            <div
+                                className="
+        flex flex-wrap justify-end gap-2.5
+    "
+                            >
                                 <button
                                     type="button"
                                     onClick={() => setShowReplyBox(false)}
-                                    className="rounded-lg px-4 py-2 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-800 active:scale-95"
+                                    className="
+            rounded-lg px-4 py-2 text-xs font-semibold text-slate-600
+            transition-all duration-200
+            hover:bg-slate-100 hover:text-slate-800
+            active:scale-95
+        "
                                 >
                                     Cancel
                                 </button>
+
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-500 px-4 py-2 text-xs font-bold text-white shadow-md shadow-indigo-500/30 transition-all duration-200 hover:shadow-lg hover:shadow-indigo-500/40 hover:from-indigo-500 hover:to-indigo-600 disabled:cursor-not-allowed disabled:from-indigo-400 disabled:to-indigo-400 disabled:shadow-none active:scale-95"
+                                    className="
+            inline-flex items-center gap-1.5 rounded-lg
+            bg-gradient-to-r from-indigo-600 to-indigo-500
+            px-4 py-2 text-xs font-bold text-white shadow-md shadow-indigo-500/30
+            transition-all duration-200
+            hover:shadow-lg hover:shadow-indigo-500/40 hover:from-indigo-500 hover:to-indigo-600
+            disabled:cursor-not-allowed disabled:from-indigo-400 disabled:to-indigo-400 disabled:shadow-none
+            active:scale-95
+        "
                                 >
                                     <Send className="h-3.5 w-3.5" />
                                     {isSubmitting ? "Posting…" : "Post Reply"}
