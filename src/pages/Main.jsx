@@ -63,7 +63,7 @@ export default function Main() {
                 setTitle("Settings");
                 return <SettingsView />;
             case "watch":
-                setTitle("Watch");
+                setTitle("My Video Session");
                 return <WatchView />;
             default:
                 setTitle("My Videos");
