@@ -64,26 +64,28 @@ const ReplyList = ({ videoId, commentId, expanded, onCountChange }) => {
     if (!expanded) return null;
 
     return (
-        <div className="mt-4">
-            {replies.length ? (
-                <ul className="space-y-5 border-l border-slate-200 pl-4">
+        <div className="mt-4 sm:mt-5">
+            {replies.length && (
+                <ul className="space-y-3 sm:space-y-5 border-l-2 sm:border-l border-slate-200 pl-2 sm:pl-4">
                     {replies.map((reply) => (
-                        <li key={reply.replyId} className="flex gap-3">
-                            <Avatar
-                                name={reply.authorName}
-                                url={reply.authorAvatar}
-                            />
-                            <div className="min-w-0 flex-1 space-y-1.5">
-                                <div className="flex items-center gap-2">
-                                    <p className="text-sm font-semibold text-slate-800">
+                        <li key={reply.replyId} className="flex gap-2 sm:gap-3">
+                            <div className="flex-shrink-0">
+                                <Avatar
+                                    name={reply.authorName}
+                                    url={reply.authorAvatar}
+                                />
+                            </div>
+                            <div className="min-w-0 flex-1 space-y-1 sm:space-y-1.5">
+                                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                    <p className="text-xs sm:text-sm font-semibold text-slate-800 truncate max-w-[120px] sm:max-w-none">
                                         {reply.authorName || "Anonymous"}
                                     </p>
-                                    <span className="text-[11px] text-slate-400">
+                                    <span className="text-[10px] sm:text-[11px] text-slate-400 flex-shrink-0">
                                         {formatTimestamp(reply.createdAt)}
                                     </span>
                                 </div>
                                 <p
-                                    className="text-sm text-slate-600 whitespace-pre-wrap break-words"
+                                    className="text-xs sm:text-sm text-slate-600 whitespace-pre-wrap break-words leading-relaxed"
                                     dangerouslySetInnerHTML={{
                                         __html: sanitizeHtmlString(
                                             reply.content ?? ""
@@ -94,10 +96,6 @@ const ReplyList = ({ videoId, commentId, expanded, onCountChange }) => {
                         </li>
                     ))}
                 </ul>
-            ) : (
-                <p className="border-l border-slate-200 pl-4 text-xs italic text-slate-400">
-                    No replies yet.
-                </p>
             )}
         </div>
     );
@@ -180,7 +178,7 @@ const CommentItem = ({
                     {showReplyBox && canReply ? (
                         <form
                             onSubmit={handleSubmitReply}
-                            className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200"
+                            className="mt-4 sm:mt-6 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200"
                         >
                             <textarea
                                 value={replyText}
@@ -342,21 +340,21 @@ const DiscussionForum = ({
         <section
             className={`space-y-6 rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-slate-50/50 to-white p-6 shadow-lg backdrop-blur-sm ${className}`}
         >
-            <header className="flex items-center justify-between gap-4 pb-2 border-b border-slate-200/60">
+            <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 pb-3 sm:pb-2 border-b border-slate-200/60">
                 <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-md shadow-indigo-500/30">
-                        <MessagesSquare className="size-5 text-white" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-md shadow-indigo-500/30">
+                        <MessagesSquare className="h-5 w-5 text-white" />
                     </div>
-                    <div>
-                        <h2 className="text-lg font-bold text-slate-900 tracking-tight">
-                            Discussion Forum
+                    <div className="min-w-0">
+                        <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+                            Discussion
                         </h2>
-                        <h3 className="text-xs font-medium text-slate-500 mt-0.5">
+                        <h3 className="text-xs font-medium text-slate-500 mt-0.5 line-clamp-1">
                             Ask questions, share insights, and learn together
                         </h3>
                     </div>
                 </div>
-                <span className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-sm ring-1 ring-slate-200/50">
+                <span className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-sm ring-1 ring-slate-200/50 self-start sm:self-auto shrink-0">
                     <span className="flex h-2 w-2 rounded-full bg-indigo-500" />
                     {comments.length}{" "}
                     {comments.length === 1 ? "comment" : "comments"}
