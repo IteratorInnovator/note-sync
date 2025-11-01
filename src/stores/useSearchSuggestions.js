@@ -128,13 +128,13 @@ export const useSearchSuggestions = create(
                 }
 
                 try {
-                    const results = await searchVideos(trimmed, {
+                    const { items = [] } = await searchVideos(trimmed, {
                         signal: controller.signal,
                     });
                     const uniqueTitles = new Set();
                     const suggestions = [];
 
-                    for (const item of results) {
+                    for (const item of items) {
                         const title = item.title?.trim();
                         if (!title || uniqueTitles.has(title)) continue;
 
@@ -143,7 +143,7 @@ export const useSearchSuggestions = create(
                             id: item.videoId,
                             title,
                             channelTitle: item.channelTitle ?? "",
-                            thumbnail: item.thumbnail ?? null,
+                            thumbnail: item.thumbnailUrl ?? null,
                         });
 
                         if (suggestions.length >= SUGGESTION_LIMIT) break;

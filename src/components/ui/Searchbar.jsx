@@ -76,14 +76,22 @@ const Searchbar = ({ value = "", onChange, onResults, placeholder="Search videos
             setSearchLoading(true);
 
             try {
-                const items = await searchVideos(trimmed, {
+                const { items, nextPageToken, prevPageToken } = await searchVideos(trimmed, {
                     signal: acRef.current.signal,
                 });
-                onResults?.(items);
+                onResults?.({
+                    items,
+                    nextPageToken,
+                    prevPageToken,
+                });
             } catch (e) {
                 if (e?.name === "AbortError") return;
                 console.log(e);
-                onResults?.([]);
+                onResults?.({
+                    items: [],
+                    nextPageToken: null,
+                    prevPageToken: null,
+                });
             } finally {
                 setSearchLoading(false);
             }

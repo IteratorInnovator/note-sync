@@ -19,7 +19,11 @@ export default function Main() {
     const [collapsed, setCollapsed] = useState(false); // desktop
     const [mobileOpen, setMobileOpen] = useState(false); // mobile
     const [searchTerm, setSearchTerm] = useState("");
-    const [searchResults, setSearchResults] = useState([]);
+    const [searchResults, setSearchResults] = useState({
+        items: [],
+        nextPageToken: null,
+        prevPageToken: null,
+    });
     const { toasts, removeToast } = useToasts();
     const sidebarW = collapsed ? "3.5rem" : "16rem";
 
