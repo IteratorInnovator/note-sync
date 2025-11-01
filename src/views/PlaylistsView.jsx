@@ -1,5 +1,12 @@
-import { useEffect, useState, useMemo } from "react";
-import { getVideosByUserId } from "../utils/firestore";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import {
+    getUserVideosAndPlaylists,
+    removeVideoIdsFromPlaylist,
+    createPlaylist,
+    deletePlaylist,
+    addVideosToPlaylist,
+    renamePlaylist,
+} from "../utils/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import ViewControls from "../components/ui/ViewControls";
 import SavedVideoList from "../components/SavedVideoList";
@@ -26,9 +33,8 @@ const MyPlaylistView = () => {
     const [isCondensedLayout, setIsCondensedLayout] = useState(false);
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
+    const [playlists, setPlaylists] = useState([]);
 
-    // Custom playlist states
-    const [customPlaylists, setCustomPlaylists] = useState({});
     const [showCreatePlaylist, setShowCreatePlaylist] = useState(false);
     const [newPlaylistName, setNewPlaylistName] = useState("");
     const [editingPlaylistId, setEditingPlaylistId] = useState(null);
@@ -44,87 +50,130 @@ const MyPlaylistView = () => {
     const auth = getAuth();
     const navigate = useNavigate();
 
-    // Load custom playlists from localStorage
-    useEffect(() => {
-        if (user) {
-            const stored = localStorage.getItem(`playlists_${user.uid}`);
-            if (stored) {
-                setCustomPlaylists(JSON.parse(stored));
+    const fetchUserData = useCallback(
+        async (uid) => {
+            if (!uid) {
+                return { videos: [], playlists: [] };
             }
-        }
-    }, [user]);
 
-    // Save playlists to localStorage
-    const savePlaylistsToStorage = (playlists) => {
-        if (user) {
-            localStorage.setItem(
-                `playlists_${user.uid}`,
-                JSON.stringify(playlists)
+            const result = await getUserVideosAndPlaylists(uid);
+            const { playlists } = result;
+
+            const playlistsNeedingCleanup = playlists.filter(
+                (playlist) => playlist.missingVideoIds?.length
             );
-        }
-    };
 
-    // Listen for auth changes and fetch videos
+            if (playlistsNeedingCleanup.length) {
+                await Promise.all(
+                    playlistsNeedingCleanup.map((playlist) =>
+                        removeVideoIdsFromPlaylist(
+                            uid,
+                            playlist.playlistId,
+                            playlist.missingVideoIds
+                        ).catch((error) => {
+                            console.error(
+                                "Failed to prune playlist entries",
+                                playlist.playlistId,
+                                error
+                            );
+                        })
+                    )
+                );
+
+                return await getUserVideosAndPlaylists(uid);
+            }
+
+            return result;
+        },
+        []
+    );
+
+    const refreshData = useCallback(
+        async (uid) => {
+            const { videos, playlists } = await fetchUserData(
+                uid
+            );
+            setVideos(videos);
+            setPlaylists(playlists);
+        },
+        [fetchUserData]
+    );
+
+    // Listen for auth changes and fetch videos + playlists
     useEffect(() => {
         let active = true;
+
         const unsubscribe = onAuthStateChanged(auth, async (u) => {
             if (!active) return;
             setUser(u);
+
             if (!u) {
                 setVideos([]);
+                setPlaylists([]);
                 setLoading(false);
                 return;
             }
 
-            const data = await getVideosByUserId(u.uid);
-            setVideos(data);
-            setLoading(false);
+            setLoading(true);
+            try {
+                const { videos: libraryVideos, playlists } =
+                    await fetchUserData(u.uid);
+                if (!active) return;
+
+                setVideos(libraryVideos);
+                setPlaylists(playlists);
+            } catch (error) {
+                console.error("Failed to load videos/playlists:", error);
+                if (active) {
+                    setVideos([]);
+                    setPlaylists([]);
+                }
+            } finally {
+                if (active) setLoading(false);
+            }
         });
 
         return () => {
             active = false;
             unsubscribe();
         };
-    }, [auth]);
+    }, [auth, fetchUserData]);
 
-    // Create new playlist with duplicate check
-    const handleCreatePlaylist = () => {
+    const handleCreatePlaylist = async () => {
         const name = newPlaylistName.trim();
-        if (!name) return;
+        const uid = user?.uid;
+        if (!name || !uid) return;
 
-        const playlistId = `playlist_${Date.now()}`;
-        const newPlaylists = {
-            ...customPlaylists,
-            [playlistId]: {
-                id: playlistId,
-                name,
-                videoIds: [],
-                createdAt: Date.now(),
-            },
-        };
-
-        setCustomPlaylists(newPlaylists);
-        savePlaylistsToStorage(newPlaylists);
-        setNewPlaylistName("");
-        setShowCreatePlaylist(false);
+        try {
+            setLoading(true);
+            await createPlaylist(uid, name);
+            await refreshData(uid);
+            setNewPlaylistName("");
+            setShowCreatePlaylist(false);
+        } catch (error) {
+            console.error("Failed to create playlist:", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     // Rename playlist
-    const handleRenamePlaylist = (playlistId) => {
-        if (!editingPlaylistName.trim()) return;
+    const handleRenamePlaylist = async (playlistId) => {
+        const nextName = editingPlaylistName.trim();
+        const uid = user?.uid;
+        if (!nextName || !uid) return;
 
-        const newPlaylists = {
-            ...customPlaylists,
-            [playlistId]: {
-                ...customPlaylists[playlistId],
-                name: editingPlaylistName.trim(),
-            },
-        };
-
-        setCustomPlaylists(newPlaylists);
-        savePlaylistsToStorage(newPlaylists);
-        setEditingPlaylistId(null);
-        setEditingPlaylistName("");
+        try {
+            setLoading(true);
+            await renamePlaylist(uid, playlistId, nextName);
+            await refreshData(uid);
+            setEditingPlaylistId(null);
+            setEditingPlaylistName("");
+        } catch (error) {
+            console.error("Failed to rename playlist:", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     // Delete playlist
@@ -133,14 +182,20 @@ const MyPlaylistView = () => {
         setShowConfirmDelete(true);
     };
 
-    const confirmDelete = () => {
-        if (!playlistToDelete) return;
-        const newPlaylists = { ...customPlaylists };
-        delete newPlaylists[playlistToDelete];
-        setCustomPlaylists(newPlaylists);
-        savePlaylistsToStorage(newPlaylists);
-        setShowConfirmDelete(false);
-        setPlaylistToDelete(null);
+    const confirmDelete = async () => {
+        const uid = user?.uid;
+        if (!playlistToDelete || !uid) return;
+        try {
+            setLoading(true);
+            await deletePlaylist(uid, playlistToDelete);
+            await refreshData(uid);
+        } catch (error) {
+            console.error("Failed to delete playlist:", error);
+        } finally {
+            setShowConfirmDelete(false);
+            setPlaylistToDelete(null);
+            setLoading(false);
+        }
     };
 
     const cancelDelete = () => {
@@ -149,39 +204,55 @@ const MyPlaylistView = () => {
     };
 
     // Add videos to playlist
-    const handleAddToPlaylist = (playlistId) => {
-        const newPlaylists = {
-            ...customPlaylists,
-            [playlistId]: {
-                ...customPlaylists[playlistId],
-                videoIds: [
-                    ...new Set([
-                        ...customPlaylists[playlistId].videoIds,
-                        ...Array.from(selectedVideos),
-                    ]),
-                ],
-            },
-        };
-        setCustomPlaylists(newPlaylists);
-        savePlaylistsToStorage(newPlaylists);
-        setSelectedVideos(new Set());
-        setSelectionMode(false);
-        setShowAddToPlaylist(false);
+    const handleAddToPlaylist = async (playlistId) => {
+        const uid = user?.uid;
+        if (!uid || !playlistId || selectedVideos.size === 0) return;
+
+        try {
+            setLoading(true);
+            await addVideosToPlaylist(
+                uid,
+                playlistId,
+                Array.from(selectedVideos)
+            );
+            await refreshData(uid);
+            setSelectedVideos(new Set());
+            setSelectionMode(false);
+            setShowAddToPlaylist(false);
+        } catch (error) {
+            console.error("Failed to add videos to playlist:", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     // Remove video from playlist
-    const handleRemoveFromPlaylist = (playlistId, videoId) => {
-        const newPlaylists = {
-            ...customPlaylists,
-            [playlistId]: {
-                ...customPlaylists[playlistId],
-                videoIds: customPlaylists[playlistId].videoIds.filter(
-                    (id) => id !== videoId
-                ),
-            },
-        };
-        setCustomPlaylists(newPlaylists);
-        savePlaylistsToStorage(newPlaylists);
+    const handleRemoveFromPlaylist = async (playlistId, videoId) => {
+        const uid = user?.uid;
+        if (!uid || !playlistId) return;
+
+        try {
+            await removeVideoIdsFromPlaylist(uid, playlistId, [videoId]);
+            setPlaylists((prev) =>
+                prev.map((playlist) => {
+                    if (playlist.playlistId !== playlistId) return playlist;
+                    const nextVideoIds = (playlist.videoIds || []).filter(
+                        (id) => id !== videoId
+                    );
+                    const nextVideos = (playlist.videos || []).filter(
+                        (video) => video.videoId !== videoId
+                    );
+                    return {
+                        ...playlist,
+                        videoIds: nextVideoIds,
+                        videos: nextVideos,
+                    };
+                })
+            );
+        } catch (error) {
+            console.error("Failed to remove video from playlist:", error);
+            throw error;
+        }
     };
 
     // Toggle video selection
@@ -238,20 +309,32 @@ const MyPlaylistView = () => {
         }, {});
     }, [sortedVideos]);
 
-    const getPlaylistVideos = (playlistId) => {
-        const playlist = customPlaylists[playlistId];
-        if (!playlist) return [];
-        return sortedVideos.filter((v) =>
-            playlist.videoIds.includes(v.videoId)
-        );
-    };
-
     const hasVideos = videos.length > 0;
     const hasResults = sortedVideos.length > 0;
 
     const gridColumnsClass = isCondensedLayout
         ? "grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2"
         : "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3";
+
+    const handleVideoRemoved = useCallback((removedId) => {
+        setVideos((prev) =>
+            prev.filter((video) => video.videoId !== removedId)
+        );
+        setPlaylists((prev) =>
+            prev.map((playlist) => ({
+                ...playlist,
+                videoIds: (playlist.videoIds || []).filter(
+                    (id) => id !== removedId
+                ),
+                videos: (playlist.videos || []).filter(
+                    (video) => video.videoId !== removedId
+                ),
+                missingVideoIds: (playlist.missingVideoIds || []).filter(
+                    (id) => id !== removedId
+                ),
+            }))
+        );
+    }, []);
 
     return (
         <div className="min-h-screen rounded-lg bg-gradient-to-br from-gray-50 to-gray-100">
@@ -271,8 +354,8 @@ const MyPlaylistView = () => {
                                 </span>
                             )}
                             <span className="text-sm text-gray-600">
-                                • {Object.keys(customPlaylists).length} custom{" "}
-                                {Object.keys(customPlaylists).length === 1
+                                • {playlists.length}{" "}
+                                {playlists.length === 1
                                     ? "playlist"
                                     : "playlists"}
                             </span>
@@ -383,33 +466,30 @@ const MyPlaylistView = () => {
                             <h3 className="text-xl font-bold mb-4">
                                 Add to Playlist
                             </h3>
-                            {Object.keys(customPlaylists).length === 0 ? (
+                            {playlists.length === 0 ? (
                                 <p className="text-gray-600 mb-4">
                                     No playlists yet. Create one first!
                                 </p>
                             ) : (
                                 <div className="space-y-2 mb-4">
-                                    {Object.values(customPlaylists).map(
-                                        (playlist) => (
-                                            <button
-                                                key={playlist.id}
-                                                onClick={() =>
-                                                    handleAddToPlaylist(
-                                                        playlist.id
-                                                    )
-                                                }
-                                                className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
-                                            >
-                                                <div className="font-medium">
-                                                    {playlist.name}
-                                                </div>
-                                                <div className="text-sm text-gray-500">
-                                                    {playlist.videoIds.length}{" "}
-                                                    videos
-                                                </div>
-                                            </button>
-                                        )
-                                    )}
+                                    {playlists.map((playlist) => (
+                                        <button
+                                            key={playlist.playlistId}
+                                            onClick={() =>
+                                                handleAddToPlaylist(
+                                                    playlist.playlistId
+                                                )
+                                            }
+                                            className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+                                        >
+                                            <div className="font-medium">
+                                                {playlist.name}
+                                            </div>
+                                            <div className="text-sm text-gray-500">
+                                                {playlist.videos.length} videos
+                                            </div>
+                                        </button>
+                                    ))}
                                 </div>
                             )}
                             <button
@@ -505,235 +585,188 @@ const MyPlaylistView = () => {
                     </div>
                 )}
 
-                {/* Custom Playlists Section */}
-                {!loading &&
-                    user &&
-                    Object.keys(customPlaylists).length > 0 && (
-                        <div className="mb-10">
-                            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                                My Custom Playlists
-                            </h2>
-                            <div className="space-y-8">
-                                {Object.values(customPlaylists).map(
-                                    (playlist) => {
-                                        const playlistVideos =
-                                            getPlaylistVideos(playlist.id);
-                                        return (
-                                            <div
-                                                key={playlist.id}
-                                                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
-                                            >
-                                                {/* Playlist Header */}
-                                                <div className="flex items-center justify-between mb-4">
-                                                    {editingPlaylistId ===
-                                                    playlist.id ? (
-                                                        <input
-                                                            type="text"
-                                                            value={
-                                                                editingPlaylistName
-                                                            }
-                                                            onChange={(e) =>
-                                                                setEditingPlaylistName(
-                                                                    e.target
-                                                                        .value
-                                                                )
-                                                            }
-                                                            onKeyPress={(e) =>
-                                                                e.key ===
-                                                                    "Enter" &&
-                                                                handleRenamePlaylist(
-                                                                    playlist.id
-                                                                )
-                                                            }
-                                                            className="text-xl font-bold px-2 py-1 border border-purple-500 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                                            autoFocus
-                                                        />
-                                                    ) : (
-                                                        <div className="flex items-center gap-3">
-                                                            <h3 className="text-xl font-bold text-gray-900">
-                                                                {playlist.name}
-                                                            </h3>
-                                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
-                                                                {
-                                                                    playlistVideos.length
-                                                                }
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                    <div className="flex gap-2">
-                                                        {editingPlaylistId ===
-                                                        playlist.id ? (
-                                                            <>
-                                                                <button
-                                                                    onClick={() =>
-                                                                        handleRenamePlaylist(
-                                                                            playlist.id
-                                                                        )
-                                                                    }
-                                                                    className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                                                                    title="Save"
-                                                                >
-                                                                    <svg
-                                                                        className="w-5 h-5"
-                                                                        fill="none"
-                                                                        stroke="currentColor"
-                                                                        viewBox="0 0 24 24"
-                                                                    >
-                                                                        <path
-                                                                            strokeLinecap="round"
-                                                                            strokeLinejoin="round"
-                                                                            strokeWidth={
-                                                                                2
-                                                                            }
-                                                                            d="M5 13l4 4L19 7"
-                                                                        />
-                                                                    </svg>
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => {
-                                                                        setEditingPlaylistId(
-                                                                            null
-                                                                        );
-                                                                        setEditingPlaylistName(
-                                                                            ""
-                                                                        );
-                                                                    }}
-                                                                    className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
-                                                                    title="Cancel"
-                                                                >
-                                                                    <svg
-                                                                        className="w-5 h-5"
-                                                                        fill="none"
-                                                                        stroke="currentColor"
-                                                                        viewBox="0 0 24 24"
-                                                                    >
-                                                                        <path
-                                                                            strokeLinecap="round"
-                                                                            strokeLinejoin="round"
-                                                                            strokeWidth={
-                                                                                2
-                                                                            }
-                                                                            d="M6 18L18 6M6 6l12 12"
-                                                                        />
-                                                                    </svg>
-                                                                </button>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <button
-                                                                    onClick={() => {
-                                                                        setEditingPlaylistId(
-                                                                            playlist.id
-                                                                        );
-                                                                        setEditingPlaylistName(
-                                                                            playlist.name
-                                                                        );
-                                                                    }}
-                                                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                                    title="Rename"
-                                                                >
-                                                                    <svg
-                                                                        className="w-5 h-5"
-                                                                        fill="none"
-                                                                        stroke="currentColor"
-                                                                        viewBox="0 0 24 24"
-                                                                    >
-                                                                        <path
-                                                                            strokeLinecap="round"
-                                                                            strokeLinejoin="round"
-                                                                            strokeWidth={
-                                                                                2
-                                                                            }
-                                                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                                                        />
-                                                                    </svg>
-                                                                </button>
-                                                                <button
-                                                                    onClick={() =>
-                                                                        handleDeletePlaylist(
-                                                                            playlist.id
-                                                                        )
-                                                                    }
-                                                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                                    title="Delete"
-                                                                >
-                                                                    <svg
-                                                                        className="w-5 h-5"
-                                                                        fill="none"
-                                                                        stroke="currentColor"
-                                                                        viewBox="0 0 24 24"
-                                                                    >
-                                                                        <path
-                                                                            strokeLinecap="round"
-                                                                            strokeLinejoin="round"
-                                                                            strokeWidth={
-                                                                                2
-                                                                            }
-                                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                                        />
-                                                                    </svg>
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                {/* Playlist Videos */}
-                                                {playlistVideos.length > 0 ? (
-                                                    <SavedVideoList
-                                                        videoList={
-                                                            playlistVideos
-                                                        }
-                                                        gridClassName={
-                                                            gridColumnsClass
-                                                        }
-                                                        highlightFunc={(text) =>
-                                                            highlightMatch(
-                                                                text,
-                                                                searchQuery
+                {/* My Playlists Section */}
+                {!loading && user && playlists.length > 0 && (
+                    <div className="mb-10">
+                        <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                            My Playlists
+                        </h2>
+                        <div className="space-y-8">
+                            {playlists.map((playlist) => (
+                                <div
+                                    key={playlist.playlistId}
+                                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+                                >
+                                    {/* Playlist Header */}
+                                    <div className="flex items-center justify-between mb-4">
+                                        {editingPlaylistId ===
+                                        playlist.playlistId ? (
+                                            <input
+                                                type="text"
+                                                value={editingPlaylistName}
+                                                onChange={(e) =>
+                                                    setEditingPlaylistName(
+                                                        e.target.value
+                                                    )
+                                                }
+                                                onKeyPress={(e) =>
+                                                    e.key === "Enter" &&
+                                                    handleRenamePlaylist(
+                                                        playlist.playlistId
+                                                    )
+                                                }
+                                                className="text-xl font-bold px-2 py-1 border border-purple-500 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                                autoFocus
+                                            />
+                                        ) : (
+                                            <div className="flex items-center gap-3">
+                                                <h3 className="text-xl font-bold text-gray-900">
+                                                    {playlist.name}
+                                                </h3>
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                                                    {playlist.videos.length}
+                                                </span>
+                                            </div>
+                                        )}
+                                        <div className="flex gap-2">
+                                            {editingPlaylistId ===
+                                            playlist.playlistId ? (
+                                                <>
+                                                    <button
+                                                        onClick={() =>
+                                                            handleRenamePlaylist(
+                                                                playlist.playlistId
                                                             )
                                                         }
-                                                        onRemoveSuccess={(
-                                                            removedId
-                                                        ) => {
-                                                            setVideos((prev) =>
-                                                                prev.filter(
-                                                                    (video) =>
-                                                                        video.videoId !==
-                                                                        removedId
-                                                                )
+                                                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                                        title="Save"
+                                                    >
+                                                        <svg
+                                                            className="w-5 h-5"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M5 13l4 4L19 7"
+                                                            />
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditingPlaylistId(
+                                                                null
                                                             );
-                                                            handleRemoveFromPlaylist(
-                                                                playlist.id,
-                                                                removedId
+                                                            setEditingPlaylistName(
+                                                                ""
                                                             );
                                                         }}
-                                                        enableSelection={true}
-                                                        showPlaylistRemove={
-                                                            true
-                                                        }
-                                                        onPlaylistRemove={(
-                                                            videoId
-                                                        ) =>
-                                                            handleRemoveFromPlaylist(
-                                                                playlist.id,
-                                                                videoId
+                                                        className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                                                        title="Cancel"
+                                                    >
+                                                        <svg
+                                                            className="w-5 h-5"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M6 18L18 6M6 6l12 12"
+                                                            />
+                                                        </svg>
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditingPlaylistId(
+                                                                playlist.playlistId
+                                                            );
+                                                            setEditingPlaylistName(
+                                                                playlist.name
+                                                            );
+                                                        }}
+                                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                        title="Rename"
+                                                    >
+                                                        <svg
+                                                            className="w-5 h-5"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                                            />
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        onClick={() =>
+                                                            handleDeletePlaylist(
+                                                                playlist.playlistId
                                                             )
                                                         }
-                                                    />
-                                                ) : (
-                                                    <div className="text-center py-8 text-gray-500">
-                                                        No videos in this
-                                                        playlist yet
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    }
-                                )}
-                            </div>
+                                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                        title="Delete"
+                                                    >
+                                                        <svg
+                                                            className="w-5 h-5"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                            />
+                                                        </svg>
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Playlist Videos */}
+                                    {playlist.videos.length > 0 ? (
+                                        <SavedVideoList
+                                            videoList={playlist.videos}
+                                            gridClassName={gridColumnsClass}
+                                            highlightFunc={(text) =>
+                                                highlightMatch(
+                                                    text,
+                                                    searchQuery
+                                                )
+                                            }
+                                            playlists={playlists}
+                                            onPlaylistRemove={(videoId) =>
+                                                handleRemoveFromPlaylist(
+                                                    playlist.playlistId,
+                                                    videoId
+                                                )
+                                            }
+                                        />
+                                    ) : (
+                                        <div className="text-center py-8 text-gray-500">
+                                            No videos in this playlist yet
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
                         </div>
-                    )}
+                    </div>
+                )}
 
                 {/* Grouped Videos (Original Categories) */}
                 {!loading && user && hasResults && (
@@ -851,15 +884,8 @@ const MyPlaylistView = () => {
                                                     searchQuery
                                                 )
                                             }
-                                            onRemoveSuccess={(removedId) =>
-                                                setVideos((prev) =>
-                                                    prev.filter(
-                                                        (v) =>
-                                                            v.videoId !==
-                                                            removedId
-                                                    )
-                                                )
-                                            }
+                                            playlists={playlists}
+                                            onRemoveSuccess={handleVideoRemoved}
                                         />
                                     )}
                                 </div>

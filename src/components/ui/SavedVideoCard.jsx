@@ -9,6 +9,7 @@ const SavedVideoCard = ({
     channelTitle,
     onRemove,
     highlightFunc,
+    removeLabel,
 }) => {
     return (
         <li className="relative group">
@@ -52,7 +53,10 @@ const SavedVideoCard = ({
               sm:opacity-0 sm:scale-95 group-hover:opacity-100 group-hover:scale-100
             "
                     >
-                        <RemoveButton onRemove={() => onRemove(videoId)} />
+                        <RemoveButton
+                            onRemove={() => onRemove(videoId)}
+                            ariaLabel={removeLabel}
+                        />
                     </div>
                 </div>
 

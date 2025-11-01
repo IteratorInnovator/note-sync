@@ -490,6 +490,5 @@ const NoteSection = forwardRef(
     }
 );
 
-NoteSection.displayName = "NoteSection";
 
 export default NoteSection;

@@ -19,7 +19,7 @@ import {
     resetUserSettings,
     deleteAllVideos,
 } from "../utils/firestore";
-import { ToastContainer } from "../components/ui/toast"
+import { useToasts } from "../stores/useToasts";
 
 const safeSearchOptions = [
     { value: "strict", label: "Strict (hide mature content)" },
@@ -130,8 +130,6 @@ const ACCENT_STYLES = {
             "bg-slate-900 hover:bg-slate-950 focus:ring-slate-300 text-white shadow-slate-900/25",
     },
 };
-
-let toastId = 0;
 
 const ConfirmationModal = ({
     open,
@@ -250,24 +248,7 @@ export default function SettingsView() {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showClearVideosModal, setShowClearVideosModal] = useState(false);
     const [draftSettings, setDraftSettings] = useState({ ...settings });
-    const [toasts, setToasts] = useState([]);
-
-    const addToast = (
-        message,
-        Icon = null,
-        iconColour = "",
-        duration = 3000
-    ) => {
-        const id = toastId++;
-        setToasts((prev) => [
-            ...prev,
-            { id, message, Icon, iconColour, duration },
-        ]);
-    };
-
-    const removeToast = (id) => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
-    };
+    const { addToast } = useToasts();
 
     useEffect(() => {
         void getSettings(() => getUserSettings(auth.currentUser.uid));
@@ -324,9 +305,17 @@ export default function SettingsView() {
             if (!ok) {
                 throw new Error();
             }
-            addToast("Cleared saved videos", CircleCheck, "text-emerald-400");
+            addToast({
+                message: "All saved videos cleared",
+                Icon: CircleCheck,
+                iconColour: "text-emerald-400",
+            });
         } catch {
-            addToast("Failed to clear saved videos", CircleX, "text-red-400");
+            addToast({
+                message: "Failed to clear saved videos",
+                Icon: CircleX,
+                iconColour: "text-red-400",
+            });
         }
     };
 
@@ -454,8 +443,6 @@ export default function SettingsView() {
                     }
                 />
             </DangerSection>
-
-            <ToastContainer toasts={toasts} removeToast={removeToast} />
         </div>
     );
 }

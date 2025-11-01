@@ -12,6 +12,7 @@ import {
     deleteDoc,
     serverTimestamp,
     limit,
+    arrayRemove,
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { app, functions } from "../";
@@ -62,7 +63,7 @@ export const addVideo = async (
     if (snap.exists()) {
         throw new VideoAlreadySavedError();
     }
-    
+
     await setDoc(videoRef, {
         videoId,
         title,
@@ -78,11 +79,44 @@ export const removeVideo = async (uid, videoId) => {
     const fn = httpsCallable(functions, "deleteVideoDocWithNotes");
     try {
         const { data } = await fn({ uid, videoId });
-        return !!data?.ok;
+        const ok = !!data?.ok;
+        if (ok) {
+            try {
+                await removeVideoFromAllPlaylists(uid, videoId);
+            } catch (cleanupError) {
+                console.error(
+                    "Failed to remove video from playlists:",
+                    cleanupError
+                );
+            }
+        }
+        return ok;
     } catch {
         return false;
     }
 };
+
+export async function removeVideoFromAllPlaylists(uid, videoId) {
+    const playlistsSnap = await getDocs(
+        collection(db, "users", uid, "playlists")
+    );
+
+    if (playlistsSnap.empty) return;
+
+    const updates = [];
+
+    playlistsSnap.forEach((playlistDoc) => {
+        const videos = playlistDoc.data()?.videos;
+        if (!Array.isArray(videos) || !videos.includes(videoId)) return;
+        updates.push(
+            updateDoc(playlistDoc.ref, { videos: arrayRemove(videoId) })
+        );
+    });
+
+    if (updates.length) {
+        await Promise.all(updates);
+    }
+}
 
 export const deleteAllVideos = async (uid) => {
     const fn = httpsCallable(functions, "deleteAllVideoDocs");
@@ -172,28 +206,90 @@ export const getPlaylistsByUserId = async (uid) => {
     return snap.docs.map((doc) => ({ playlistId: doc.id, ...doc.data() }));
 };
 
-export const createPlaylist = async (uid, title, description = "") =>
+export const createPlaylist = async (uid, name) =>
     (
         await addDoc(collection(db, "users", uid, "playlists"), {
-            title,
-            description,
+            name,
+            videos: [],
             createdAt: serverTimestamp(),
         })
     ).id;
 
+export const renamePlaylist = async (uid, playlistId, nextName) => {
+    const playlistRef = doc(db, "users", uid, "playlists", playlistId);
+    await updateDoc(playlistRef, { name: nextName });
+};
+
 export const deletePlaylist = async (uid, playlistId) =>
     await deleteDoc(doc(db, "users", uid, "playlists", playlistId));
 
-export const addVideoToPlaylist = async (uid, playlistId, videoId) => {
-    const db = getFirestore();
+/**
+ * Append one or more videos to an existing playlist, preserving existing entries.
+ *
+ * @param {string} uid - The owner's user id.
+ * @param {string} playlistId - Playlist document id.
+ * @param {string[]} videoIds - Array of video ids to merge into the playlist.
+ */
+export const addVideosToPlaylist = async (uid, playlistId, videoIds) => {
+    if (!Array.isArray(videoIds) || videoIds.length === 0) return;
+
     const playlistRef = doc(db, "users", uid, "playlists", playlistId);
     const playlistSnap = await getDoc(playlistRef);
+    if (!playlistSnap.exists()) return;
 
-    if (!playlistSnap.exists()) throw new Error("Playlist not found");
+    const currentVideos = Array.isArray(playlistSnap.data()?.videos)
+        ? playlistSnap.data().videos
+        : [];
+    const nextVideos = Array.from(
+        new Set([...currentVideos, ...videoIds.filter(Boolean)])
+    );
 
-    const playlistData = playlistSnap.data();
-    const videos = playlistData.videos || [];
-    if (!videos.includes(videoId)) videos.push(videoId);
+    if (nextVideos.length === currentVideos.length) return;
 
-    await updateDoc(playlistRef, { videos });
+    await updateDoc(playlistRef, { videos: nextVideos });
+};
+
+export const removeVideoIdsFromPlaylist = async (
+    uid,
+    playlistId,
+    videoIds
+) => {
+    const ids = Array.isArray(videoIds)
+        ? videoIds.map((id) => id).filter(Boolean)
+        : [];
+
+    if (ids.length === 0) return;
+
+    const playlistRef = doc(db, "users", uid, "playlists", playlistId);
+    await updateDoc(playlistRef, { videos: arrayRemove(...ids) });
+};
+
+export const getUserVideosAndPlaylists = async (uid) => {
+    const [videos, playlistsSnap] = await Promise.all([
+        getVideosByUserId(uid),
+        getDocs(
+            query(collection(db, "users", uid, "playlists"), orderBy("name"))
+        ),
+    ]);
+
+    const videoMap = new Map(videos.map((video) => [video.videoId, video]));
+
+    const playlists = playlistsSnap.docs.map((playlistDoc) => {
+        const data = playlistDoc.data() ?? {};
+        const videoIds = Array.isArray(data.videos) ? data.videos : [];
+        const resolvedVideos = videoIds
+            .map((id) => videoMap.get(id))
+            .filter(Boolean);
+        const missingVideoIds = videoIds.filter((id) => !videoMap.has(id));
+
+        return {
+            playlistId: playlistDoc.id,
+            ...data,
+            videoIds,
+            videos: resolvedVideos,
+            missingVideoIds,
+        };
+    });
+
+    return { videos, playlists };
 };

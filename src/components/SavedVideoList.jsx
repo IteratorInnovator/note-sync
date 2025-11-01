@@ -1,12 +1,10 @@
 import { useState, useCallback } from "react";
 import SavedVideoCard from "../components/ui/SavedVideoCard";
-import { ToastContainer } from "./ui/Toast";
-import { removeVideo, hasNotes, addVideoToPlaylist } from "../utils/firestore";
+import { removeVideo, hasNotes, addVideosToPlaylist } from "../utils/firestore";
 import { auth } from "..";
 import { CircleCheck, CircleX } from "lucide-react";
 import { Button } from "./ui/button";
-
-let toastId = 0;
+import { useToasts } from "../stores/useToasts";
 
 const ConfirmDialog = ({ open, onConfirm, onCancel }) => {
     if (!open) return null;
@@ -41,21 +39,24 @@ const PlaylistSelectDialog = ({ open, playlists, onSelect, onCancel }) => {
                 <h2 className="text-lg font-semibold">Add to Playlist</h2>
                 {playlists.length === 0 ? (
                     <p className="text-sm text-gray-500">
-                        You don’t have any playlists yet.
+                        You don't have any playlists yet.
                     </p>
                 ) : (
                     <ul className="space-y-2 max-h-48 overflow-y-auto">
-                        {playlists.map((p) => (
-                            <li key={p.id}>
-                                <Button
-                                    className="w-full justify-start"
-                                    variant="outline"
-                                    onClick={() => onSelect(p.id)}
-                                >
-                                    {p.name}
-                                </Button>
-                            </li>
-                        ))}
+                        {playlists.map((p) => {
+                            const playlistId = p.id ?? p.playlistId;
+                            return (
+                                <li key={playlistId}>
+                                    <Button
+                                        className="w-full justify-start"
+                                        variant="outline"
+                                        onClick={() => onSelect(playlistId)}
+                                    >
+                                        {p.name}
+                                    </Button>
+                                </li>
+                            );
+                        })}
                     </ul>
                 )}
                 <div className="flex justify-end gap-2 mt-2">
@@ -74,61 +75,79 @@ const SavedVideoList = ({
     onRemoveSuccess,
     gridClassName = "grid-cols-2 md:grid-cols-3 lg:grid-cols-3",
     highlightFunc,
+    onPlaylistRemove,
 }) => {
-    const [openMenuId, setOpenMenuId] = useState(null);
-    const [toasts, setToasts] = useState([]);
     const [confirmingId, setConfirmingId] = useState(null);
     const [selectedVideos, setSelectedVideos] = useState(new Set());
     const [playlistDialogVideo, setPlaylistDialogVideo] = useState(null);
+    const isPlaylistMode = typeof onPlaylistRemove === "function";
+    const { addToast } = useToasts();
 
-    const handleOpenChange = useCallback(
-        (id, isOpen) => setOpenMenuId(isOpen ? id : null),
-        []
-    );
-
-    const addToast = (
-        message,
-        Icon = null,
-        iconColour = "",
-        duration = 3000
-    ) => {
-        const id = toastId++;
-        setToasts((prev) => [
-            ...prev,
-            { id, message, Icon, iconColour, duration },
-        ]);
-    };
-    const removeToast = (id) =>
-        setToasts((prev) => prev.filter((t) => t.id !== id));
+    const clearSelectionForVideo = useCallback((videoId) => {
+        setSelectedVideos((prev) => {
+            if (!prev.has(videoId)) return prev;
+            const next = new Set(prev);
+            next.delete(videoId);
+            return next;
+        });
+    }, []);
 
     const handleRemove = useCallback(
         async (videoId) => {
+            if (isPlaylistMode) {
+                try {
+                    await onPlaylistRemove(videoId);
+                    addToast({
+                        message: `Removed from playlist`,
+                        Icon: CircleCheck,
+                        iconColour: "text-emerald-400",
+                    });
+                    onRemoveSuccess?.(videoId);
+                    clearSelectionForVideo(videoId);
+                } catch {
+                    addToast({
+                        message: `Failed to remove from playlist`,
+                        Icon: CircleX,
+                        iconColour: "text-red-400",
+                    });
+                }
+                return;
+            }
+
             try {
                 const uid = auth.currentUser.uid;
                 const ok = await removeVideo(uid, videoId);
                 if (!ok) throw new Error();
-                addToast(
-                    `Removed from My Videos`,
-                    CircleCheck,
-                    "text-emerald-400"
-                );
+                addToast({
+                    message: `Removed from My Videos`,
+                    Icon: CircleCheck,
+                    iconColour: "text-emerald-400",
+                });
                 onRemoveSuccess?.(videoId);
+                clearSelectionForVideo(videoId);
             } catch {
-                addToast(
-                    `Failed to remove from My Videos`,
-                    CircleX,
-                    "text-red-400"
-                );
-            } finally {
-                setOpenMenuId(null);
+                addToast({
+                    message: `Failed to remove video`,
+                    Icon: CircleX,
+                    iconColour: "text-red-400",
+                });
             }
         },
-        [onRemoveSuccess]
+        [
+            clearSelectionForVideo,
+            isPlaylistMode,
+            onPlaylistRemove,
+            onRemoveSuccess,
+            addToast,
+        ]
     );
 
     const handleRemoveRequest = useCallback(
         async (videoId) => {
-            setOpenMenuId(null);
+            if (isPlaylistMode) {
+                await handleRemove(videoId);
+                return;
+            }
             const uid = auth.currentUser?.uid;
             if (!uid) return;
             try {
@@ -139,7 +158,7 @@ const SavedVideoList = ({
                 setConfirmingId(videoId);
             }
         },
-        [handleRemove]
+        [handleRemove, isPlaylistMode]
     );
 
     const confirmRemove = async () => {
@@ -160,10 +179,18 @@ const SavedVideoList = ({
     const handlePlaylistSelect = async (playlistId) => {
         try {
             const uid = auth.currentUser.uid;
-            await addVideoToPlaylist(uid, playlistId, playlistDialogVideo);
-            addToast("Added to playlist", CircleCheck, "text-emerald-400");
+            await addVideosToPlaylist(uid, playlistId, [playlistDialogVideo]);
+            addToast({
+                message: `Added to playlist`,
+                Icon: CircleCheck,
+                iconColour: "text-emerald-400",
+            });
         } catch {
-            addToast("Failed to add to playlist", CircleX, "text-red-400");
+            addToast({
+                message: `Failed to add to playlist`,
+                Icon: CircleX,
+                iconColour: "text-red-400",
+            });
         } finally {
             setPlaylistDialogVideo(null);
         }
@@ -183,6 +210,9 @@ const SavedVideoList = ({
                         onRemove={() => handleRemoveRequest(v.videoId)}
                         isSelected={selectedVideos.has(v.videoId)}
                         onSelectToggle={toggleSelection}
+                        removeLabel={
+                            isPlaylistMode ? "Remove from playlist" : undefined
+                        }
                     />
                 ))}
             </ul>
@@ -199,8 +229,6 @@ const SavedVideoList = ({
                 onSelect={handlePlaylistSelect}
                 onCancel={() => setPlaylistDialogVideo(null)}
             />
-
-            <ToastContainer toasts={toasts} removeToast={removeToast} />
         </>
     );
 };

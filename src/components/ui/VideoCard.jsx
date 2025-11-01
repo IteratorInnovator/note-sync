@@ -4,11 +4,10 @@ import { Link } from "react-router-dom";
 
 const VideoCard = ({
     videoId,
-    thumbnail,
+    thumbnailUrl,
     title,
     channelTitle,
     onSave,
-    onAddToPlaylist,
 }) => {
 
     return (
@@ -18,7 +17,7 @@ const VideoCard = ({
                 state={{
                     video: {
                         videoId,
-                        thumbnailUrl: thumbnail,
+                        thumbnailUrl: thumbnailUrl,
                         title,
                         channelTitle,
                     },
@@ -26,9 +25,9 @@ const VideoCard = ({
                 className="block transform overflow-hidden rounded-xl border border-slate-200 bg-white cursor-pointer transition-transform duration-300 ease-out group-hover:shadow-lg group-hover:scale-[1.02] hover:shadow-lg hover:scale-[1.02]"
             >
                 <div className="relative aspect-video bg-slate-100">
-                    {thumbnail && (
+                    {thumbnailUrl && (
                         <img
-                            src={thumbnail}
+                            src={thumbnailUrl}
                             alt={title || "Video thumbnail"}
                             loading="lazy"
                             decoding="async"
@@ -55,9 +54,8 @@ const VideoCard = ({
                     >
                         <PlusButton
                             onSave={() =>
-                                onSave(videoId, title, channelTitle, thumbnail)
+                                onSave(videoId, title, channelTitle, thumbnailUrl)
                             }
-                            onAddToPlaylist={() => onAddToPlaylist(videoId)}
                         />
                     </div>
                 </div>

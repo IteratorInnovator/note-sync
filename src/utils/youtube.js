@@ -34,7 +34,7 @@ export const searchVideos = async (searchTerm, { signal }) => {
         description: item.snippet?.description ?? "",
         channelTitle: item.snippet?.channelTitle ?? "",
         publishedAt: item.snippet?.publishedAt ?? "",
-        thumbnail: item.snippet?.thumbnails?.medium?.url ?? null,
+        thumbnailUrl: item.snippet?.thumbnails?.medium?.url ?? null,
     }));
 }
 
