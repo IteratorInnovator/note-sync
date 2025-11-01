@@ -16,7 +16,6 @@ const navItems = [
     { label: "Settings", to: "/settings", icon: Settings },
 ];
 
-
 const SidebarContent = ({ collapsed, onCloseMobile }) => {
     const itemBase =
         "grid items-center h-10 rounded-xl text-slate-900 text-sm transition-colors hover:bg-neutral-200";
@@ -37,11 +36,10 @@ const SidebarContent = ({ collapsed, onCloseMobile }) => {
             {/* Brand collapses, keeps DOM for smooth slide */}
             <div
                 className={`overflow-hidden transition-[max-height,opacity,padding] duration-300
-              ${
-                  collapsed
-                      ? "max-h-0 opacity-0 py-0 px-0"
-                      : "max-h-20 opacity-100 py-2 px-2"
-              }`}
+              ${collapsed
+                        ? "max-h-0 opacity-0 py-0 px-0"
+                        : "max-h-20 opacity-100 py-2 px-2"
+                    }`}
             >
                 <div className="flex flex-row items-center h-10 px-2 gap-x-3">
                     <svg
@@ -72,18 +70,20 @@ const SidebarContent = ({ collapsed, onCloseMobile }) => {
                     <NavLink
                         key={to}
                         to={to}
-                        className={`${itemBase} ${cols} ${gap} ${pad}`}
+                        onClick={onCloseMobile}
                         aria-label={label}
                         title={collapsed ? label : undefined}
-                        onClick={onCloseMobile}
+                        className={({ isActive }) =>
+                            `${itemBase} ${cols} ${gap} ${pad} ${isActive
+                                ? "bg-sky-200 text-sky-700 font-medium"
+                                : "hover:bg-sky-100 hover:text-sky-600"
+                            }`
+                        }
                     >
-                        {/* Icon: perfectly centered vertically and horizontally */}
                         <Icon className="size-4 place-self-center" />
-                        {/* Label: collapses without affecting icon column */}
                         <span
-                            className={`${labelBase} ${
-                                collapsed ? labelHidden : labelShown
-                            }`}
+                            className={`${labelBase} ${collapsed ? labelHidden : labelShown
+                                }`}
                         >
                             {label}
                         </span>
@@ -103,9 +103,8 @@ const SidebarContent = ({ collapsed, onCloseMobile }) => {
                 >
                     <LogOut className="size-4 place-self-center" />
                     <span
-                        className={`${labelBase} ${
-                            collapsed ? labelHidden : labelShown
-                        }`}
+                        className={`${labelBase} ${collapsed ? labelHidden : labelShown
+                            }`}
                     >
                         Sign out
                     </span>
@@ -113,6 +112,6 @@ const SidebarContent = ({ collapsed, onCloseMobile }) => {
             </div>
         </div>
     );
-}
+};
 
 export default SidebarContent;
