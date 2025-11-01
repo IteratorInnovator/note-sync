@@ -1386,7 +1386,7 @@ const WatchPage = ({ onTitleChange }) => {
                 </div>
 
                 <div
-                    className={`mt-6 ${
+                    className={`mt-3 ${
                         activeMobilePanel === "discussion" ? "block" : "hidden"
                     } md:block`}
                 >

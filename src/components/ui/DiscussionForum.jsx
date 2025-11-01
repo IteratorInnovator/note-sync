@@ -46,50 +46,59 @@ const Avatar = ({ name = "", url }) => {
     );
 };
 
-const ReplyList = ({ videoId, commentId }) => {
+const ReplyList = ({ videoId, commentId, expanded, onCountChange }) => {
     const [replies, setReplies] = useState([]);
 
     useEffect(() => {
         const unsubscribe = subscribeToCommentReplies(
             videoId,
             commentId,
-            (nextReplies) => setReplies(nextReplies)
+            (nextReplies) => {
+                setReplies(nextReplies);
+                onCountChange?.(nextReplies.length);
+            }
         );
         return unsubscribe;
-    }, [videoId, commentId]);
+    }, [videoId, commentId, onCountChange]);
 
-    if (!replies.length) return null;
+    if (!expanded) return null;
 
     return (
         <div className="mt-4">
-            <div className="mb-3 flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold text-indigo-700">
-                    {replies.length} {replies.length === 1 ? "reply" : "replies"}
-                </span>
-            </div>
-            <ul className="space-y-5 border-l border-slate-200 pl-4">
-                {replies.map((reply) => (
-                    <li key={reply.replyId} className="flex gap-3">
-                        <Avatar name={reply.authorName} url={reply.authorAvatar} />
-                        <div className="min-w-0 flex-1 space-y-1.5">
-                            <div className="flex items-center gap-2">
-                                <p className="text-sm font-semibold text-slate-800">
-                                    {reply.authorName || "Anonymous"}
-                                </p>
-                                <span className="text-[11px] text-slate-400">
-                                    {formatTimestamp(reply.createdAt)}
-                                </span>
-                            </div>
-                            <p
-                                className="text-sm text-slate-600 whitespace-pre-wrap break-words"
-                                dangerouslySetInnerHTML={{
-                                    __html: sanitizeHtmlString(reply.content ?? ""),
-                                }}
+            {replies.length ? (
+                <ul className="space-y-5 border-l border-slate-200 pl-4">
+                    {replies.map((reply) => (
+                        <li key={reply.replyId} className="flex gap-3">
+                            <Avatar
+                                name={reply.authorName}
+                                url={reply.authorAvatar}
                             />
-                        </div>
-                    </li>
-                ))}
-            </ul>
+                            <div className="min-w-0 flex-1 space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                    <p className="text-sm font-semibold text-slate-800">
+                                        {reply.authorName || "Anonymous"}
+                                    </p>
+                                    <span className="text-[11px] text-slate-400">
+                                        {formatTimestamp(reply.createdAt)}
+                                    </span>
+                                </div>
+                                <p
+                                    className="text-sm text-slate-600 whitespace-pre-wrap break-words"
+                                    dangerouslySetInnerHTML={{
+                                        __html: sanitizeHtmlString(
+                                            reply.content ?? ""
+                                        ),
+                                    }}
+                                />
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                <p className="border-l border-slate-200 pl-4 text-xs italic text-slate-400">
+                    No replies yet.
+                </p>
+            )}
         </div>
     );
 };
@@ -103,6 +112,8 @@ const CommentItem = ({
 }) => {
     const [replyText, setReplyText] = useState("");
     const [showReplyBox, setShowReplyBox] = useState(false);
+    const [replyCount, setReplyCount] = useState(0);
+    const [showReplies, setShowReplies] = useState(false);
 
     const handleSubmitReply = async (event) => {
         event?.preventDefault();
@@ -140,15 +151,31 @@ const CommentItem = ({
                         }}
                     />
 
-                    {canReply ? (
-                        <button
-                            type="button"
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-slate-100 to-slate-50 px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200/50 transition-all duration-200 hover:shadow-md hover:ring-indigo-300/50 hover:from-indigo-50 hover:to-purple-50 active:scale-95"
-                            onClick={() => setShowReplyBox((prev) => !prev)}
-                        >
-                            <Reply className="h-3.5 w-3.5" /> Reply
-                        </button>
-                    ) : null}
+                    <div className="flex items-center gap-4">
+                        {canReply ? (
+                            <button
+                                type="button"
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-slate-100 to-slate-50 px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200/50 transition-all duration-200 hover:shadow-md hover:ring-indigo-300/50 hover:from-indigo-50 hover:to-purple-50 active:scale-95"
+                                onClick={() => setShowReplyBox((prev) => !prev)}
+                            >
+                                <Reply className="h-3.5 w-3.5" /> Reply
+                            </button>
+                        ) : null}
+
+                        {replyCount > 0 ? (
+                            <button
+                                type="button"
+                                className="text-xs text-gray-900 transition-colors duration-150 hover:opacity-80 hover:underline active:scale-95"
+                                onClick={() => setShowReplies((prev) => !prev)}
+                            >
+                                {showReplies
+                                    ? "Hide replies"
+                                    : `View ${replyCount} ${
+                                          replyCount === 1 ? "reply" : "replies"
+                                      }`}
+                            </button>
+                        ) : null}
+                    </div>
 
                     {showReplyBox && canReply ? (
                         <form
@@ -187,6 +214,8 @@ const CommentItem = ({
                     <ReplyList
                         videoId={videoId}
                         commentId={comment.commentId}
+                        expanded={showReplies}
+                        onCountChange={setReplyCount}
                     />
                 </div>
             </div>
