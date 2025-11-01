@@ -22,6 +22,12 @@ import { DEFAULT_SETTINGS } from "../stores/useSettings";
 
 const db = getFirestore(app, import.meta.env.VITE_APP_FIREBASE_DATABASE_ID);
 
+// ---------------- Users -----------------
+export const getUserById = async (uid) => {
+    const snap = await getDoc(doc(db, "users", uid));
+    return { ...snap.data() }
+};
+
 // ---------------- Videos ----------------
 export const getVideosByUserId = async (uid) => {
     const q = query(
@@ -261,12 +267,13 @@ export const subscribeToCommentReplies = (
 
 export const addVideoComment = async (
     videoId,
-    { uid, authorName, authorAvatar, content },
+    { uid, content },
     metadata = {}
 ) => {
     if (!videoId || !uid || !content) {
         throw new Error("Missing data for comment.");
     }
+    const { name: authorName, photoURL: authorAvatar } = await getUserById(uid);
     await ensureVideoDiscussionDoc(videoId, metadata);
     const ref = await addDoc(videoCommentsCollection(videoId), {
         uid,

@@ -45,6 +45,7 @@ export const createUserDoc = functions
             .set({
                 name: user.displayName ?? user.providerData?.[0]?.displayName ?? null,
                 email: user.email ?? user.providerData?.[0]?.email ?? null,
+                photoURL: user.photoURL ?? user.providerData?.[0]?.photoURL ?? null,
                 providerId: user.providerData?.[0]?.providerId ?? null,
                 createdAt: FieldValue.serverTimestamp(),
                 settings: {
