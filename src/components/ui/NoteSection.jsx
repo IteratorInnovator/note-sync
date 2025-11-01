@@ -1,5 +1,13 @@
 // NoteSection.jsx
-import { useState, useEffect, useMemo } from "react";
+import {
+    forwardRef,
+    useCallback,
+    useEffect,
+    useImperativeHandle,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import {
     getNotesByVideoId,
     createNote,
@@ -34,12 +42,16 @@ const formatTime = (sec) => {
     return `${m}:${s.toString().padStart(2, "0")}`;
 };
 
-const NoteSection = ({
-    videoId,
-    playerRef,
-    onNotesChange = () => undefined,
-    refreshTrigger = 0,
-}) => {
+const NoteSection = forwardRef(
+    (
+        {
+            videoId,
+            playerRef,
+            onNotesChange = () => undefined,
+            refreshTrigger = 0,
+        },
+        ref
+    ) => {
     const [notes, setNotes] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -58,6 +70,44 @@ const NoteSection = ({
     const editingHasContent = editedContentLength > 0;
 
     const [toasts, setToasts] = useState([]);
+
+    const newNoteEditorRef = useRef(null);
+    const editorHighlightTimeoutRef = useRef(null);
+    const newNoteEditorContainerRef = useRef(null);
+    const [newEditorHighlight, setNewEditorHighlight] = useState(false);
+
+    const focusNewNoteEditor = useCallback(() => {
+        newNoteEditorRef.current?.focus?.();
+        newNoteEditorContainerRef.current?.scrollIntoView?.({
+            behavior: "smooth",
+            block: "center",
+        });
+
+        setNewEditorHighlight(true);
+        if (editorHighlightTimeoutRef.current) {
+            clearTimeout(editorHighlightTimeoutRef.current);
+        }
+        editorHighlightTimeoutRef.current = setTimeout(() => {
+            setNewEditorHighlight(false);
+        }, 1600);
+    }, []);
+
+    useImperativeHandle(
+        ref,
+        () => ({
+            focusNewNoteEditor,
+        }),
+        [focusNewNoteEditor]
+    );
+
+    useEffect(
+        () => () => {
+            if (editorHighlightTimeoutRef.current) {
+                clearTimeout(editorHighlightTimeoutRef.current);
+            }
+        },
+        []
+    );
 
     // Fetch notes
     useEffect(() => {
@@ -225,16 +275,26 @@ const NoteSection = ({
 
                         {/* Right column */}
                         <div className="flex-1 w-full min-w-0 flex flex-col gap-4">
-                            <Editor
-                                className="w-full"
-                                resetSignal={newEditorResetSignal}
-                                placeholder="Add a new note at the current timestamp..."
-                                maxLength={MAX_NOTE_LENGTH}
-                                onChange={({ html, plainTextLength = 0 }) => {
-                                    setNewNote(html);
-                                    setNewNoteLength(plainTextLength);
-                                }}
-                            />
+                            <div
+                                ref={newNoteEditorContainerRef}
+                                className={`transition-all ${
+                                    newEditorHighlight
+                                        ? "ring-2 ring-indigo-500 shadow-lg"
+                                        : ""
+                                }`}
+                            >
+                                <Editor
+                                    ref={newNoteEditorRef}
+                                    className="w-full"
+                                    resetSignal={newEditorResetSignal}
+                                    placeholder="Add a new note at the current timestamp..."
+                                    maxLength={MAX_NOTE_LENGTH}
+                                    onChange={({ html, plainTextLength = 0 }) => {
+                                        setNewNote(html);
+                                        setNewNoteLength(plainTextLength);
+                                    }}
+                                />
+                            </div>
                             <div className="text-left text-xs font-medium text-slate-500">
                                 {Math.max(
                                     0,
@@ -380,7 +440,7 @@ const NoteSection = ({
                                     </div>
 
                                     {editingId !== note.noteId && (
-                                        <div className="flex w-full justify-end shrink-0 gap-1 opacity-100 md:w-auto md:justify-start md:opacity-0 md:transition-opacity md:group-hover:opacity-100">
+                                        <div className="self-end flex w-full justify-end shrink-0 gap-1 opacity-100 md:w-auto md:justify-start md:opacity-0 md:transition-opacity md:group-hover:opacity-100">
                                             <button
                                                 onClick={() =>
                                                     handleEdit(
@@ -414,6 +474,8 @@ const NoteSection = ({
             <ToastContainer toasts={toasts} removeToast={removeToast} />
         </>
     );
-};
+});
+
+NoteSection.displayName = "NoteSection";
 
 export default NoteSection;

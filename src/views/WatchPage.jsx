@@ -114,6 +114,7 @@ const WatchPage = ({ onTitleChange }) => {
     const skipNextClickRef = useRef(false);
     const isTouchDeviceRef = useRef(false);
     const quickNoteToastIdRef = useRef(0);
+    const noteSectionRef = useRef(null);
 
     const shouldInterceptOverlay = useMemo(
         () =>
@@ -154,14 +155,20 @@ const WatchPage = ({ onTitleChange }) => {
             playerInstanceRef.current?.getCurrentTime?.() ?? currentTime;
         const safeTime = Number.isFinite(rawTime) ? rawTime : 0;
 
+        playerInstanceRef.current?.pauseVideo?.();
+
+        if (!isFullscreen) {
+            noteSectionRef.current?.focusNewNoteEditor?.();
+            return;
+        }
+
         setQuickNoteTimestamp(safeTime);
         setQuickNoteContent("");
         setQuickNoteLength(0);
         setQuickNoteResetSignal((signal) => signal + 1);
         setQuickNoteError("");
         setIsQuickNoteOpen(true);
-        playerInstanceRef.current?.pauseVideo?.();
-    }, [currentTime, isPlayerReady]);
+    }, [currentTime, isFullscreen, isPlayerReady]);
 
     const handleCloseQuickNote = useCallback(() => {
         setIsQuickNoteOpen(false);
@@ -244,7 +251,7 @@ const WatchPage = ({ onTitleChange }) => {
         playerInstanceRef,
     ]);
 
-        useEffect(() => {
+    useEffect(() => {
         setNotes((prev) => (prev.length ? [] : prev));
         setNotesRefreshTrigger(0);
     }, [videoId]);
@@ -791,10 +798,7 @@ const WatchPage = ({ onTitleChange }) => {
         [handleTouchIntent]
     );
 
-    const handleOverlayTouchStart = useCallback(
-
-        handleTouchIntent(true)
-    );
+    const handleOverlayTouchStart = useCallback(handleTouchIntent(true));
 
     const handleVideoClick = () => {
         if (!isPlayerReady) return;
@@ -820,339 +824,467 @@ const WatchPage = ({ onTitleChange }) => {
     return (
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 w-full">
             <div className="md:w-[65%] flex flex-col gap-4">
-            <div className="group relative overflow-hidden border border-slate-200 shadow-xl transition-[border-radius] rounded-2xl" ref={videoContainerRef}
-                onMouseEnter={() => {
-                    if (isFullscreen) showFullscreenControls();
-                }}
-                onMouseMove={() => {
-                    if (isFullscreen) showFullscreenControls();
-                }}
-                onFocus={() => {
-                    if (isFullscreen) showFullscreenControls();
-                }}
-                onBlur={(event) => {
-                    if (
-                        isFullscreen &&
-                        !event.currentTarget.contains(event.relatedTarget)
-                    ) {
-                        showFullscreenControls();
-                    }
-                }}>
-                <div className={`relative w-full ${isFullscreen ? "h-full" : "aspect-video"}`} role="presentation">
-                    <div
-                        className={`absolute inset-0 z-10 ${shouldInterceptOverlay ? "pointer-events-auto cursor-pointer" : "pointer-events-none"}`}
-                        onPointerDown={handleOverlayPointerDown}
-                        onTouchStart={handleOverlayTouchStart}
-                        onClick={handleVideoClick}
-                        aria-hidden="true"
-                    />
-                    <div ref={playerRef} className="absolute inset-0 h-full w-full" />
-                </div>
-
                 <div
-                    className={`absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/60 via-black/40 to-transparent px-3 pb-3 pt-6 transition-opacity duration-200 sm:px-6 sm:pb-5 ${isFullscreen ? (controlsVisible ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0") : inlineControlsVisibilityClass}`}
-                    onClick={(event) => {
-                        refreshManualControls();
-                        event.stopPropagation();
+                    className="group relative overflow-hidden border border-slate-200 shadow-xl transition-[border-radius] rounded-2xl"
+                    ref={videoContainerRef}
+                    onMouseEnter={() => {
+                        if (isFullscreen) showFullscreenControls();
                     }}
-                    onMouseDown={(event) => {
-                        refreshManualControls();
-                        event.stopPropagation();
+                    onMouseMove={() => {
+                        if (isFullscreen) showFullscreenControls();
                     }}
-                    onTouchStart={(event) => {
-                        refreshManualControls();
-                        event.stopPropagation();
+                    onFocus={() => {
+                        if (isFullscreen) showFullscreenControls();
                     }}
-                    onPointerDown={(event) => {
-                        refreshManualControls();
-                        event.stopPropagation();
+                    onBlur={(event) => {
+                        if (
+                            isFullscreen &&
+                            !event.currentTarget.contains(event.relatedTarget)
+                        ) {
+                            showFullscreenControls();
+                        }
                     }}
                 >
-                    <div className="flex flex-col gap-2.5">
-                        <div className="flex items-center gap-2 text-[10px] font-medium text-white/80 sm:text-xs">
-                            <span className="tabular-nums min-w-[2.5rem] text-center">
-                                {formatTime(currentTime)}
-                            </span>
-                            <div className="relative flex-1">
-                                <input
-                                    type="range"
-                                    min={0}
-                                    max={duration || 0}
-                                    step={0.5}
-                                    value={Number.isFinite(currentTime) ? currentTime : 0}
-                                    onChange={handleSeek}
-                                    className="w-full accent-indigo-500"
-                                    disabled={!isPlayerReady}
-                                />
-                                {noteMarkers.length > 0 ? (
-                                    <div className="pointer-events-none absolute inset-0 z-10">
-                                        {noteMarkers.map((marker) => {
-                                            const isActive = activeMarkerId === marker.id;
-                                            const tooltipAlignmentBase = "left-1/2 -translate-x-1/2";
-                                            const tooltipAlignmentClass = marker.anchor === "left"
-                                                ? `${tooltipAlignmentBase} items-start translate-x-[-5%]`
-                                                : marker.anchor === "center-left"
-                                                    ? `${tooltipAlignmentBase} items-start -translate-x-[40%]`
-                                                    : marker.anchor === "center-right"
-                                                        ? `${tooltipAlignmentBase} items-end -translate-x-[60%]`
-                                                        : marker.anchor === "right"
-                                                            ? `${tooltipAlignmentBase} items-end -translate-x-[90%]`
-                                                            : `${tooltipAlignmentBase} items-center`;
-                                            return (
-                                                <div key={marker.id} className="pointer-events-none absolute top-1/2 h-full" style={{ left: `${marker.position}%` }}>
-                                                    <div
-                                                        className="pointer-events-auto relative flex h-full"
-                                                        onPointerEnter={() => handleMarkerEnter(marker.id)}
-                                                        onPointerLeave={(event) => {
-                                                            if (!event.currentTarget.contains(event.relatedTarget)) {
-                                                                handleMarkerLeave();
-                                                            }
-                                                        }}
-                                                        onFocusCapture={() => handleMarkerEnter(marker.id)}
-                                                        onBlurCapture={(event) => {
-                                                            if (!event.currentTarget.contains(event.relatedTarget)) {
-                                                                handleMarkerLeave();
-                                                            }
-                                                        }}
-                                                    >
-                                                        <button
-                                                            type="button"
-                                                            className="relative flex h-3 w-[3px] md:h-4 md:w-[4px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-yellow-200 shadow-[0_0_8px_rgba(234,179,8,0.75)] ring-1 ring-yellow-500 transition hover:scale-110 focus-visible:scale-110 focus-visible:outline-none"
-                                                            onClick={(event) => {
-                                                                event.preventDefault();
-                                                                handleJumpToNote(marker.timeSec);
-                                                            }}
-                                                            onKeyDown={(event) => {
-                                                                if (event.key === "Enter" || event.key === " ") {
-                                                                    event.preventDefault();
-                                                                    handleJumpToNote(marker.timeSec);
-                                                                }
-                                                            }}
-                                                            onFocus={() => handleMarkerEnter(marker.id)}
-                                                            aria-label={`Jump to note at ${formatTime(marker.timeSec)}`}
-                                                            aria-expanded={isActive}
-                                                        />
-                                                        {isActive ? (
-                                                            <div className={`pointer-events-auto absolute bottom-full mb-2 lg:mb-3 flex flex-col ${tooltipAlignmentClass}`} style={{ transform: "translateY(-4px)" }}>
-                                                                <div className="w-[min(65vw,260px)] sm:w-[min(55vw,320px)] md:w-[min(45vw,380px)] rounded-lg border border-slate-200 bg-white/95 p-1.5 sm:p-2 md:p-2.5 lg:p-3 xl:max-w-[640px] xl:p-4 text-left text-[9px] sm:text-[9px] md:text-[10px] lg:text-[11px] xl:text-xs text-slate-600 shadow-2xl ring-1 ring-black/5 overflow-y-auto max-h-[35vh] sm:max-h-[40vh] md:max-h-[45vh] lg:max-h-[300px] xl:max-h-[340px]">
-                                                                    <div className="mb-1 inline-flex items-center rounded-full bg-slate-900 px-1 py-0.5 text-[8px] font-semibold text-white shadow sm:mb-1.5 sm:px-1.5 sm:text-[9px] md:text-[10px] lg:mb-2 lg:px-2 lg:text-[10px] xl:text-[11px]">
-                                                                        {formatTime(marker.timeSec)}
-                                                                    </div>
-                                                                    {marker.safeContent ? (
-                                                                        <div
-                                                                            className="note-marker-content whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-[9px] leading-relaxed text-slate-700 sm:text-[9px] md:text-[10px] lg:text-[11px] xl:text-xs"
-                                                                            dangerouslySetInnerHTML={{
-                                                                                __html: marker.safeContent,
-                                                                            }}
-                                                                        />
-                                                                    ) : (
-                                                                        <p className="text-[9px] italic text-slate-400 sm:text-[9px] md:text-[10px] lg:text-[11px] xl:text-xs">
-                                                                            No content
-                                                                        </p>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        ) : null}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                ) : null}
-                            </div>
-                            <span className="tabular-nums min-w-[2.5rem] text-center">
-                                {formatTime(duration)}
-                            </span>
-                        </div>
+                    <div
+                        className={`relative w-full ${
+                            isFullscreen ? "h-full" : "aspect-video"
+                        }`}
+                        role="presentation"
+                    >
+                        <div
+                            className={`absolute inset-0 z-10 ${
+                                shouldInterceptOverlay
+                                    ? "pointer-events-auto cursor-pointer"
+                                    : "pointer-events-none"
+                            }`}
+                            onPointerDown={handleOverlayPointerDown}
+                            onTouchStart={handleOverlayTouchStart}
+                            onClick={handleVideoClick}
+                            aria-hidden="true"
+                        />
+                        <div
+                            ref={playerRef}
+                            className="absolute inset-0 h-full w-full"
+                        />
+                    </div>
 
-                        <div className="flex items-center justify-between">
-                            <div className="flex flex-row gap-1.5 sm:gap-3">
-                                <button
-                                    type="button"
-                                    onClick={handleTogglePlay}
-                                    title={isPlaying ? "Pause" : "Play"}
-                                    className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
-                                    aria-label={isPlaying ? "Pause" : "Play"}
-                                    disabled={!isPlayerReady}
-                                >
-                                    {isPlaying ? (
-                                        <Pause className="size-3 md:size-5" />
-                                    ) : (
-                                        <Play className="size-3 md:size-5" />
-                                    )}
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={handleSeekBackward}
-                                    title="Skip backward 10s"
-                                    className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
-                                    aria-label="Seek backward 10 seconds"
-                                    disabled={!isPlayerReady}
-                                >
-                                    <SkipBack className="size-3 md:size-5" />
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={handleSeekForward}
-                                    title="Skip forward 10s"
-                                    className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
-                                    aria-label="Seek forward 10 seconds"
-                                    disabled={!isPlayerReady}
-                                >
-                                    <SkipForward className="size-3 md:size-5" />
-                                </button>
-
-                                <div className="flex items-center gap-2 sm:w-auto sm:gap-3">
-                                    <button
-                                        type="button"
-                                        title="Volume"
-                                        onClick={handleToggleMute}
-                                        className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
-                                        aria-label={volume === 0 ? "Unmute" : "Mute"}
-                                        disabled={!isPlayerReady}
-                                    >
-                                        {volume === 0 ? (
-                                            <VolumeX className="size-3 md:size-5" />
-                                        ) : (
-                                            <Volume2 className="size-3 md:size-5" />
-                                        )}
-                                    </button>
+                    <div
+                        className={`absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/60 via-black/40 to-transparent px-3 pb-3 pt-6 transition-opacity duration-200 sm:px-6 sm:pb-5 ${
+                            isFullscreen
+                                ? controlsVisible
+                                    ? "pointer-events-auto opacity-100"
+                                    : "pointer-events-none opacity-0"
+                                : inlineControlsVisibilityClass
+                        }`}
+                        onClick={(event) => {
+                            refreshManualControls();
+                            event.stopPropagation();
+                        }}
+                        onMouseDown={(event) => {
+                            refreshManualControls();
+                            event.stopPropagation();
+                        }}
+                        onTouchStart={(event) => {
+                            refreshManualControls();
+                            event.stopPropagation();
+                        }}
+                        onPointerDown={(event) => {
+                            refreshManualControls();
+                            event.stopPropagation();
+                        }}
+                    >
+                        <div className="flex flex-col gap-2.5">
+                            <div className="flex items-center gap-2 text-[10px] font-medium text-white/80 sm:text-xs">
+                                <span className="tabular-nums min-w-[2.5rem] text-center">
+                                    {formatTime(currentTime)}
+                                </span>
+                                <div className="relative flex-1">
                                     <input
                                         type="range"
                                         min={0}
-                                        max={100}
-                                        step={1}
-                                        value={volume}
-                                        onChange={handleVolume}
-                                        className="w-16 md:w-32 flex-1 accent-indigo-500"
+                                        max={duration || 0}
+                                        step={0.5}
+                                        value={
+                                            Number.isFinite(currentTime)
+                                                ? currentTime
+                                                : 0
+                                        }
+                                        onChange={handleSeek}
+                                        className="w-full accent-indigo-500"
                                         disabled={!isPlayerReady}
                                     />
+                                    {noteMarkers.length > 0 ? (
+                                        <div className="pointer-events-none absolute inset-0 z-10">
+                                            {noteMarkers.map((marker) => {
+                                                const isActive =
+                                                    activeMarkerId ===
+                                                    marker.id;
+                                                const tooltipAlignmentBase =
+                                                    "left-1/2 -translate-x-1/2";
+                                                const tooltipAlignmentClass =
+                                                    marker.anchor === "left"
+                                                        ? `${tooltipAlignmentBase} items-start translate-x-[-5%]`
+                                                        : marker.anchor ===
+                                                          "center-left"
+                                                        ? `${tooltipAlignmentBase} items-start -translate-x-[40%]`
+                                                        : marker.anchor ===
+                                                          "center-right"
+                                                        ? `${tooltipAlignmentBase} items-end -translate-x-[60%]`
+                                                        : marker.anchor ===
+                                                          "right"
+                                                        ? `${tooltipAlignmentBase} items-end -translate-x-[90%]`
+                                                        : `${tooltipAlignmentBase} items-center`;
+                                                return (
+                                                    <div
+                                                        key={marker.id}
+                                                        className="pointer-events-none absolute top-1/2 h-full"
+                                                        style={{
+                                                            left: `${marker.position}%`,
+                                                        }}
+                                                    >
+                                                        <div
+                                                            className="pointer-events-auto relative flex h-full"
+                                                            onPointerEnter={() =>
+                                                                handleMarkerEnter(
+                                                                    marker.id
+                                                                )
+                                                            }
+                                                            onPointerLeave={(
+                                                                event
+                                                            ) => {
+                                                                if (
+                                                                    !event.currentTarget.contains(
+                                                                        event.relatedTarget
+                                                                    )
+                                                                ) {
+                                                                    handleMarkerLeave();
+                                                                }
+                                                            }}
+                                                            onFocusCapture={() =>
+                                                                handleMarkerEnter(
+                                                                    marker.id
+                                                                )
+                                                            }
+                                                            onBlurCapture={(
+                                                                event
+                                                            ) => {
+                                                                if (
+                                                                    !event.currentTarget.contains(
+                                                                        event.relatedTarget
+                                                                    )
+                                                                ) {
+                                                                    handleMarkerLeave();
+                                                                }
+                                                            }}
+                                                        >
+                                                            <button
+                                                                type="button"
+                                                                className="relative flex h-3 w-[3px] md:h-4 md:w-[4px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-yellow-200 shadow-[0_0_8px_rgba(234,179,8,0.75)] ring-1 ring-yellow-500 transition hover:scale-110 focus-visible:scale-110 focus-visible:outline-none"
+                                                                onClick={(
+                                                                    event
+                                                                ) => {
+                                                                    event.preventDefault();
+                                                                    handleJumpToNote(
+                                                                        marker.timeSec
+                                                                    );
+                                                                }}
+                                                                onKeyDown={(
+                                                                    event
+                                                                ) => {
+                                                                    if (
+                                                                        event.key ===
+                                                                            "Enter" ||
+                                                                        event.key ===
+                                                                            " "
+                                                                    ) {
+                                                                        event.preventDefault();
+                                                                        handleJumpToNote(
+                                                                            marker.timeSec
+                                                                        );
+                                                                    }
+                                                                }}
+                                                                onFocus={() =>
+                                                                    handleMarkerEnter(
+                                                                        marker.id
+                                                                    )
+                                                                }
+                                                                aria-label={`Jump to note at ${formatTime(
+                                                                    marker.timeSec
+                                                                )}`}
+                                                                aria-expanded={
+                                                                    isActive
+                                                                }
+                                                            />
+                                                            {isActive ? (
+                                                                <div
+                                                                    className={`pointer-events-auto absolute bottom-full mb-2 lg:mb-3 flex flex-col ${tooltipAlignmentClass}`}
+                                                                    style={{
+                                                                        transform:
+                                                                            "translateY(-4px)",
+                                                                    }}
+                                                                >
+                                                                    <div className="w-[min(65vw,260px)] sm:w-[min(55vw,320px)] md:w-[min(45vw,380px)] rounded-lg border border-slate-200 bg-white/95 p-1.5 sm:p-2 md:p-2.5 lg:p-3 xl:max-w-[640px] xl:p-4 text-left text-[9px] sm:text-[9px] md:text-[10px] lg:text-[11px] xl:text-xs text-slate-600 shadow-2xl ring-1 ring-black/5 overflow-y-auto max-h-[35vh] sm:max-h-[40vh] md:max-h-[45vh] lg:max-h-[300px] xl:max-h-[340px]">
+                                                                        <div className="mb-1 inline-flex items-center rounded-full bg-slate-900 px-1 py-0.5 text-[8px] font-semibold text-white shadow sm:mb-1.5 sm:px-1.5 sm:text-[9px] md:text-[10px] lg:mb-2 lg:px-2 lg:text-[10px] xl:text-[11px]">
+                                                                            {formatTime(
+                                                                                marker.timeSec
+                                                                            )}
+                                                                        </div>
+                                                                        {marker.safeContent ? (
+                                                                            <div
+                                                                                className="note-marker-content whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-[9px] leading-relaxed text-slate-700 sm:text-[9px] md:text-[10px] lg:text-[11px] xl:text-xs"
+                                                                                dangerouslySetInnerHTML={{
+                                                                                    __html: marker.safeContent,
+                                                                                }}
+                                                                            />
+                                                                        ) : (
+                                                                            <p className="text-[9px] italic text-slate-400 sm:text-[9px] md:text-[10px] lg:text-[11px] xl:text-xs">
+                                                                                No
+                                                                                content
+                                                                            </p>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            ) : null}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : null}
                                 </div>
+                                <span className="tabular-nums min-w-[2.5rem] text-center">
+                                    {formatTime(duration)}
+                                </span>
                             </div>
 
-                            <div className="order-6 flex items-center justify-between gap-2 sm:order-none sm:w-auto sm:gap-3 sm:ml-auto">
-                                <div className="relative">
+                            <div className="flex items-center justify-between">
+                                <div className="flex flex-row gap-1.5 sm:gap-3">
                                     <button
                                         type="button"
-                                        onClick={handleOpenQuickNote}
-                                        title="Add quick note"
+                                        onClick={handleTogglePlay}
+                                        title={isPlaying ? "Pause" : "Play"}
                                         className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
-                                        aria-label="Add quick note"
+                                        aria-label={
+                                            isPlaying ? "Pause" : "Play"
+                                        }
                                         disabled={!isPlayerReady}
                                     >
-                                        <Pencil className="size-3 md:size-5" />
+                                        {isPlaying ? (
+                                            <Pause className="size-3 md:size-5" />
+                                        ) : (
+                                            <Play className="size-3 md:size-5" />
+                                        )}
                                     </button>
 
-                                    {isQuickNoteOpen && isFullscreen ? (
-                                        <>
-                                            <div
-                                                className="fixed inset-0 z-40 bg-black/30"
-                                                onClick={handleQuickNoteBackdropClick}
-                                            />
-                                            <div
-                                                className="absolute bottom-full right-0 z-50 mb-3 w-[92vw] max-w-[22rem] sm:max-w-[24rem] md:max-w-[26rem] origin-bottom-right animate-fadeIn"
-                                                onClick={(event) => event.stopPropagation()}
-                                            >
-                                                <div className="relative flex w-full max-h-[78vh] flex-col rounded-2xl bg-white/95 p-4 shadow-2xl ring-1 ring-black/10 backdrop-blur sm:max-h-[70vh] md:max-h-[64vh]">
-                                                    <div className="absolute -bottom-1 right-6 w-0 border-x-[6px] border-t-[6px] border-x-transparent border-t-white/95 drop-shadow-lg" />
-                                                    <div className="flex items-center justify-between gap-3">
-                                                        <span className="inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-[10px] font-semibold text-white shadow">
-                                                            {quickNoteDisplayTime}
-                                                        </span>
-                                                        <button
-                                                            type="button"
-                                                            onClick={handleCloseQuickNote}
-                                                            className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700"
-                                                            aria-label="Close quick note"
-                                                        >
-                                                            <X className="h-3.5 w-3.5" />
-                                                        </button>
-                                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleSeekBackward}
+                                        title="Skip backward 10s"
+                                        className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                        aria-label="Seek backward 10 seconds"
+                                        disabled={!isPlayerReady}
+                                    >
+                                        <SkipBack className="size-3 md:size-5" />
+                                    </button>
 
-                                                    <div className="mt-3 flex-1 overflow-hidden">
-                                                        <Editor
-                                                            className="h-full w-full [&_.ql-container]:h-full [&_.ql-container]:rounded-b-xl [&_.ql-container]:max-h-[52vh] sm:[&_.ql-container]:max-h-[48vh] md:[&_.ql-container]:max-h-[44vh] [&_.ql-editor]:min-h-[6rem] sm:[&_.ql-editor]:min-h-[7rem] md:[&_.ql-editor]:min-h-[8rem] [&_.ql-editor]:max-h-[50vh] sm:[&_.ql-editor]:max-h-[44vh] md:[&_.ql-editor]:max-h-[40vh] [&_.ql-editor]:text-sm [&_.ql-toolbar]:rounded-t-xl [&_.ql-toolbar]:border-none"
-                                                            placeholder="Capture a quick thought..."
-                                                            maxLength={MAX_NOTE_LENGTH}
-                                                            resetSignal={quickNoteResetSignal}
-                                                            onChange={handleQuickNoteChange}
-                                                        />
-                                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleSeekForward}
+                                        title="Skip forward 10s"
+                                        className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                        aria-label="Seek forward 10 seconds"
+                                        disabled={!isPlayerReady}
+                                    >
+                                        <SkipForward className="size-3 md:size-5" />
+                                    </button>
 
-                                                    {quickNoteError ? (
-                                                        <p className="mt-2 text-xs font-medium text-red-500">
-                                                            {quickNoteError}
-                                                        </p>
-                                                    ) : null}
+                                    <div className="flex items-center gap-2 sm:w-auto sm:gap-3">
+                                        <button
+                                            type="button"
+                                            title="Volume"
+                                            onClick={handleToggleMute}
+                                            className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                            aria-label={
+                                                volume === 0 ? "Unmute" : "Mute"
+                                            }
+                                            disabled={!isPlayerReady}
+                                        >
+                                            {volume === 0 ? (
+                                                <VolumeX className="size-3 md:size-5" />
+                                            ) : (
+                                                <Volume2 className="size-3 md:size-5" />
+                                            )}
+                                        </button>
+                                        <input
+                                            type="range"
+                                            min={0}
+                                            max={100}
+                                            step={1}
+                                            value={volume}
+                                            onChange={handleVolume}
+                                            className="w-16 md:w-32 flex-1 accent-indigo-500"
+                                            disabled={!isPlayerReady}
+                                        />
+                                    </div>
+                                </div>
 
-                                                    <div className="mt-3 flex items-center justify-between gap-3">
-                                                        <span className="text-[11px] font-medium text-slate-500">
-                                                            {quickNoteCharactersRemaining} characters remaining
-                                                        </span>
-                                                        <div className="flex items-center gap-2">
+                                <div className="order-6 flex items-center justify-between gap-2 sm:order-none sm:w-auto sm:gap-3 sm:ml-auto">
+                                    <div className="relative">
+                                        <button
+                                            type="button"
+                                            onClick={handleOpenQuickNote}
+                                            title="Add quick note"
+                                            className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                            aria-label="Add quick note"
+                                            disabled={!isPlayerReady}
+                                        >
+                                            <Pencil className="size-3 md:size-5" />
+                                        </button>
+
+                                        {isQuickNoteOpen && isFullscreen ? (
+                                            <>
+                                                <div
+                                                    className="fixed inset-0 z-40 bg-black/30"
+                                                    onClick={
+                                                        handleQuickNoteBackdropClick
+                                                    }
+                                                />
+                                                <div
+                                                    className="absolute bottom-full right-0 z-50 mb-3 w-[92vw] max-w-[22rem] sm:max-w-[24rem] md:max-w-[26rem] origin-bottom-right animate-fadeIn"
+                                                    onClick={(event) =>
+                                                        event.stopPropagation()
+                                                    }
+                                                >
+                                                    <div className="relative flex w-full max-h-[78vh] flex-col rounded-2xl bg-white/95 p-4 shadow-2xl ring-1 ring-black/10 backdrop-blur sm:max-h-[70vh] md:max-h-[64vh]">
+                                                        <div className="absolute -bottom-1 right-6 w-0 border-x-[6px] border-t-[6px] border-x-transparent border-t-white/95 drop-shadow-lg" />
+                                                        <div className="flex items-center justify-between gap-3">
+                                                            <span className="inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-[10px] font-semibold text-white shadow">
+                                                                {
+                                                                    quickNoteDisplayTime
+                                                                }
+                                                            </span>
                                                             <button
                                                                 type="button"
-                                                                onClick={handleCloseQuickNote}
-                                                                className="px-3 py-1.5 text-xs font-semibold text-slate-500 transition hover:text-slate-700"
+                                                                onClick={
+                                                                    handleCloseQuickNote
+                                                                }
+                                                                className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700"
+                                                                aria-label="Close quick note"
                                                             >
-                                                                Cancel
+                                                                <X className="h-3.5 w-3.5" />
                                                             </button>
-                                                            <button
-                                                                type="button"
-                                                                onClick={handleSaveQuickNote}
-                                                                className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md transition hover:bg-indigo-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
-                                                                disabled={!canSaveQuickNote}
-                                                            >
-                                                                {isSavingQuickNote ? "Saving..." : "Save"}
-                                                            </button>
+                                                        </div>
+
+                                                        <div className="mt-3 flex-1 overflow-hidden">
+                                                            <Editor
+                                                                className="h-full w-full [&_.ql-container]:h-full [&_.ql-container]:rounded-b-xl [&_.ql-container]:max-h-[52vh] sm:[&_.ql-container]:max-h-[48vh] md:[&_.ql-container]:max-h-[44vh] [&_.ql-editor]:min-h-[6rem] sm:[&_.ql-editor]:min-h-[7rem] md:[&_.ql-editor]:min-h-[8rem] [&_.ql-editor]:max-h-[50vh] sm:[&_.ql-editor]:max-h-[44vh] md:[&_.ql-editor]:max-h-[40vh] [&_.ql-editor]:text-sm [&_.ql-toolbar]:rounded-t-xl [&_.ql-toolbar]:border-none"
+                                                                placeholder="Capture a quick thought..."
+                                                                maxLength={
+                                                                    MAX_NOTE_LENGTH
+                                                                }
+                                                                resetSignal={
+                                                                    quickNoteResetSignal
+                                                                }
+                                                                onChange={
+                                                                    handleQuickNoteChange
+                                                                }
+                                                            />
+                                                        </div>
+
+                                                        {quickNoteError ? (
+                                                            <p className="mt-2 text-xs font-medium text-red-500">
+                                                                {quickNoteError}
+                                                            </p>
+                                                        ) : null}
+
+                                                        <div className="mt-3 flex items-center justify-between gap-3">
+                                                            <span className="text-[11px] font-medium text-slate-500">
+                                                                {
+                                                                    quickNoteCharactersRemaining
+                                                                }{" "}
+                                                                characters
+                                                                remaining
+                                                            </span>
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={
+                                                                        handleCloseQuickNote
+                                                                    }
+                                                                    className="px-3 py-1.5 text-xs font-semibold text-slate-500 transition hover:text-slate-700"
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={
+                                                                        handleSaveQuickNote
+                                                                    }
+                                                                    className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md transition hover:bg-indigo-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+                                                                    disabled={
+                                                                        !canSaveQuickNote
+                                                                    }
+                                                                >
+                                                                    {isSavingQuickNote
+                                                                        ? "Saving..."
+                                                                        : "Save"}
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </>
-                                    ) : null}
+                                            </>
+                                        ) : null}
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={handleCyclePlaybackRate}
+                                        title="Playback rate"
+                                        className="flex h-7 min-w-[2rem] md:min-w-[2.75rem] items-center justify-center bg-white/15 text-[8px] md:text-xs font-semibold text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                        aria-label="Change playback speed"
+                                        disabled={!isPlayerReady}
+                                    >
+                                        {`${playbackRate}x`}
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={handleToggleFullscreen}
+                                        title={
+                                            isFullscreen
+                                                ? "Exit fullscreen"
+                                                : "Enter fullscreen"
+                                        }
+                                        className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
+                                        aria-label={
+                                            isFullscreen
+                                                ? "Exit fullscreen"
+                                                : "Enter fullscreen"
+                                        }
+                                    >
+                                        {isFullscreen ? (
+                                            <Minimize2 className="size-3 md:size-5" />
+                                        ) : (
+                                            <Maximize2 className="size-3 md:size-5" />
+                                        )}
+                                    </button>
                                 </div>
-
-                                <button
-                                    type="button"
-                                    onClick={handleCyclePlaybackRate}
-                                    title="Playback rate"
-                                    className="flex h-7 min-w-[2rem] md:min-w-[2.75rem] items-center justify-center bg-white/15 text-[8px] md:text-xs font-semibold text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
-                                    aria-label="Change playback speed"
-                                    disabled={!isPlayerReady}
-                                >
-                                    {`${playbackRate}x`}
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={handleToggleFullscreen}
-                                    title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                                    className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
-                                    aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                                >
-                                    {isFullscreen ? (
-                                        <Minimize2 className="size-3 md:size-5" />
-                                    ) : (
-                                        <Maximize2 className="size-3 md:size-5" />
-                                    )}
-                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="mt-4">
-                <h1 className="text-2xl font-semibold text-slate-900">
-                    {video?.title || "YouTube Video"}
-                </h1>
-                {video?.channelTitle ? (
-                    <p className="text-sm text-slate-500 mt-1">{video.channelTitle}</p>
-                ) : null}
-            </div>
+                <div className="mt-4">
+                    <h1 className="text-2xl font-semibold text-slate-900">
+                        {video?.title || "YouTube Video"}
+                    </h1>
+                    {video?.channelTitle ? (
+                        <p className="text-sm text-slate-500 mt-1">
+                            {video.channelTitle}
+                        </p>
+                    ) : null}
+                </div>
             </div>
 
             {/* Right column: notes */}
@@ -1161,6 +1293,7 @@ const WatchPage = ({ onTitleChange }) => {
                     {/* Notes content */}
                     <div>
                         <NoteSection
+                            ref={noteSectionRef}
                             videoId={videoId}
                             playerRef={playerInstanceRef}
                             onNotesChange={handleNotesChange}
@@ -1176,7 +1309,9 @@ const WatchPage = ({ onTitleChange }) => {
                                     <div
                                         className="prose prose-sm text-slate-700 whitespace-pre-wrap break-words"
                                         dangerouslySetInnerHTML={{
-                                            __html: sanitizeHtmlString(note.content ?? ""),
+                                            __html: sanitizeHtmlString(
+                                                note.content ?? ""
+                                            ),
                                         }}
                                     />
                                 </div>
@@ -1186,79 +1321,10 @@ const WatchPage = ({ onTitleChange }) => {
                 </div>
             </div>
 
-
             <ToastContainer
                 toasts={quickNoteToasts}
                 removeToast={removeQuickNoteToast}
             />
-
-            {isQuickNoteOpen && !isFullscreen ? (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label="Quick note"
-                    onClick={handleQuickNoteBackdropClick}
-                >
-                    <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl space-y-5">
-                        <div className="flex items-start justify-between gap-4">
-                            <span className="inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
-                                {formatTime(quickNoteTimestamp ?? 0)}
-                            </span>
-                            <button
-                                type="button"
-                                onClick={handleCloseQuickNote}
-                                className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700"
-                                aria-label="Close quick note"
-                            >
-                                <X className="h-4 w-4" />
-                            </button>
-                        </div>
-
-                        <Editor
-                            className="w-full"
-                            placeholder="Capture a quick thought..."
-                            maxLength={MAX_NOTE_LENGTH}
-                            resetSignal={quickNoteResetSignal}
-                            onChange={handleQuickNoteChange}
-                        />
-
-                        {quickNoteError ? (
-                            <p className="text-sm font-medium text-red-500">
-                                {quickNoteError}
-                            </p>
-                        ) : null}
-
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="text-xs font-medium text-slate-500">
-                                {Math.max(
-                                    0,
-                                    MAX_NOTE_LENGTH -
-                                        Math.min(quickNoteLength, MAX_NOTE_LENGTH)
-                                )}{" "}
-                                characters remaining
-                            </div>
-                            <div className="flex items-center justify-end gap-2">
-                                <button
-                                    type="button"
-                                    onClick={handleCloseQuickNote}
-                                    className="px-4 py-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleSaveQuickNote}
-                                    className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-indigo-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
-                                    disabled={!hasMeaningfulText(sanitizeHtmlString(quickNoteContent).trim()) || isSavingQuickNote}
-                                >
-                                    {isSavingQuickNote ? "Saving..." : "Save note"}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            ) : null}
         </div>
     );
 };

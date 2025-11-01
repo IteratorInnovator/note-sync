@@ -5,7 +5,7 @@ import MainHeader from "../components/MainHeader";
 import MyVideosView from "../views/MyVideosView";
 import SearchView from "../views/SearchView";
 import SettingsView from "../views/SettingsView";
-import WatchPage from "../views/WatchPage";
+import WatchView from "../views/WatchPage";
 import { useIsMdUp } from "../utils/breakpoint";
 import PlaylistsView from "../views/PlaylistsView";
 
@@ -61,7 +61,7 @@ export default function Main() {
                 return <SettingsView />;
             case "watch":
                 setTitle("Watch");
-                return <WatchPage />;
+                return <WatchView />;
             default:
                 setTitle("My Videos");
                 return null; // immediately redirected above

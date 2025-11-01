@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useRef } from "react";
+import {
+    forwardRef,
+    useEffect,
+    useImperativeHandle,
+    useMemo,
+    useRef,
+} from "react";
 import { useQuill } from "react-quilljs";
 import "quill/dist/quill.snow.css";
 
@@ -13,7 +19,7 @@ const MODULES = {
 
 const FORMATS = ["bold", "italic", "underline", "list"];
 
-const Editor = ({
+const Editor = forwardRef(({
     initialHtml = "",
     placeholder = "",
     maxLength,
@@ -21,7 +27,7 @@ const Editor = ({
     readOnly = false,
     resetSignal,
     onChange,
-}) => {
+}, ref) => {
     const options = useMemo(
         () => ({
             theme: "snow",
@@ -34,6 +40,7 @@ const Editor = ({
     );
 
     const { quill, quillRef } = useQuill(options);
+    const toolbarRef = useRef(null);
     const prevHtmlRef = useRef("");
     const didInitRef = useRef(false);
     const resetSignalRef = useRef(resetSignal);
@@ -81,6 +88,17 @@ const Editor = ({
         prevHtmlRef.current = "";
     }, [quill, resetSignal]);
 
+    useImperativeHandle(
+        ref,
+        () => ({
+            focus: () => {
+                quill?.focus();
+            },
+            getQuill: () => quill ?? null,
+        }),
+        [quill]
+    );
+
     return (
         <div className={`w-full min-w-0 ${className}`}>
             <div
@@ -97,6 +115,8 @@ const Editor = ({
             />
         </div>
     );
-};
+});
+
+Editor.displayName = "Editor";
 
 export default Editor;
