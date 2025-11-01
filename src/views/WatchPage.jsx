@@ -4,11 +4,11 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { auth } from "..";
 import NoteSection from "../components/ui/NoteSection";
 import Editor from "../components/ui/Editor";
-import { ToastContainer } from "../components/ui/Toast";
 import { createNote, getVideoById } from "../utils/firestore";
 import { hasMeaningfulText, sanitizeHtmlString } from "../utils/htmlHelpers";
 import {
     CircleCheck,
+    CircleX,
     Maximize2,
     Minimize2,
     Pause,
@@ -20,6 +20,7 @@ import {
     VolumeX,
     X,
 } from "lucide-react";
+import { useToasts } from "../stores/useToasts";
 
 let youtubeApiPromise = null;
 
@@ -97,7 +98,6 @@ const WatchPage = ({ onTitleChange }) => {
     const [quickNoteTimestamp, setQuickNoteTimestamp] = useState(0);
     const [isSavingQuickNote, setIsSavingQuickNote] = useState(false);
     const [quickNoteError, setQuickNoteError] = useState("");
-    const [quickNoteToasts, setQuickNoteToasts] = useState([]);
     const PLAYBACK_RATES = [0.25, 0.5, 1, 1.25, 1.5, 1.75, 2];
     const [playbackRateIndex, setPlaybackRateIndex] = useState(
         PLAYBACK_RATES.indexOf(1)
@@ -113,7 +113,7 @@ const WatchPage = ({ onTitleChange }) => {
     const manualControlsTimeoutRef = useRef(null);
     const skipNextClickRef = useRef(false);
     const isTouchDeviceRef = useRef(false);
-    const quickNoteToastIdRef = useRef(0);
+ 
     const noteSectionRef = useRef(null);
 
     const shouldInterceptOverlay = useMemo(
@@ -128,25 +128,7 @@ const WatchPage = ({ onTitleChange }) => {
         setNotes(Array.isArray(nextNotes) ? nextNotes : []);
     }, []);
 
-    const removeQuickNoteToast = useCallback((id) => {
-        setQuickNoteToasts((prev) => prev.filter((toast) => toast.id !== id));
-    }, []);
-
-    const addQuickNoteToast = useCallback(
-        (
-            message,
-            Icon = CircleCheck,
-            iconColour = "text-emerald-400",
-            duration = 3000
-        ) => {
-            const id = quickNoteToastIdRef.current++;
-            setQuickNoteToasts((prev) => [
-                ...prev,
-                { id, message, Icon, iconColour, duration },
-            ]);
-        },
-        []
-    );
+    const { addToast } = useToasts();
 
     const handleOpenQuickNote = useCallback(() => {
         if (!isPlayerReady) return;
@@ -156,6 +138,14 @@ const WatchPage = ({ onTitleChange }) => {
         const safeTime = Number.isFinite(rawTime) ? rawTime : 0;
 
         playerInstanceRef.current?.pauseVideo?.();
+
+        if (isFullscreen) {
+            if (hideControlsTimeoutRef.current) {
+                window.clearTimeout(hideControlsTimeoutRef.current);
+                hideControlsTimeoutRef.current = null;
+            }
+            setControlsVisible(true);
+        }
 
         if (!isFullscreen) {
             noteSectionRef.current?.focusNewNoteEditor?.();
@@ -235,9 +225,17 @@ const WatchPage = ({ onTitleChange }) => {
             setIsQuickNoteOpen(false);
             setQuickNoteContent("");
             setQuickNoteLength(0);
-            addQuickNoteToast("Note successfully created");
+            addToast({
+                message: "Note saved",
+                Icon: CircleCheck,
+                iconColour: "text-emerald-400",
+            })
         } catch {
-            setQuickNoteError("Could not save the note. Please try again.");
+            addToast({
+                message: "Failed to save note",
+                Icon: CircleX,
+                iconColour: "text-red-400",
+            })
         } finally {
             setIsSavingQuickNote(false);
             playerInstanceRef.current?.playVideo?.();
@@ -247,7 +245,7 @@ const WatchPage = ({ onTitleChange }) => {
         quickNoteContent,
         quickNoteTimestamp,
         videoId,
-        addQuickNoteToast,
+        addToast,
         playerInstanceRef,
     ]);
 
@@ -350,6 +348,7 @@ const WatchPage = ({ onTitleChange }) => {
         if (!isFullscreen) return;
         setControlsVisible(true);
         clearHideControlsTimeout();
+        if (isQuickNoteOpen) return;
         hideControlsTimeoutRef.current = window.setTimeout(() => {
             const stillFullscreen =
                 document.fullscreenElement === videoContainerRef.current ||
@@ -358,13 +357,32 @@ const WatchPage = ({ onTitleChange }) => {
                 document.mozFullScreenElement === videoContainerRef.current ||
                 document.msFullscreenElement === videoContainerRef.current;
 
-            if (stillFullscreen) {
+            if (stillFullscreen && !isQuickNoteOpen) {
                 setControlsVisible(false);
             }
 
             hideControlsTimeoutRef.current = null;
         }, 3000);
-    }, [clearHideControlsTimeout, isFullscreen]);
+    }, [clearHideControlsTimeout, isFullscreen, isQuickNoteOpen]);
+
+    useEffect(() => {
+        if (!isFullscreen) return;
+
+        if (isQuickNoteOpen) {
+            // Force controls visible and kill any pending hide
+            setControlsVisible(true);
+            clearHideControlsTimeout();
+        } else {
+            // Modal just closed
+            // Restart the normal auto-hide cycle
+            showFullscreenControls();
+        }
+    }, [
+        isQuickNoteOpen,
+        isFullscreen,
+        clearHideControlsTimeout,
+        showFullscreenControls,
+    ]);
 
     const refreshManualControls = useCallback(() => {
         if (isTouchDevice && !isFullscreen) {
@@ -574,18 +592,31 @@ const WatchPage = ({ onTitleChange }) => {
         };
     }, []);
     useEffect(() => {
+        const cleanup = () => {
+            clearHideControlsTimeout();
+        };
+
         if (!isFullscreen) {
             setControlsVisible(false);
-            clearHideControlsTimeout();
+            cleanup();
             return;
+        }
+
+        if (isQuickNoteOpen) {
+            cleanup();
+            setControlsVisible(true);
+            return cleanup;
         }
 
         showFullscreenControls();
 
-        return () => {
-            clearHideControlsTimeout();
-        };
-    }, [isFullscreen, clearHideControlsTimeout, showFullscreenControls]);
+        return cleanup;
+    }, [
+        isFullscreen,
+        isQuickNoteOpen,
+        clearHideControlsTimeout,
+        showFullscreenControls,
+    ]);
 
     useEffect(() => {
         if (!isFullscreen) return undefined;
@@ -1044,7 +1075,7 @@ const WatchPage = ({ onTitleChange }) => {
                                                                             "translateY(-4px)",
                                                                     }}
                                                                 >
-                                                                    <div className="w-[min(65vw,260px)] sm:w-[min(55vw,320px)] md:w-[min(45vw,380px)] rounded-lg border border-slate-200 bg-white/95 p-1.5 sm:p-2 md:p-2.5 lg:p-3 xl:max-w-[640px] xl:p-4 text-left text-[9px] sm:text-[9px] md:text-[10px] lg:text-[11px] xl:text-xs text-slate-600 shadow-2xl ring-1 ring-black/5 overflow-y-auto max-h-[35vh] sm:max-h-[40vh] md:max-h-[45vh] lg:max-h-[300px] xl:max-h-[340px]">
+                                                                    <div className="w-[min(65vw,260px)] sm:w-[min(55vw,320px)] md:w-[min(45vw,380px)] rounded-lg border border-slate-200 bg-white/95 p-1.5 sm:p-2 md:p-2.5 lg:p-3 xl:max-w-[640px] xl:p-4 text-left text-[9px] md:text-xs lg:text-sm xl:text-xs text-slate-600 shadow-2xl ring-1 ring-black/5 overflow-y-auto max-h-[35vh] sm:max-h-[40vh] md:max-h-[45vh] lg:max-h-[300px] xl:max-h-[340px]">
                                                                         <div className="mb-1 inline-flex items-center rounded-full bg-slate-900 px-1 py-0.5 text-[8px] font-semibold text-white shadow sm:mb-1.5 sm:px-1.5 sm:text-[9px] md:text-[10px] lg:mb-2 lg:px-2 lg:text-[10px] xl:text-[11px]">
                                                                             {formatTime(
                                                                                 marker.timeSec
@@ -1342,10 +1373,7 @@ const WatchPage = ({ onTitleChange }) => {
                 </div>
             </div>
 
-            <ToastContainer
-                toasts={quickNoteToasts}
-                removeToast={removeQuickNoteToast}
-            />
+            
         </div>
     );
 };
