@@ -905,7 +905,11 @@ const WatchPage = ({ onTitleChange }) => {
                     >
                         <div
                             className={`absolute inset-0 z-10 ${
-                                shouldInterceptOverlay
+                                isFullscreen
+                                    ? controlsVisible || isQuickNoteOpen
+                                        ? "pointer-events-none"
+                                        : "pointer-events-auto cursor-pointer"
+                                    : shouldInterceptOverlay
                                     ? "pointer-events-auto cursor-pointer"
                                     : "pointer-events-none"
                             }`}
