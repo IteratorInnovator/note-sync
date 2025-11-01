@@ -36,10 +36,11 @@ const SidebarContent = ({ collapsed, onCloseMobile }) => {
             {/* Brand collapses, keeps DOM for smooth slide */}
             <div
                 className={`overflow-hidden transition-[max-height,opacity,padding] duration-300
-              ${collapsed
-                        ? "max-h-0 opacity-0 py-0 px-0"
-                        : "max-h-20 opacity-100 py-2 px-2"
-                    }`}
+              ${
+                  collapsed
+                      ? "max-h-0 opacity-0 py-0 px-0"
+                      : "max-h-20 opacity-100 py-2 px-2"
+              }`}
             >
                 <div className="flex flex-row items-center h-10 px-2 gap-x-3">
                     <svg
@@ -75,8 +76,8 @@ const SidebarContent = ({ collapsed, onCloseMobile }) => {
                         title={collapsed ? label : undefined}
                         className={({ isActive }) =>
                             `${itemBase} ${cols} ${gap} ${pad} ${isActive
-                                ? "bg-sky-200 text-sky-700 font-medium"
-                                : "hover:bg-sky-100 hover:text-sky-600"
+                                ? "bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold shadow-lg shadow-red-500/30"
+                                : "hover:bg-red-100 hover:text-red-600"
                             }`
                         }
                     >
@@ -103,8 +104,9 @@ const SidebarContent = ({ collapsed, onCloseMobile }) => {
                 >
                     <LogOut className="size-4 place-self-center" />
                     <span
-                        className={`${labelBase} ${collapsed ? labelHidden : labelShown
-                            }`}
+                        className={`${labelBase} ${
+                            collapsed ? labelHidden : labelShown
+                        }`}
                     >
                         Sign out
                     </span>
