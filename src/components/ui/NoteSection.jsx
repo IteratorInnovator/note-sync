@@ -179,6 +179,7 @@ const NoteSection = forwardRef(
             ...prev,
             { noteId: id, content: htmlContent, timeSec },
         ]);
+        playerRef.current?.playVideo?.();
         handleCancelNewNote();
         addToast("Note successfully created");
     };

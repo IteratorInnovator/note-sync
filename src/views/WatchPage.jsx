@@ -351,7 +351,17 @@ const WatchPage = ({ onTitleChange }) => {
         setControlsVisible(true);
         clearHideControlsTimeout();
         hideControlsTimeoutRef.current = window.setTimeout(() => {
-            setControlsVisible(false);
+            const stillFullscreen =
+                document.fullscreenElement === videoContainerRef.current ||
+                document.webkitFullscreenElement ===
+                    videoContainerRef.current ||
+                document.mozFullScreenElement === videoContainerRef.current ||
+                document.msFullscreenElement === videoContainerRef.current;
+
+            if (stillFullscreen) {
+                setControlsVisible(false);
+            }
+
             hideControlsTimeoutRef.current = null;
         }, 3000);
     }, [clearHideControlsTimeout, isFullscreen]);
@@ -798,7 +808,18 @@ const WatchPage = ({ onTitleChange }) => {
         [handleTouchIntent]
     );
 
-    const handleOverlayTouchStart = useCallback(handleTouchIntent(true));
+    const handleOverlayTouchStart = useCallback(
+        (event) => {
+            skipNextClickRef.current = false;
+            const handled = handleTouchIntent(true);
+            skipNextClickRef.current = handled;
+            if (handled) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        },
+        [handleTouchIntent]
+    );
 
     const handleVideoClick = () => {
         if (!isPlayerReady) return;
