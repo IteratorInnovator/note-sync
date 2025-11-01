@@ -90,7 +90,7 @@ const Editor = ({
         [&_.ql-toolbar]:bg-slate-300/80
         [&_.ql-container]:w-full [&_.ql-container]:min-w-0
         [&_.ql-editor]:whitespace-pre-wrap [&_.ql-editor]:break-words [&_.ql-editor]:[overflow-wrap:anywhere]
-        [&_.ql-editor]:min-h-[10rem] md:[&_.ql-editor]:min-h-[14rem]
+        [&_.ql-editor]:min-h-[10rem] md:[&_.ql-editor]:min-h-[8rem]
         [&_.ql-editor]:max-h-[55vh] lg:[&_.ql-editor]:max-h-[65vh]
         [&_.ql-editor]:overflow-y-auto
       "

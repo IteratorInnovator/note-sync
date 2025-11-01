@@ -217,8 +217,8 @@ const NoteSection = ({
                 </div>
 
                 {/* Input Section */}
-                <div className="mb-6 rounded-xl bg-white p-4 shadow-sm border border-slate-200">
-                    <div className="flex w-full flex-col md:flex-row items-start gap-4">
+                <div className="mb-6 rounded-xl bg-white p-3 shadow-sm border border-slate-200">
+                    <div className="flex w-full flex-col items-start gap-4">
                         <div className="flex h-10 min-w-[64px] items-center justify-center rounded-full bg-slate-900 px-2 text-xs font-semibold text-white shadow-sm">
                             {formatTime(currentTimestamp)}
                         </div>
@@ -289,7 +289,7 @@ const NoteSection = ({
                                 key={note.noteId}
                                 className="group rounded-xl bg-white p-4 shadow-sm transition-all hover:shadow-md border border-slate-200 hover:border-blue-200"
                             >
-                                <div className="flex flex-col md:flex-row w-full min-w-0 items-start gap-4">
+                                <div className="flex flex-col w-full min-w-0 items-start gap-4">
                                     <button
                                         onClick={() => handleSeek(note.timeSec)}
                                         className="flex shrink-0 items-center gap-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 px-3 py-2 shadow-sm transition-all hover:shadow-md hover:scale-105 active:scale-95"

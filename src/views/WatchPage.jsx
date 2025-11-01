@@ -792,24 +792,13 @@ const WatchPage = ({ onTitleChange }) => {
     );
 
     const handleOverlayTouchStart = useCallback(
-        (event) => {
-            skipNextClickRef.current = false;
-            const handled = handleTouchIntent(true);
-            skipNextClickRef.current = handled;
-            if (handled) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-        },
-        [handleTouchIntent]
+
+        handleTouchIntent(true)
     );
 
     const handleVideoClick = () => {
         if (!isPlayerReady) return;
-        if (skipNextClickRef.current) {
-            skipNextClickRef.current = false;
-            return;
-        }
+
         if (isTouchDevice && shouldInterceptOverlay) {
             if (!isFullscreen && !manualControlsVisible) {
                 showManualControls();
