@@ -3,7 +3,7 @@ import Searchbar from "../components/ui/Searchbar";
 import VideoList from "../components/VideoList";
 import GridLayoutControls from "../components/ui/GridLayoutControls";
 import { searchVideos } from "../utils/youtube";
-import { LoaderCircle, ArrowBigLeft, ArrowBigRight, Loader  } from "lucide-react";
+import { LoaderCircle, ArrowBigLeft, ArrowBigRight, Loader, Search, Sparkles } from "lucide-react";
 
 const SearchView = ({
     searchTerm = "",
@@ -38,7 +38,7 @@ const SearchView = ({
 
     const gridColumnsClass = isCondensedLayout
         ? "grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2"
-        : "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3";
+        : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4";
 
     const items = useMemo(() => results?.items ?? [], [results]);
     const nextPageToken = results?.nextPageToken ?? null;
@@ -77,63 +77,130 @@ const SearchView = ({
     };
 
     return (
-        <div className="rounded-lg max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 min-h-screen space-y-6">
-            <Searchbar
-                value={searchTerm}
-                onChange={onSearchTermChange}
-                onResults={onResultsChange}
-            />
-            {items.length !== 0 && (
-                <GridLayoutControls
-                    isMdUp={isMdUp}
-                    isCondensedLayout={isCondensedLayout}
-                    setIsCondensedLayout={setIsCondensedLayout}
-                />
-            )}
-
-            {items.length === 0 ? (
-                <div className="flex h-64 items-center justify-center">
-                    <div className="text-center md:text-lg text-slate-500/60">
-                        Start searching to discover new videos.
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+            <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
+                {/* Header Section with Search */}
+                <div className="mb-6 sm:mb-8">
+                    {items.length === 0 && (
+                        <div className="text-center mb-6 sm:mb-8">
+                            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2 sm:mb-3">
+                                Discover Videos
+                            </h1>
+                            <p className="text-sm sm:text-base text-gray-600">
+                                Search for YouTube videos and save them with notes
+                            </p>
+                        </div>
+                    )}
+                    
+                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
+                        <Searchbar
+                            value={searchTerm}
+                            onChange={onSearchTermChange}
+                            onResults={onResultsChange}
+                        />
                     </div>
                 </div>
-            ) : (
-                <div className="space-y-6">
-                    <VideoList
-                        videoList={items}
-                        gridClassName={gridColumnsClass}
-                    />
 
-                    {pagingError ? (
-                        <p className="text-sm text-red-500">{pagingError}</p>
-                    ) : null}
-
-                    <div className="flex items-center justify-center gap-3">
-                        <button
-                            type="button"
-                            title="Previous Page"
-                            onClick={() => handlePageChange("prev", prevPageToken)}
-                            disabled={!prevPageToken || isPaging}
-                            className="cursor-pointer inline-flex items-center rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            {isPaging && pagingDirection === "prev"
-                                ? <Loader className="animate-spin size-5" />
-                                : <ArrowBigLeft className="size-5" /> }
-                        </button>
-                        <button
-                            type="button"
-                            title="Next Page"
-                            onClick={() => handlePageChange("next", nextPageToken)}
-                            disabled={!nextPageToken || isPaging}
-                            className="cursor-pointer inline-flex items-center rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            {isPaging && pagingDirection === "next"
-                                ? <Loader className="animate-spin size-5" />
-                                : <ArrowBigRight className="size-5" /> }
-                        </button>
+                {/* Results Header with Controls */}
+                {items.length !== 0 && (
+                    <div className="mb-6 sm:mb-8">
+                        <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4 mb-4">
+                            <div className="flex items-center gap-2 sm:gap-3">
+                                <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-green-100 text-green-800 whitespace-nowrap">
+                                    {items.length} results
+                                </span>
+                                {searchTerm && (
+                                    <span className="text-xs sm:text-sm text-gray-600 truncate max-w-[150px] sm:max-w-none">
+                                        for "{searchTerm}"
+                                    </span>
+                                )}
+                            </div>
+                            <GridLayoutControls
+                                isMdUp={isMdUp}
+                                isCondensedLayout={isCondensedLayout}
+                                setIsCondensedLayout={setIsCondensedLayout}
+                            />
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
+
+                {/* Empty State */}
+                {items.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[60vh] px-4">
+                        <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-8 sm:p-12 max-w-md w-full text-center">
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                                <Search className="w-8 h-8 sm:w-10 sm:h-10 text-green-600" />
+                            </div>
+                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
+                                Start Exploring
+                            </h2>
+                            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 leading-relaxed">
+                                Enter a search term above to discover videos. Save your favorites and take notes!
+                            </p>
+                            <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-gray-500">
+                                <Sparkles className="w-4 h-4" />
+                                <span>Try searching for topics you're interested in</span>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="space-y-6 sm:space-y-8">
+                        {/* Video Grid */}
+                        <div className="animate-fadeIn">
+                            <VideoList
+                                videoList={items}
+                                gridClassName={gridColumnsClass}
+                            />
+                        </div>
+
+                        {/* Pagination Error */}
+                        {pagingError && (
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                                <p className="text-sm text-red-600">{pagingError}</p>
+                            </div>
+                        )}
+
+                        {/* Pagination Controls */}
+                        <div className="flex items-center justify-center gap-3 pb-4">
+                            <button
+                                type="button"
+                                title="Previous Page"
+                                onClick={() => handlePageChange("prev", prevPageToken)}
+                                disabled={!prevPageToken || isPaging}
+                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-white border-2 border-gray-300 px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-medium text-gray-700 transition-all hover:bg-gray-50 hover:border-gray-400 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white disabled:hover:border-gray-300 disabled:hover:shadow-none"
+                            >
+                                {isPaging && pagingDirection === "prev" ? (
+                                    <Loader className="animate-spin w-5 h-5" />
+                                ) : (
+                                    <ArrowBigLeft className="w-5 h-5" />
+                                )}
+                                <span className="hidden sm:inline">Previous</span>
+                            </button>
+                            
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 rounded-lg">
+                                <div className={`w-2 h-2 rounded-full ${prevPageToken ? 'bg-gray-400' : 'bg-gray-300'}`} />
+                                <div className="w-2 h-2 rounded-full bg-green-500" />
+                                <div className={`w-2 h-2 rounded-full ${nextPageToken ? 'bg-gray-400' : 'bg-gray-300'}`} />
+                            </div>
+
+                            <button
+                                type="button"
+                                title="Next Page"
+                                onClick={() => handlePageChange("next", nextPageToken)}
+                                disabled={!nextPageToken || isPaging}
+                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-white border-2 border-gray-300 px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-medium text-gray-700 transition-all hover:bg-gray-50 hover:border-gray-400 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white disabled:hover:border-gray-300 disabled:hover:shadow-none"
+                            >
+                                <span className="hidden sm:inline">Next</span>
+                                {isPaging && pagingDirection === "next" ? (
+                                    <Loader className="animate-spin w-5 h-5" />
+                                ) : (
+                                    <ArrowBigRight className="w-5 h-5" />
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
