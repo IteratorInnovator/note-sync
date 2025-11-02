@@ -83,6 +83,10 @@ function AppContent() {
                 element={isVerifiedUser ? <Main /> : <Navigate to="/" />}
             />
             <Route
+                path="/home"
+                element={isVerifiedUser ? <Main /> : <Navigate to="/" />}
+            />
+            <Route
                 path="/search"
                 element={isVerifiedUser ? <Main /> : <Navigate to="/" />}
             />

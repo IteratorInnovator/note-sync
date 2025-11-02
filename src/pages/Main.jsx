@@ -8,10 +8,11 @@ import SettingsView from "../views/SettingsView";
 import WatchView from "../views/WatchView";
 import { useIsMdUp } from "../utils/breakpoint";
 import PlaylistsView from "../views/PlaylistsView";
+import HomeView from "../views/HomeView";
 import { useToasts } from "../stores/useToasts";
 import { ToastContainer } from "../components/ui/Toast";
 
-const VALID_PATHS = new Set(["videos", "search", "playlists", "settings", "watch"]);
+const VALID_PATHS = new Set(["home", "videos", "search", "playlists", "settings", "watch"]);
 
 export default function Main() {
     const mdUp = useIsMdUp();
@@ -47,6 +48,9 @@ export default function Main() {
 
     const view = useMemo(() => {
         switch (tab) {
+            case "home":
+                setTitle("Home");
+                return <HomeView />;
             case "videos":
                 setTitle("My Videos");
                 return <MyVideosView />;

@@ -4,12 +4,14 @@ import {
     Search,
     ListVideo,
     LogOut,
+    Home,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../../..";
 
 const navItems = [
+    { label: "Home", to: "/home", icon: Home },
     { label: "My Videos", to: "/videos", icon: Clapperboard },
     { label: "Search Videos", to: "/search", icon: Search },
     { label: "My Playlists", to: "/playlists", icon: ListVideo },
