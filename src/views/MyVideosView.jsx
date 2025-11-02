@@ -7,21 +7,19 @@ import { auth } from "../";
 import ViewControls from "../components/ui/ViewControls";
 import { ToastContainer } from "../components/ui/Toast";
 
-
 const highlightMatch = (text, query) => {
-  if (!query) return text;
-  const regex = new RegExp(`(${query})`, "gi");
-  return text.split(regex).map((part, idx) =>
-    regex.test(part) ? (
-      <span key={idx} className="bg-yellow-200">
-        {part}
-      </span>
-    ) : (
-      part
-    )
-  );
+    if (!query) return text;
+    const regex = new RegExp(`(${query})`, "gi");
+    return text.split(regex).map((part, idx) =>
+        regex.test(part) ? (
+            <span key={idx} className="bg-yellow-200">
+                {part}
+            </span>
+        ) : (
+            part
+        )
+    );
 };
-
 
 const MyVideosView = () => {
     const [videoList, setVideoList] = useState([]);
@@ -112,10 +110,12 @@ const MyVideosView = () => {
                 {!loading && hasVideosInLibrary && (
                     <div className="mb-6 sm:mb-8">
                         <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                            <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-blue-100 text-blue-800 whitespace-nowrap">
+                            {/* Purple badge */}
+                            <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-purple-100 text-purple-800 whitespace-nowrap">
                                 {videoList.length}{" "}
                                 {videoList.length === 1 ? "video" : "videos"}
                             </span>
+
                             {searchQuery && hasVideosAfterSearch && (
                                 <span className="text-xs sm:text-sm text-gray-600 whitespace-nowrap">
                                     {sortedVideos.length} result
@@ -145,7 +145,7 @@ const MyVideosView = () => {
                 {/* Loading */}
                 {loading && (
                     <div className="flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[60vh] px-4">
-                        <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
+                        <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-gray-200 border-t-purple-500 rounded-full animate-spin"></div>
                         <p className="mt-4 sm:mt-6 text-base sm:text-lg text-gray-600 font-medium text-center">
                             Loading your videos...
                         </p>
@@ -159,9 +159,9 @@ const MyVideosView = () => {
                             onClick={() => navigate("/search")}
                             className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-6 sm:p-8 md:p-12 max-w-md w-full text-center cursor-pointer transition-transform hover:scale-[1.02]"
                         >
-                            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                                 <svg
-                                    className="w-8 h-8 sm:w-10 sm:h-10 text-blue-600"
+                                    className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-500"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -174,12 +174,12 @@ const MyVideosView = () => {
                                     />
                                 </svg>
                             </div>
+
                             <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
                                 No Videos Yet
                             </h2>
                             <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                                Start building your video library by searching
-                                for videos. Tap anywhere to explore!
+                                Start building your video library by searching for videos. Tap anywhere to explore!
                             </p>
                         </div>
                     </div>
@@ -188,10 +188,11 @@ const MyVideosView = () => {
                 {/* No Search Results */}
                 {!loading && hasVideosInLibrary && !hasVideosAfterSearch && (
                     <div className="flex flex-col items-center justify-center min-h-[40vh] sm:min-h-[50vh] px-4">
-                        <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-6 sm:p-8 md:p-12 max-w-md w-full text-center">
-                            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-amber-100 to-amber-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 sm:p-12 max-w-sm w-full text-center">
+                            {/* Icon */}
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                                 <svg
-                                    className="w-8 h-8 sm:w-10 sm:h-10 text-amber-600"
+                                    className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-600"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -204,18 +205,24 @@ const MyVideosView = () => {
                                     />
                                 </svg>
                             </div>
-                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
+
+                            {/* Heading */}
+                            <h2 className="text-2xl font-bold text-gray-900 mb-2">
                                 No Results Found
                             </h2>
-                            <p className="text-sm sm:text-base text-gray-600 mb-1 sm:mb-2">
+
+                            {/* Subtext */}
+                            <p className="text-gray-600 mb-4">
                                 No videos match your search for
                             </p>
-                            <p className="text-base sm:text-lg font-semibold text-gray-900 mb-5 sm:mb-6 break-words px-2">
+                            <p className="text-gray-900 font-semibold mb-6 break-words">
                                 "{searchQuery}"
                             </p>
+
+                            {/* Clear Search Button */}
                             <button
                                 onClick={() => setSearchQuery("")}
-                                className="inline-flex items-center justify-center px-5 sm:px-6 py-2.5 sm:py-3 bg-gray-900 text-white text-sm sm:text-base font-medium rounded-lg hover:bg-gray-800 hover:scale-110 duration-200 ease-in-out transition-all w-auto"
+                                className="px-6 py-3 bg-black text-white font-medium rounded-lg hover:bg-gray-800 transition-all"
                             >
                                 Clear Search
                             </button>
@@ -223,20 +230,17 @@ const MyVideosView = () => {
                     </div>
                 )}
 
+
                 {/* Video Grid */}
                 {!loading && hasVideosAfterSearch && (
                     <div className="animate-fadeIn">
                         <SavedVideoList
                             videoList={sortedVideos}
                             gridClassName={gridColumnsClass}
-                            highlightFunc={(text) =>
-                                highlightMatch(text, searchQuery)
-                            }
+                            highlightFunc={(text) => highlightMatch(text, searchQuery)}
                             onRemoveSuccess={(removedId) =>
                                 setVideoList((prev) =>
-                                    prev.filter(
-                                        (video) => video.videoId !== removedId
-                                    )
+                                    prev.filter((video) => video.videoId !== removedId)
                                 )
                             }
                         />
