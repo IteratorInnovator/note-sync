@@ -38,9 +38,8 @@ const ViewControls = ({
         <div className="flex flex-col gap-5 justify-between">
             {/* Row 1: Searchbar */}
             <div
-                className={`flex ${
-                    centerSearch ? "justify-center" : "justify-start"
-                }`}
+                className={`flex ${centerSearch ? "justify-center" : "justify-start"
+                    }`}
             >
                 <div className="w-full md:w-1/2">
                     <LibrarySearchbar
@@ -87,7 +86,9 @@ const ViewControls = ({
                     {/* Reset Button */}
                     <Button
                         onClick={onReset}
-                        className="rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-xs md:text-sm font-medium shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                        className="rounded-full bg-gray-400 hover:bg-gray-500 text-white text-xs md:text-sm font-medium shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"
+
+
                     >
                         Reset
                     </Button>
