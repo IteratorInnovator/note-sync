@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { auth } from "..";
 import NoteSection from "../components/ui/NoteSection";
+import DiscussionForum from "../components/ui/DiscussionForum";
 import Editor from "../components/ui/Editor";
 import { createNote, getVideoById } from "../utils/firestore";
 import { hasMeaningfulText, sanitizeHtmlString } from "../utils/htmlHelpers";
@@ -98,6 +99,7 @@ const WatchPage = ({ onTitleChange }) => {
     const [quickNoteTimestamp, setQuickNoteTimestamp] = useState(0);
     const [isSavingQuickNote, setIsSavingQuickNote] = useState(false);
     const [quickNoteError, setQuickNoteError] = useState("");
+    const [activeMobilePanel, setActiveMobilePanel] = useState("notes");
     const PLAYBACK_RATES = [0.25, 0.5, 1, 1.25, 1.5, 1.75, 2];
     const [playbackRateIndex, setPlaybackRateIndex] = useState(
         PLAYBACK_RATES.indexOf(1)
@@ -148,6 +150,7 @@ const WatchPage = ({ onTitleChange }) => {
         }
 
         if (!isFullscreen) {
+            setActiveMobilePanel("notes");
             noteSectionRef.current?.focusNewNoteEditor?.();
             return;
         }
@@ -319,6 +322,19 @@ const WatchPage = ({ onTitleChange }) => {
         hasMeaningfulText(quickNoteSanitizedContent) && !isSavingQuickNote;
 
     const quickNoteDisplayTime = formatTime(quickNoteTimestamp ?? 0);
+
+    const discussionVideoMeta = useMemo(
+        () => ({
+            title: video?.title ?? "",
+            channelTitle: video?.channelTitle ?? "",
+            thumbnailUrl:
+                video?.thumbnailUrl ??
+                video?.thumbnails?.medium?.url ??
+                video?.thumbnails?.default?.url ??
+                "",
+        }),
+        [video]
+    );
 
     const clearHideControlsTimeout = useCallback(() => {
         if (hideControlsTimeoutRef.current) {
@@ -875,7 +891,7 @@ const WatchPage = ({ onTitleChange }) => {
 
     return (
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 w-full">
-            <div className="md:w-[65%] flex flex-col gap-4">
+            <div className="md:w-[65%] md:flex-1 md:min-w-0 flex flex-col gap-4">
                 <div
                     className="group relative overflow-hidden border border-slate-200 shadow-xl transition-[border-radius] rounded-2xl"
                     ref={videoContainerRef}
@@ -1341,10 +1357,52 @@ const WatchPage = ({ onTitleChange }) => {
                         </p>
                     ) : null}
                 </div>
+
+                <div className="mt-6 md:hidden">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 p-1 text-sm font-medium text-slate-600">
+                        <button
+                            type="button"
+                            onClick={() => setActiveMobilePanel("notes")}
+                            className={`rounded-full px-4 py-1.5 transition ${
+                                activeMobilePanel === "notes"
+                                    ? "bg-white text-slate-900 shadow"
+                                    : "text-slate-500"
+                            }`}
+                        >
+                            Notes
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveMobilePanel("discussion")}
+                            className={`rounded-full px-4 py-1.5 transition ${
+                                activeMobilePanel === "discussion"
+                                    ? "bg-white text-slate-900 shadow"
+                                    : "text-slate-500"
+                            }`}
+                        >
+                            Discussion
+                        </button>
+                    </div>
+                </div>
+
+                <div
+                    className={`mt-3 ${
+                        activeMobilePanel === "discussion" ? "block" : "hidden"
+                    } md:block`}
+                >
+                    <DiscussionForum
+                        videoId={videoId}
+                        videoMeta={discussionVideoMeta}
+                    />
+                </div>
             </div>
 
-            {/* Right column: notes */}
-            <div className="w-full md:w-[35%]">
+            {/* Notes */}
+            <div
+                className={`${
+                    activeMobilePanel === "notes" ? "block" : "hidden"
+                } md:block md:w-[35%]`}
+            >
                 <div className="flex flex-col gap-6">
                     {/* Notes content */}
                     <div>
