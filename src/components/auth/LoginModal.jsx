@@ -47,7 +47,7 @@ const LoginModal = ({ switchToSignUpView, switchToForgotPasswordView }) => {
                 return;
             }
             // success: redirect to main page
-            navigate("/videos");
+            navigate("/home");
         } catch (err) {
             fetchSignInMethodsForEmail(auth, email).then((methods) => {
                 if (methods.includes("google.com")) {
