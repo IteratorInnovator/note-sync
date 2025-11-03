@@ -3,7 +3,7 @@ import Searchbar from "../components/ui/Searchbar";
 import VideoList from "../components/VideoList";
 import GridLayoutControls from "../components/ui/GridLayoutControls";
 import { searchVideos } from "../utils/youtube";
-import { LoaderCircle, ArrowBigLeft, ArrowBigRight, Loader, Search, Sparkles } from "lucide-react";
+import { ArrowBigLeft, ArrowBigRight, Loader, Search, Sparkles } from "lucide-react";
 
 const SearchView = ({
     searchTerm = "",
@@ -15,6 +15,11 @@ const SearchView = ({
     const [isPaging, setIsPaging] = useState(false);
     const [pagingDirection, setPagingDirection] = useState(null);
     const [pagingError, setPagingError] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [hasSearched, setHasSearched] = useState(false);
+    const [noResultsTerm, setNoResultsTerm] = useState("");
+    const trimmedSearchTerm = searchTerm.trim();
+    const hasNoResults = hasSearched && Boolean(noResultsTerm);
 
     // Determine grid column classes based on toggle
     const [isCondensedLayout, setIsCondensedLayout] = useState(false);
@@ -43,26 +48,105 @@ const SearchView = ({
     const items = useMemo(() => results?.items ?? [], [results]);
     const nextPageToken = results?.nextPageToken ?? null;
     const prevPageToken = results?.prevPageToken ?? null;
+    const pageBadges = useMemo(() => {
+        const badges = [];
+        const previousValue = currentPage - 1;
+
+        if (prevPageToken && previousValue >= 1) {
+            badges.push({
+                key: `page-${previousValue}`,
+                value: previousValue,
+                variant: "adjacent",
+            });
+        }
+
+        badges.push({
+            key: `page-${currentPage}`,
+            value: currentPage,
+            variant: "current",
+        });
+
+        if (nextPageToken) {
+            const nextValue = currentPage + 1;
+            badges.push({
+                key: `page-${nextValue}`,
+                value: nextValue,
+                variant: "adjacent",
+            });
+        }
+
+        return badges.slice(0, 3);
+    }, [prevPageToken, nextPageToken, currentPage]);
 
     useEffect(() => {
         setPagingError("");
         setIsPaging(false);
         setPagingDirection(null);
+
+        if (!results?.prevPageToken) {
+            setCurrentPage(1);
+        }
     }, [results]);
 
+    useEffect(() => {
+        if (!trimmedSearchTerm) {
+            setHasSearched(false);
+            setNoResultsTerm("");
+        }
+    }, [trimmedSearchTerm]);
+
+    useEffect(() => {
+        if (!hasSearched || !trimmedSearchTerm) return;
+
+        if (items.length > 0) {
+            setNoResultsTerm("");
+        }
+    }, [items, hasSearched, trimmedSearchTerm]);
+
+    const handleSearchResults = (payload) => {
+        const normalizedPayload =
+            payload ?? {
+                items: [],
+                nextPageToken: null,
+                prevPageToken: null,
+            };
+
+        onResultsChange?.(normalizedPayload);
+
+        if (!trimmedSearchTerm) {
+            setHasSearched(false);
+            setNoResultsTerm("");
+            return;
+        }
+
+        setHasSearched(true);
+        const totalItems = normalizedPayload.items?.length ?? 0;
+
+        if (totalItems === 0) {
+            setNoResultsTerm(trimmedSearchTerm);
+        } else {
+            setNoResultsTerm("");
+        }
+    };
+
     const handlePageChange = async (direction, pageToken) => {
-        if (!pageToken || !searchTerm.trim() || isPaging) return;
+        if (!pageToken || !trimmedSearchTerm || isPaging) return;
 
         setIsPaging(true);
         setPagingDirection(direction);
         setPagingError("");
         const controller = new AbortController();
         try {
-            const payload = await searchVideos(searchTerm.trim(), {
+            const payload = await searchVideos(trimmedSearchTerm, {
                 pageToken,
                 signal: controller.signal,
             });
-            onResultsChange?.(payload);
+            handleSearchResults(payload);
+            if (direction === "next") {
+                setCurrentPage((prev) => prev + 1);
+            } else if (direction === "prev") {
+                setCurrentPage((prev) => Math.max(1, prev - 1));
+            }
             if (typeof window !== "undefined") {
                 window.scrollTo({ top: 0, behavior: "smooth" });
             }
@@ -81,40 +165,17 @@ const SearchView = ({
             <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
                 {/* Header Section with Search */}
                 <div className="mb-6 sm:mb-8">
-                    {items.length === 0 && (
-                        <div className="text-center mb-6 sm:mb-8">
-                            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2 sm:mb-3">
-                                Discover Videos
-                            </h1>
-                            <p className="text-sm sm:text-base text-gray-600">
-                                Search for YouTube videos and save them with notes
-                            </p>
-                        </div>
-                    )}
-                    
-                    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
-                        <Searchbar
-                            value={searchTerm}
-                            onChange={onSearchTermChange}
-                            onResults={onResultsChange}
-                        />
-                    </div>
+                    <Searchbar
+                        value={searchTerm}
+                        onChange={onSearchTermChange}
+                        onResults={handleSearchResults}
+                    />
                 </div>
 
                 {/* Results Header with Controls */}
                 {items.length !== 0 && (
                     <div className="mb-6 sm:mb-8">
                         <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4 mb-4">
-                            <div className="flex items-center gap-2 sm:gap-3">
-                                <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-green-100 text-green-800 whitespace-nowrap">
-                                    {items.length} results
-                                </span>
-                                {searchTerm && (
-                                    <span className="text-xs sm:text-sm text-gray-600 truncate max-w-[150px] sm:max-w-none">
-                                        for "{searchTerm}"
-                                    </span>
-                                )}
-                            </div>
                             <GridLayoutControls
                                 isMdUp={isMdUp}
                                 isCondensedLayout={isCondensedLayout}
@@ -126,21 +187,41 @@ const SearchView = ({
 
                 {/* Empty State */}
                 {items.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[60vh] px-4">
-                        <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-8 sm:p-12 max-w-md w-full text-center">
-                            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                                <Search className="w-8 h-8 sm:w-10 sm:h-10 text-green-600" />
+                    <div className="flex flex-col items-center justify-center px-4 min-h-[50vh] sm:min-h-[60vh]">
+                        <div className="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-8 text-center shadow-lg sm:p-12">
+                            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-green-100 to-green-200 text-green-600 sm:mb-7 sm:h-20 sm:w-20">
+                                <Search className="h-8 w-8 sm:h-10 sm:w-10" aria-hidden="true" />
                             </div>
-                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
-                                Start Exploring
-                            </h2>
-                            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 leading-relaxed">
-                                Enter a search term above to discover videos. Save your favorites and take notes!
-                            </p>
-                            <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-gray-500">
-                                <Sparkles className="w-4 h-4" />
-                                <span>Try searching for topics you're interested in</span>
-                            </div>
+                            {hasNoResults ? (
+                                <>
+                                    <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">
+                                        No results for
+                                        <span className="mt-1 block break-all text-green-600 sm:mt-2">
+                                            "{noResultsTerm}"
+                                        </span>
+                                    </h2>
+                                    <p className="mt-3 text-sm leading-relaxed text-gray-600 sm:text-base">
+                                        Try adjusting your keywords, removing filters, or searching for a broader topic to find related videos.
+                                    </p>
+                                    <div className="mt-5 flex items-center justify-center gap-2 text-xs text-gray-500 sm:text-sm">
+                                        <Sparkles className="h-4 w-4" aria-hidden="true" />
+                                        <span>Tip: keep it simple, then refine once you see promising results.</span>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">
+                                        Start Exploring
+                                    </h2>
+                                    <p className="mt-3 text-sm leading-relaxed text-gray-600 sm:text-base">
+                                        Enter a search term above to discover videos. Save your favorites and take notes!
+                                    </p>
+                                    <div className="mt-5 flex items-center justify-center gap-2 text-xs text-gray-500 sm:text-sm">
+                                        <Sparkles className="h-4 w-4" aria-hidden="true" />
+                                        <span>Try searching for topics you're interested in.</span>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 ) : (
@@ -156,7 +237,9 @@ const SearchView = ({
                         {/* Pagination Error */}
                         {pagingError && (
                             <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-                                <p className="text-sm text-red-600">{pagingError}</p>
+                                <p className="text-sm text-red-600">
+                                    {pagingError}
+                                </p>
                             </div>
                         )}
 
@@ -167,20 +250,28 @@ const SearchView = ({
                                 title="Previous Page"
                                 onClick={() => handlePageChange("prev", prevPageToken)}
                                 disabled={!prevPageToken || isPaging}
-                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-white border-2 border-gray-300 px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-medium text-gray-700 transition-all hover:bg-gray-50 hover:border-gray-400 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white disabled:hover:border-gray-300 disabled:hover:shadow-none"
+                                className="inline-flex items-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 {isPaging && pagingDirection === "prev" ? (
-                                    <Loader className="animate-spin w-5 h-5" />
+                                    <Loader className="size-5 animate-spin" />
                                 ) : (
-                                    <ArrowBigLeft className="w-5 h-5" />
+                                    <ArrowBigLeft className="size-5" />
                                 )}
-                                <span className="hidden sm:inline">Previous</span>
                             </button>
-                            
-                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 rounded-lg">
-                                <div className={`w-2 h-2 rounded-full ${prevPageToken ? 'bg-gray-400' : 'bg-gray-300'}`} />
-                                <div className="w-2 h-2 rounded-full bg-green-500" />
-                                <div className={`w-2 h-2 rounded-full ${nextPageToken ? 'bg-gray-400' : 'bg-gray-300'}`} />
+
+                            <div className="flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5">
+                                {pageBadges.map((badge) => (
+                                    <span
+                                        key={badge.key}
+                                        className={`flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold ${
+                                            badge.variant === "current"
+                                                ? "border-green-600 bg-green-500 text-white"
+                                                : "border-gray-300 bg-white text-gray-700"
+                                        }`}
+                                    >
+                                        {badge.value}
+                                    </span>
+                                ))}
                             </div>
 
                             <button
@@ -188,13 +279,12 @@ const SearchView = ({
                                 title="Next Page"
                                 onClick={() => handlePageChange("next", nextPageToken)}
                                 disabled={!nextPageToken || isPaging}
-                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-white border-2 border-gray-300 px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-medium text-gray-700 transition-all hover:bg-gray-50 hover:border-gray-400 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white disabled:hover:border-gray-300 disabled:hover:shadow-none"
+                                className="inline-flex items-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                                <span className="hidden sm:inline">Next</span>
                                 {isPaging && pagingDirection === "next" ? (
-                                    <Loader className="animate-spin w-5 h-5" />
+                                    <Loader className="size-5 animate-spin" />
                                 ) : (
-                                    <ArrowBigRight className="w-5 h-5" />
+                                    <ArrowBigRight className="size-5" />
                                 )}
                             </button>
                         </div>
