@@ -4,14 +4,12 @@ import {
     Search,
     ListVideo,
     LogOut,
-    Home,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../../..";
 
 const navItems = [
-    { label: "Home", to: "/home", icon: Home },
     { label: "My Videos", to: "/videos", icon: Clapperboard },
     { label: "Search Videos", to: "/search", icon: Search },
     { label: "My Playlists", to: "/playlists", icon: ListVideo },
@@ -44,7 +42,11 @@ const SidebarContent = ({ collapsed, onCloseMobile }) => {
                       : "max-h-20 opacity-100 py-2 px-2"
               }`}
             >
-                <div className="flex flex-row items-center h-10 px-2 gap-x-3">
+                <NavLink
+                    to="/home"
+                    onClick={onCloseMobile}
+                    className="cursor-pointer flex flex-row items-center h-10 px-2 gap-x-3"
+                >
                     <svg
                         width="28"
                         height="28"
@@ -64,7 +66,7 @@ const SidebarContent = ({ collapsed, onCloseMobile }) => {
                     <span className="text-lg font-semibold text-red-500">
                         NoteSync
                     </span>
-                </div>
+                </NavLink>
             </div>
 
             {/* Nav */}
@@ -77,16 +79,18 @@ const SidebarContent = ({ collapsed, onCloseMobile }) => {
                         aria-label={label}
                         title={collapsed ? label : undefined}
                         className={({ isActive }) =>
-                            `${itemBase} ${cols} ${gap} ${pad} ${isActive
-                                ? "bg-sky-200 text-sky-700 font-medium"
-                                : "hover:bg-sky-100 hover:text-sky-600"
+                            `${itemBase} ${cols} ${gap} ${pad} ${
+                                isActive
+                                    ? "bg-sky-200 text-sky-700 font-medium"
+                                    : "hover:bg-sky-100 hover:text-sky-600"
                             }`
                         }
                     >
                         <Icon className="size-4 place-self-center" />
                         <span
-                            className={`${labelBase} ${collapsed ? labelHidden : labelShown
-                                }`}
+                            className={`${labelBase} ${
+                                collapsed ? labelHidden : labelShown
+                            }`}
                         >
                             {label}
                         </span>

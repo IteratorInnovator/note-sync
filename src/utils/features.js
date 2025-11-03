@@ -1,5 +1,12 @@
 import { Search, Video, FileText, List, Settings, Download } from "lucide-react";
 
+import searchVideosGif from "../assets/gifs/search-videos.gif";
+import manageVideosGif from "../assets/gifs/manage-videos.gif";
+// import takeNotesGif from "../assets/gifs/take-notes.gif";
+// import organizePlaylistsGif from "../assets/gifs/organize-playlists.gif";
+// import settingsGif from "../assets/gifs/settings.gif";
+// import exportNotesGif from "../assets/gif/export-notes.gif";
+
 export const features = [
     {
         id: 1,
@@ -11,7 +18,8 @@ export const features = [
             "Enter your search query or paste a YouTube URL",
             "Browse through the results",
             "Use the add icon to save videos to your library"
-        ]
+        ],
+        gifUrl: searchVideosGif
     },
     {
         id: 2,
@@ -23,7 +31,8 @@ export const features = [
             "Click on any video to watch and take notes",
             "Use the delete icon to remove videos you no longer need",
             "Use the filter and search function to find specific videos"
-        ]
+        ],
+        gifUrl: manageVideosGif
     },
     {
         id: 3,
@@ -37,7 +46,8 @@ export const features = [
             "Your note will be timestamped automatically",
             "View that part of the video again by clicking on the note timestamp",
             "Edit or delete notes anytime by clicking on them"
-        ]
+        ],
+        
     },
     {
         id: 4,
@@ -50,7 +60,8 @@ export const features = [
             "Enter the name of the playlist",
             "Select and add the videos you want to your playlists",
             "Rename or delete playlists as needed"
-        ]
+        ],
+        
     },
     {
         id: 5,
@@ -62,7 +73,8 @@ export const features = [
             "Adjust your video preferences and display options",
             "Enable or disable safe search filters",
             "Use 'Reset' to restore default settings"
-        ]
+        ],
+        
     },
     {
         id: 6,
@@ -73,6 +85,7 @@ export const features = [
             "Select the video with notes you want to export",
             "Click the 'Download Notes' button",
             "Download the generated PDF file"
-        ]
+        ],
+        
     }
 ];

@@ -5,6 +5,7 @@ import { auth } from ".";
 import "./App.css";
 import Index from "./pages/Index";
 import Main from "./pages/Main";
+import Home from "./pages/Home";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import { Loader2 } from "lucide-react";
@@ -84,7 +85,7 @@ function AppContent() {
             />
             <Route
                 path="/home"
-                element={isVerifiedUser ? <Main /> : <Navigate to="/" />}
+                element={isVerifiedUser ? <Home /> : <Navigate to="/" />}
             />
             <Route
                 path="/search"
