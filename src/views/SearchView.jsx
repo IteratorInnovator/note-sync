@@ -3,7 +3,13 @@ import Searchbar from "../components/ui/Searchbar";
 import VideoList from "../components/VideoList";
 import GridLayoutControls from "../components/ui/GridLayoutControls";
 import { searchVideos } from "../utils/youtube";
-import { LoaderCircle, ArrowBigLeft, ArrowBigRight, Loader, Search, Sparkles } from "lucide-react";
+import {
+    ArrowBigLeft,
+    ArrowBigRight,
+    Loader,
+    Search,
+    Sparkles,
+} from "lucide-react";
 
 const SearchView = ({
     searchTerm = "",
@@ -15,10 +21,10 @@ const SearchView = ({
     const [isPaging, setIsPaging] = useState(false);
     const [pagingDirection, setPagingDirection] = useState(null);
     const [pagingError, setPagingError] = useState("");
-
-    // Determine grid column classes based on toggle
+    const [currentPage, setCurrentPage] = useState(1);
     const [isCondensedLayout, setIsCondensedLayout] = useState(false);
 
+    // Track screen size
     useEffect(() => {
         if (typeof window === "undefined") return;
         const mediaQuery = window.matchMedia("(min-width: 768px)");
@@ -36,9 +42,10 @@ const SearchView = ({
         };
     }, []);
 
+    // Grid rules
     const gridColumnsClass = isCondensedLayout
-        ? "grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2"
-        : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4";
+        ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2" // condensed
+        : "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3"; // default
 
     const items = useMemo(() => results?.items ?? [], [results]);
     const nextPageToken = results?.nextPageToken ?? null;
@@ -50,12 +57,14 @@ const SearchView = ({
         setPagingDirection(null);
     }, [results]);
 
+    // Handle paging with page counter
     const handlePageChange = async (direction, pageToken) => {
         if (!pageToken || !searchTerm.trim() || isPaging) return;
 
         setIsPaging(true);
         setPagingDirection(direction);
         setPagingError("");
+
         const controller = new AbortController();
         try {
             const payload = await searchVideos(searchTerm.trim(), {
@@ -63,6 +72,12 @@ const SearchView = ({
                 signal: controller.signal,
             });
             onResultsChange?.(payload);
+
+            // Update page number
+            setCurrentPage((prev) =>
+                direction === "next" ? prev + 1 : Math.max(1, prev - 1)
+            );
+
             if (typeof window !== "undefined") {
                 window.scrollTo({ top: 0, behavior: "smooth" });
             }
@@ -91,7 +106,7 @@ const SearchView = ({
                             </p>
                         </div>
                     )}
-                    
+
                     <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
                         <Searchbar
                             value={searchTerm}
@@ -162,12 +177,13 @@ const SearchView = ({
 
                         {/* Pagination Controls */}
                         <div className="flex items-center justify-center gap-3 pb-4">
+                            {/* Prev */}
                             <button
                                 type="button"
                                 title="Previous Page"
                                 onClick={() => handlePageChange("prev", prevPageToken)}
                                 disabled={!prevPageToken || isPaging}
-                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-white border-2 border-gray-300 px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-medium text-gray-700 transition-all hover:bg-gray-50 hover:border-gray-400 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white disabled:hover:border-gray-300 disabled:hover:shadow-none"
+                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-white border-2 border-gray-300 px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-medium text-gray-700 transition-all hover:bg-gray-50 hover:border-gray-400 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 {isPaging && pagingDirection === "prev" ? (
                                     <Loader className="animate-spin w-5 h-5" />
@@ -176,19 +192,39 @@ const SearchView = ({
                                 )}
                                 <span className="hidden sm:inline">Previous</span>
                             </button>
-                            
-                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 rounded-lg">
-                                <div className={`w-2 h-2 rounded-full ${prevPageToken ? 'bg-gray-400' : 'bg-gray-300'}`} />
-                                <div className="w-2 h-2 rounded-full bg-green-500" />
-                                <div className={`w-2 h-2 rounded-full ${nextPageToken ? 'bg-gray-400' : 'bg-gray-300'}`} />
+
+                            {/* ✅ Numeric Pagination */}
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg text-sm font-medium text-gray-700">
+                                <span
+                                    className={`px-2 py-1 rounded-md ${
+                                        !prevPageToken
+                                            ? "text-gray-400"
+                                            : "cursor-pointer hover:text-gray-900"
+                                    }`}
+                                >
+                                    {currentPage > 1 ? currentPage - 1 : ""}
+                                </span>
+                                <span className="px-3 py-1 bg-green-500 text-white rounded-md">
+                                    {currentPage}
+                                </span>
+                                <span
+                                    className={`px-2 py-1 rounded-md ${
+                                        !nextPageToken
+                                            ? "text-gray-400"
+                                            : "cursor-pointer hover:text-gray-900"
+                                    }`}
+                                >
+                                    {nextPageToken ? currentPage + 1 : ""}
+                                </span>
                             </div>
 
+                            {/* Next */}
                             <button
                                 type="button"
                                 title="Next Page"
                                 onClick={() => handlePageChange("next", nextPageToken)}
                                 disabled={!nextPageToken || isPaging}
-                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-white border-2 border-gray-300 px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-medium text-gray-700 transition-all hover:bg-gray-50 hover:border-gray-400 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white disabled:hover:border-gray-300 disabled:hover:shadow-none"
+                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-white border-2 border-gray-300 px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-medium text-gray-700 transition-all hover:bg-gray-50 hover:border-gray-400 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 <span className="hidden sm:inline">Next</span>
                                 {isPaging && pagingDirection === "next" ? (
