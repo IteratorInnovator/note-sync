@@ -95,22 +95,26 @@ const FeatureCard = ({ feature, onClick }) => {
                     {feature.description}
                 </p>
 
-                {/* GIF/Image with zoom effect */}
-                {feature.gifUrl && (
-                    <div 
+                {/* Demo media with zoom effect */}
+                {feature.videoUrl && (
+                    <div
                         className={`mt-2 w-full overflow-hidden rounded-lg transition-all duration-700 ${
-                            isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
+                            isVisible ? "opacity-100 scale-100" : "opacity-0 scale-90"
                         }`}
                         style={{
-                            transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
-                            transitionDelay: '500ms'
+                            transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+                            transitionDelay: "500ms",
                         }}
                     >
-                        <img
-                            src={feature.gifUrl}
-                            alt={`${feature.title} demo`}
-                            loading="lazy"
-                            className={`h-full w-full object-cover transition-transform duration-500 ${isHovered ? 'scale-110' : 'scale-100'}`}
+                        <video
+                            src={feature.videoUrl}
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            className={`h-full w-full object-cover transition-transform duration-500 ${
+                                isHovered ? "scale-110" : "scale-100"
+                            }`}
                         />
                     </div>
                 )}

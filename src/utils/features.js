@@ -1,11 +1,9 @@
 import { Search, Video, FileText, List, Settings, Download } from "lucide-react";
 
-import searchVideosGif from "../assets/gifs/search-videos.gif";
-import manageVideosGif from "../assets/gifs/manage-videos.gif";
-// import takeNotesGif from "../assets/gifs/take-notes.gif";
-// import organizePlaylistsGif from "../assets/gifs/organize-playlists.gif";
-// import settingsGif from "../assets/gifs/settings.gif";
-// import exportNotesGif from "../assets/gif/export-notes.gif";
+import searchVideos from "../assets/videos/search-videos.mp4"; 
+import organizePlaylists from "../assets/videos/organize-playlists.mp4";
+import manageVideos from "../assets/videos/manage-videos.mp4";
+import settings from "../assets/videos/settings.mp4";
 
 export const features = [
     {
@@ -19,7 +17,7 @@ export const features = [
             "Browse through the results",
             "Use the add icon to save videos to your library"
         ],
-        gifUrl: searchVideosGif
+        videoUrl: searchVideos
     },
     {
         id: 2,
@@ -32,7 +30,7 @@ export const features = [
             "Use the delete icon to remove videos you no longer need",
             "Use the filter and search function to find specific videos"
         ],
-        gifUrl: manageVideosGif
+        videoUrl: manageVideos
     },
     {
         id: 3,
@@ -61,7 +59,7 @@ export const features = [
             "Select and add the videos you want to your playlists",
             "Rename or delete playlists as needed"
         ],
-        
+        videoUrl: organizePlaylists
     },
     {
         id: 5,
@@ -74,7 +72,7 @@ export const features = [
             "Enable or disable safe search filters",
             "Use 'Reset' to restore default settings"
         ],
-        
+        videoUrl: settings
     },
     {
         id: 6,

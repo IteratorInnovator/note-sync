@@ -71,7 +71,7 @@ function AppContent() {
                     ) : mode === "verifyEmail" ? (
                         <VerifyEmailPage />
                     ) : isVerifiedUser ? (
-                        <Navigate to="/videos" />
+                        <Navigate to="/home" />
                     ) : (
                         <Index />
                     )
@@ -107,7 +107,7 @@ function AppContent() {
             {/* Catch-all. Redirect unknown paths based on auth state. */}
             <Route
                 path="*"
-                element={<Navigate replace to={isVerifiedUser ? "/videos" : "/"} />}
+                element={<Navigate replace to={isVerifiedUser ? "/home" : "/"} />}
             />
         </Routes>
     );

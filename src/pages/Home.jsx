@@ -40,7 +40,7 @@ const Home = () => {
                             }`}
                             style={{ transitionDelay: "100ms" }}
                         >
-                            Welcome back, {user?.displayName || "User"}
+                            Welcome to NoteSync, {user?.displayName || "User"}
                         </p>
 
                         {/* Main heading - fade in and scale */}
@@ -75,8 +75,9 @@ const Home = () => {
                         }`}
                         style={{ transitionDelay: "500ms" }}
                     >
-                        Transform your video learning experience with AI-powered
-                        notes, summaries, and insights
+                        Capture YouTube discoveries, sync detailed notes, and
+                        build playlists that keep your learning organized and
+                        ready to revisit
                     </p>
 
                     {/* Primary CTA - fade in and scale */}
@@ -104,7 +105,10 @@ const Home = () => {
                             {/* Content */}
                             <span className="relative z-10 flex items-center justify-center gap-2">
                                 <span>Start Learning Now</span>
-                                <ArrowRight strokeWidth={3} className="inline-block size-4 sm:size-5 transition-all duration-300 group-hover:translate-x-1" />
+                                <ArrowRight
+                                    strokeWidth={3}
+                                    className="inline-block size-4 sm:size-5 transition-all duration-300 group-hover:translate-x-1"
+                                />
                             </span>
 
                             {/* Glow effect */}
