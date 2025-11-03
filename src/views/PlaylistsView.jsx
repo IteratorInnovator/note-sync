@@ -7,7 +7,7 @@ import {
     addVideosToPlaylist,
     renamePlaylist,
 } from "../utils/firestore";
-import { Check, X } from "lucide-react";
+import { Check, X, ListVideo } from "lucide-react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import ViewControls from "../components/ui/ViewControls";
 import SavedVideoList from "../components/SavedVideoList";
@@ -523,19 +523,7 @@ const MyPlaylistView = () => {
                             className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-6 sm:p-8 md:p-12 max-w-md w-full text-center cursor-pointer transition-transform hover:scale-[1.02]"
                         >
                             <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                                <svg
-                                    className="w-8 h-8 sm:w-10 sm:h-10 text-purple-600"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
-                                    />
-                                </svg>
+                                <ListVideo className="size-8 sm:size-10 text-purple-600" />
                             </div>
                             <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
                                 No Playlists Yet

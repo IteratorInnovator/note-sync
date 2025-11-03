@@ -18,7 +18,7 @@ const Toast = ({ id, message, Icon, iconColour, duration = 3000, onClose }) => {
 // position temp message bottom right
 export const ToastContainer = ({ toasts, removeToast }) => {
     return (
-        <div className="fixed bottom-6 left-6 flex flex-col items-end space-y-2 z-50">
+        <div className="fixed bottom-6 left-6 flex flex-col items-end space-y-2 z-60">
             {toasts.map((t) => (
         <Toast
           key={t.id}
