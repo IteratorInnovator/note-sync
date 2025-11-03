@@ -7,10 +7,13 @@ import CTA from "../components/CTA";
 import Footer from "../components/Footer";
 import AuthDialog from "../components/auth/AuthDialog";
 import FadeInSection from "../components/ui/FadeInSection";
+import { ToastContainer } from "../components/ui/Toast";
+import { useToasts } from "../stores/useToasts";
 
 const Index = () => {
     const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
     const [authView, setAuthView] = useState("login"); // "login" or "signup"
+    const { toasts, removeToast } = useToasts();
     const openAuthDialog = () => {
         setIsAuthDialogOpen(true);
         setAuthView("login");
@@ -40,6 +43,7 @@ const Index = () => {
             <FadeInSection>
                 <Footer />
             </FadeInSection>
+            <ToastContainer toasts={toasts} removeToast={removeToast} />
         </div>
     );
 };

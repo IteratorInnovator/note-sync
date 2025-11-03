@@ -26,7 +26,7 @@ const AuthDialog = ({ closeAuthDialog, view, switchAuthView }) => {
 
     return (
         <div
-            className={`fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4
+            className={`fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4
                   transition-opacity duration-200
                   ${show ? "opacity-100" : "opacity-0"}`}
             onClick={closeAnimation}

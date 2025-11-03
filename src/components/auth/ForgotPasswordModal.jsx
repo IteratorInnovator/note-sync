@@ -2,11 +2,13 @@ import React, { useState } from "react";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "../../index.js";
 import User from "../../assets/user.svg";
-// import { APP_BASE_URL } from "../../index.js";
+import { useToasts } from "../../stores/useToasts";
+import { Mail, MailX } from "lucide-react";
 
 const ForgotPasswordModal = ({ switchToLoginView }) => {
     const [email, setEmail] = useState("");
     const [error, setError] = useState("");
+    const { addToast } = useToasts();
 
     const handleReset = async (event) => {
         event.preventDefault();
@@ -17,13 +19,21 @@ const ForgotPasswordModal = ({ switchToLoginView }) => {
         }
 
         try {
-            await sendPasswordResetEmail(auth, email.trim().toLowerCase())
-            alert(
-                "Password reset email sent! Check your inbox."
-            );
-        } catch(error) {
-            setError("Unable to send reset email.");
-            console.log(error)
+            await sendPasswordResetEmail(auth, email.trim().toLowerCase());
+            addToast({
+                message:
+                    "Password reset email sent. Check your inbox.",
+                Icon: Mail,
+                iconColour: "text-emerald-400",
+            });
+        } catch (error) {
+            addToast({
+                message:
+                    "Failed to send reset email. Please try again.",
+                Icon: MailX,
+                iconColour: "text-red-400",
+            });
+            console.log(error);
             return;
         }
     };
@@ -53,11 +63,11 @@ const ForgotPasswordModal = ({ switchToLoginView }) => {
                             className="w-[1.25em] pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
                         />
                     </div>
-                {error && (
-                    <p className="text-sm text-red-400 pl-2 mt-1">
-                        {error}
-                    </p>
-                )}
+                    {error && (
+                        <p className="text-sm text-red-400 pl-2 mt-1">
+                            {error}
+                        </p>
+                    )}
                 </div>
                 <button
                     type="submit"
@@ -75,7 +85,6 @@ const ForgotPasswordModal = ({ switchToLoginView }) => {
                     Back to Login
                 </button>
             </div>
-            
         </>
     );
 };

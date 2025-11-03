@@ -12,10 +12,13 @@ import { AUTH_ERRORS, fallbackError } from "../../utils/constants";
 import User from "../../assets/user.svg";
 import EyeOff from "../../assets/eye-off.svg";
 import EyeShow from "../../assets/eye-show.svg";
+import { useToasts } from "../../stores/useToasts";
+import { Mail } from "lucide-react";
 
 const SignUpModal = ({ switchToLoginView }) => {
     const [showPassword, setShowPassword] = useState(false);
     const togglePassword = () => setShowPassword((s) => !s);
+    const { addToast } = useToasts();
 
     const [credentials, setCredentials] = useState({
         email: "",
@@ -65,9 +68,11 @@ const SignUpModal = ({ switchToLoginView }) => {
                 password.trim()
             );
             await sendEmailVerification(user);
-            alert(
-                "Email verification link sent. Verify to activate your account."
-            );
+            addToast({
+                message: "Email verification link sent. Verify to activate your account",
+                Icon: Mail,
+                iconColour: "text-emerald-400",
+            });
             switchToLoginView();
         } catch (err) {
             setError(AUTH_ERRORS[err.code] || fallbackError);
