@@ -3,6 +3,16 @@
 This guide shows how to install dependencies and run a **Vite** frontend with **Firebase Cloud Functions** locally.
 
 
+## Deployed Apps
+
+- https://wad2-44a13.web.app/
+- https://wad2-44a13.firebaseapp.com/
+
+### Video Demo
+
+- YouTube demo: coming soon
+
+
 ## Prerequisites
 
 Before you begin, ensure you have the following installed:
