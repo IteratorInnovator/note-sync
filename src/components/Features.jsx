@@ -4,9 +4,9 @@ import FadeInSection from "./ui/FadeInSection";
 const features = [
     {
         icon: Search,
-        title: "Powerful Search",
+        title: "Video Search",
         description:
-            "Search across all your notes and jump directly to relevant video moments.",
+            "Quickly find YouTube lectures or playlists to start taking notes instantly.",
     },
     {
         icon: Clock,
@@ -16,9 +16,9 @@ const features = [
     },
     {
         icon: BookOpen,
-        title: "Smart Organization",
+        title: "Playlist Organization",
         description:
-            "Organize your notes by topic, playlist, or course. Find what you need instantly.",
+            "Organize your videos and notes by grouping them by course or topic.",
     },
     {
         icon: Zap,
