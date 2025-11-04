@@ -18,267 +18,7 @@ import {
     CircleX,
     Download
 } from "lucide-react";
-import { ToastContainer } from "./Toast";
-import Editor from "./Editor";
-import {
-    getPlainTextLength,
-    hasMeaningfulText,
-    sanitizeHtmlString,
-} from "../../utils/htmlHelpers";
-import Quill from "quill";
-import html2pdf from 'html2pdf.js';
-
-const MAX_NOTE_LENGTH = 500;
-let toastId = 0;
-
-const formatTime = (sec) => {
-    const m = Math.floor(sec / 60);
-    const s = Math.floor(sec % 60);
-    return `${m}:${s.toString().padStart(2, "0")}`;
-};
-
-const NoteSection = ({
-    videoId,
-    video,
-    playerRef,
-    onNotesChange = () => undefined,
-}) => {
-    const [notes, setNotes] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [currentTimestamp, setCurrentTimestamp] = useState(0);
-
-    // New note
-    const [newNote, setNewNote] = useState("");
-    const [newNoteLength, setNewNoteLength] = useState(0);
-    const [newEditorResetSignal, setNewEditorResetSignal] = useState(0);
-    const canSaveNew = newNoteLength > 0;
-
-    // Edit state
-    const [editingId, setEditingId] = useState(null);
-    const [editedContent, setEditedContent] = useState("");
-    const [editedContentLength, setEditedContentLength] = useState(0);
-    const editingHasContent = editedContentLength > 0;
-
-    const [toasts, setToasts] = useState([]);
-
-    // Fetch notes
-    useEffect(() => {
-        const uid = auth.currentUser?.uid;
-        if (!uid || !videoId) return;
-        let active = true;
-        (async () => {
-            setLoading(true);
-            const fetched = await getNotesByVideoId(uid, videoId);
-            if (active) {
-                setNotes(fetched);
-                setLoading(false);
-            }
-        })();
-        return () => {
-            active = false;
-        };
-    }, [videoId]);
-
-    useEffect(() => {
-        onNotesChange(notes);
-    }, [notes, onNotesChange]);
-
-    // ✅ FIXED: reset ordered list numbering per note
-    const handleDownload = async () => {
-        if (!notes || notes.length === 0) {
-            addToast("No notes available to download", CircleX, "text-red-400");
-            return;
-        }
-
-        const container = document.createElement("div");
-        container.style.position = 'absolute';
-        container.style.left = '-9999px';
-        document.body.appendChild(container);
-
-        const quill = new Quill(container, { theme: 'snow' });
-
-        if (video) {
-            quill.insertText(0, `${video.title || "Untitled Video"}\n`, { bold: true, size: 'large' });
-            const currentLength = quill.getLength();
-            quill.insertText(currentLength, `Channel: ${video.channelTitle || "Unknown"}\n\n`);
-        }
-
-        quill.insertText(quill.getLength(), "Notes:\n", { bold: true, size: 'large' });
-        quill.insertText(quill.getLength(), "\n");
-
-        const sortedNotes = [...notes].sort((a, b) => a.timeSec - b.timeSec);
-
-        for (let i = 0; i < sortedNotes.length; i++) {
-            const note = sortedNotes[i];
-
-            const minutes = Math.floor(note.timeSec / 60);
-            const seconds = Math.floor(note.timeSec % 60).toString().padStart(2, "0");
-
-            quill.insertText(quill.getLength(), `${i + 1}. [${minutes}:${seconds}]\n`, { bold: true });
-
-            // 🩵 FIX: reset numbering for each note's <ol>
-            let htmlContent = sanitizeHtmlString(note.content);
-            htmlContent = htmlContent.replace(/<ol(\s[^>]*)?>/g, "<ol start='1'>");
-
-            const currentIndex = quill.getLength();
-            quill.clipboard.dangerouslyPasteHTML(currentIndex, htmlContent);
-
-            quill.insertText(quill.getLength(), "\n\n");
-        }
-
-        const safeTitle = video?.title?.replace(/[\\/:*?"<>|]/g, "") || "Study_Notes";
-
-        const opt = {
-            margin: 16,
-            filename: `${safeTitle}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        try {
-            await html2pdf().set(opt).from(quill.root).save();
-        } finally {
-            document.body.removeChild(container);
-        }
-        addToast("Notes successfully downloaded");
-    };
-
-    // Track current time
-    useEffect(() => {
-        const id = setInterval(() => {
-            const t = playerRef?.current?.getCurrentTime?.();
-            if (typeof t === "number")
-                setCurrentTimestamp(Math.max(0, Math.floor(t)));
-        }, 500);
-        return () => clearInterval(id);
-    }, [playerRef]);
-
-    const addToast = (
-        message,
-        Icon = CircleCheck,
-        iconColour = "text-emerald-400"
-    ) => {
-        const id = toastId++;
-        setToasts((prev) => [...prev, { id, message, Icon, iconColour }]);
-        setTimeout(() => removeToast(id), 3000);
-    };
-
-    const removeToast = (id) => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
-    };
-
-    // Add note
-    const handleAddNote = async () => {
-        const uid = auth.currentUser?.uid;
-        if (!uid) return;
-        const htmlContent = sanitizeHtmlString(newNote).trim();
-        if (!hasMeaningfulText(htmlContent)) return;
-
-        const timeSec = playerRef.current?.getCurrentTime?.() || 0;
-        const id = await createNote(uid, videoId, htmlContent, timeSec);
-        setNotes((prev) => [
-            ...prev,
-            { noteId: id, content: htmlContent, timeSec },
-        ]);
-        handleCancelNewNote();
-        addToast("Note successfully created");
-    };
-
-    const handleCancelNewNote = () => {
-        setNewNote("");
-        setNewNoteLength(0);
-        setNewEditorResetSignal((k) => k + 1);
-    };
-
-    const handleDelete = async (noteId) => {
-        const uid = auth.currentUser?.uid;
-        if (!uid) return;
-        await deleteNote(uid, videoId, noteId);
-        setNotes((prev) => prev.filter((n) => n.noteId !== noteId));
-        addToast("Note successfully deleted");
-    };
-
-    const handleEdit = (noteId, content) => {
-        setEditingId(noteId);
-        const sanitized = sanitizeHtmlString(content);
-        setEditedContent(sanitized);
-        setEditedContentLength(getPlainTextLength(sanitized));
-    };
-
-    const handleCancelEdit = () => {
-        setEditingId(null);
-        setEditedContent("");
-        setEditedContentLength(0);
-    };
-
-    const handleSave = async (noteId) => {
-        const uid = auth.currentUser?.uid;
-        if (!uid) return;
-        const htmlContent = sanitizeHtmlString(editedContent).trim();
-        if (!hasMeaningfulText(htmlContent)) return;
-
-        await updateNote(uid, videoId, noteId, htmlContent);
-        setNotes((prev) =>
-            prev.map((n) =>
-                n.noteId === noteId ? { ...n, content: htmlContent } : n
-            )
-        );
-        setEditingId(null);
-        setEditedContent("");
-        setEditedContentLength(0);
-        addToast("Note updated", CircleCheck);
-    };
-
-    const handleSeek = (sec) => {
-        const player = playerRef.current;
-        if (!player) return;
-        player.seekTo(sec, true);
-        player.playVideo?.();
-    };
-
-    const sortedNotes = useMemo(
-        () => [...notes].sort((a, b) => a.timeSec - b.timeSec),
-        [notes]
-    );
-
-    return (
-        <>
-            {/* ... your full JSX section below unchanged ... */}
-            {/* (omitted here only for space; your layout and UI are identical) */}
-
-            <ToastContainer toasts={toasts} removeToast={removeToast} />
-        </>
-    );
-};
-
-export default NoteSection;
-
-
-
-
-
-import { useState, useEffect, useMemo } from "react";
-import {
-    getNotesByVideoId,
-    createNote,
-    updateNote,
-    deleteNote
-} from "../../utils/firestore";
-import { auth } from "../..";
-import {
-    Trash2,
-    Edit3,
-    Save,
-    Clock,
-    BookOpen,
-    X,
-    Sparkles,
-    CircleCheck,
-    CircleX,
-    Download
-} from "lucide-react";
-import { ToastContainer } from "./Toast";
+import { ToastContainer } from "./toast";
 import Editor from "./Editor";
 import {
     getPlainTextLength,
@@ -345,85 +85,80 @@ const NoteSection = ({
     }, [notes, onNotesChange]);
 
     const handleDownload = async () => {
-        if (!notes || notes.length === 0) {
-            addToast("No notes available to download", CircleX, "text-red-400");
-            return;
-        }
-
-        // Create hidden Quill container
-        const container = document.createElement("div");
-        container.style.position = 'absolute';
-        container.style.left = '-9999px';
-        document.body.appendChild(container);
-        
-        const quill = new Quill(container, { theme: 'snow' });
-
-        // Video Header (as Delta)
-        if (video) {
-            quill.insertText(0, `${video.title || "Untitled Video"}\n`, { bold: true, size: 'large' });
-            const currentLength = quill.getLength();
-            quill.insertText(currentLength, `Channel: ${video.channelTitle || "Unknown"}\n\n`);
-        }
-
-        // Notes section header
-        quill.insertText(quill.getLength(), "Notes:\n", { bold: true, size: 'large' });
-        quill.insertText(quill.getLength(), "\n");
-
-        const sortedNotes = [...notes].sort((a, b) => a.timeSec - b.timeSec);
-
-        // --- PATCH: maintain continuous numbering across lists ---
-        let listCounter = 1;
-        const updateOrderedLists = (html, startNum) => {
-            return html.replace(/<ol(\s[^>]*)?>/g, `<ol start="${startNum}">`);
-        };
-        // --------------------------------------------------------
-
-        for (let i = 0; i < sortedNotes.length; i++) {
-            const note = sortedNotes[i];
-            
-            // Timestamp
-            const minutes = Math.floor(note.timeSec / 60);
-            const seconds = Math.floor(note.timeSec % 60).toString().padStart(2, "0");
-            
-            const currentLength = quill.getLength();
-            quill.insertText(currentLength, `${i + 1}. [${minutes}:${seconds}]\n`, { bold: true });
-
-            // --- PATCH: ensure ordered list continues correctly ---
-            let htmlContent = sanitizeHtmlString(note.content);
-            htmlContent = updateOrderedLists(htmlContent, listCounter);
-            // Count how many <li> appear to continue numbering properly
-            const liCount = (htmlContent.match(/<li\b[^>]*>/g) || []).length;
-            listCounter += liCount;
-            // -----------------------------------------------------
-
-            // Insert note content as HTML using clipboard
-            const currentIndex = quill.getLength();
-            quill.clipboard.dangerouslyPasteHTML(currentIndex, htmlContent);
-            
-            // Add spacing after note
-            quill.insertText(quill.getLength(), "\n\n");
-        }
-
-        // Generate PDF from Quill's HTML
-        const safeTitle = video?.title?.replace(/[\\/:*?"<>|]/g, "") || "Study_Notes";
-        
-        const opt = {
-            margin: 16,
-            filename: `${safeTitle}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        try {
-            await html2pdf().set(opt).from(quill.root).save();
-        } finally {
-            // Cleanup
-            document.body.removeChild(container);
-        }
-        addToast("Notes successfully downloaded");
+    if (!notes || notes.length === 0) {
+        addToast("No notes available to download", CircleX, "text-red-400");
         return;
+    }
+
+    // Create hidden Quill container
+    const container = document.createElement("div");
+    container.style.position = "absolute";
+    container.style.left = "-9999px";
+    document.body.appendChild(container);
+
+    const quill = new Quill(container, { theme: "snow" });
+
+    // Proper video header with title ---
+    const videoTitle =
+        (video?.title && video.title.trim()) || "Untitled Video";
+    const safeTitle = videoTitle.replace(/[\\/:*?"<>|]/g, "_"); // safe for file systems
+
+    quill.insertText(0, `${videoTitle}\n`, { bold: true, size: "large" });
+    const currentLength = quill.getLength();
+    quill.insertText(
+        currentLength,
+        `Channel: ${video?.channelTitle || "Unknown"}\n\n`
+    );
+
+    // Notes section header
+    quill.insertText(quill.getLength(), "Notes:\n", { bold: true, size: "large" });
+    quill.insertText(quill.getLength(), "\n");
+
+    const sortedNotes = [...notes].sort((a, b) => a.timeSec - b.timeSec);
+
+    for (let i = 0; i < sortedNotes.length; i++) {
+        const note = sortedNotes[i];
+        const minutes = Math.floor(note.timeSec / 60);
+        const seconds = Math.floor(note.timeSec % 60)
+            .toString()
+            .padStart(2, "0");
+
+        quill.insertText(quill.getLength(), `${i + 1}. [${minutes}:${seconds}]\n`, {
+            bold: true,
+        });
+
+        // Add indentation for <ul> and <ol> items
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = note.content;
+        tempDiv.querySelectorAll("ul, ol").forEach((el) => {
+            el.style.marginLeft = "20px";
+        });
+
+        quill.clipboard.dangerouslyPasteHTML(
+            quill.getLength(),
+            tempDiv.innerHTML
+        );
+
+        quill.insertText(quill.getLength(), "\n\n");
+    }
+
+    // Use the actual video title as PDF name
+    const opt = {
+        margin: 16,
+        filename: `${safeTitle}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
     };
+
+    try {
+        await html2pdf().set(opt).from(quill.root).save();
+    } finally {
+        document.body.removeChild(container);
+    }
+
+    addToast(`Downloaded notes for "${videoTitle}"`);
+};
 
     // Track current player time
     useEffect(() => {
@@ -704,11 +439,14 @@ const NoteSection = ({
                                         ) : (
                                             <div className="relative rounded-lg bg-white/40">
                                                 <div
-                                                    className="note-content break-words [overflow-wrap:anywhere]  bg-gray-100/90 p-6 text-sm leading-relaxed text-slate-700
-    [&_ol]:ml-4 [&_ol]:list-decimal
-    [&_ul]:ml-4 [&_ul]:list-disc
+                                                    className="note-content break-words [overflow-wrap:anywhere] bg-gray-100/90 p-6 text-sm leading-relaxed text-slate-700
+    [&_ol]:ml-4 [&_ol]:list-decimal [&_ol]:reset-counter
+    [&_ul]:ml-4 [&_ul]:list-disc [&_ul]:reset-counter
     [&_.ql-syntax]:whitespace-pre-wrap [&_.ql-syntax]:font-mono
   "
+                                                    style={{
+                                                        counterReset: 'list-0 list-1 list-2 list-3 list-4 list-5 list-6 list-7 list-8 list-9'
+                                                    }}
                                                     dangerouslySetInnerHTML={{
                                                         __html: sanitizeHtmlString(
                                                             note.content
