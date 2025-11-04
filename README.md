@@ -190,8 +190,6 @@ firebase deploy
 
 ## 👥 Authors
 
-## Authors
-
 - **Harry Ng Kok Jing** — Maintainer  
   GitHub: https://github.com/IteratorInnovator · LinkedIn: https://www.linkedin.com/in/ng-kok-jing
 
