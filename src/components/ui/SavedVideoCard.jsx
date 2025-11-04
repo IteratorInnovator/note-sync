@@ -47,7 +47,7 @@ const SavedVideoCard = ({
 
                     <div
                         className="
-              absolute right-2 top-2 z-20
+              absolute right-1 top-1 z-20
               opacity-100 scale-100
               transition-all duration-300 ease-out
               sm:opacity-0 sm:scale-95 group-hover:opacity-100 group-hover:scale-100
