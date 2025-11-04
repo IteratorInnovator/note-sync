@@ -26,18 +26,28 @@ firebase login
 
 ```
 project-root/
-├─ index.html
-├─ package.json
-├─ vite.config.js
-├─ src/
-│  ├─ main.js
+├─ .firebase/
+├─ dist/
+├─ functions/
+│  ├─ package.json
+│  ├─ index.js
 │  └─ ...
-├─ firebase.json
+├─ node_modules/
+├─ src/
+│  ├─ index.js
+│  └─ ...
+├─ .env.development
+├─ .env.production
 ├─ .firebaserc
-└─ functions/
-   ├─ package.json
-   ├─ index.js
-   └─ ...
+├─ .gitignore
+├─ eslint.config.js
+├─ firebase.json
+├─ index.html
+├─ LICENSE
+├─ package-lock.json
+├─ package.json
+├─ README.md
+└─ vite.config.js
 ```
 
 ## ⚙️ Installation
@@ -65,23 +75,59 @@ cd ..
 
 ### 4. Set up environment variables
 
-Create a `.env.local` file in the project root:
+Create a `.env.development` and `.env.production` file in the project root:
 
+**`.env.development`:**
 ```bash
-VITE_FIREBASE_API_KEY=your_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
-VITE_FIREBASE_FUNCTIONS_EMULATOR_PORT=5001
+VITE_APP_BASE_URL=http://localhost:5173
+VITE_APP_YOUTUBE_API_KEY=your_youtube_api_key_here
+VITE_APP_YOUTUBE_API_ENDPOINT=https://www.googleapis.com/youtube/v3
+VITE_APP_FIREBASE_DATABASE_ID=your_firebase_database_id
+VITE_APP_FIREBASE_CLOUD_FUNCTIONS_REGION=your_firebase_cloud_function_region
+```
+
+**`.env.production`:**
+```bash
+VITE_APP_BASE_URL=https://your-production-domain.com
+VITE_APP_YOUTUBE_API_KEY=your_youtube_api_key_here
+VITE_APP_YOUTUBE_API_ENDPOINT=https://www.googleapis.com/youtube/v3
+VITE_APP_FIREBASE_DATABASE_ID=your_firebase_database_id
+VITE_APP_FIREBASE_CLOUD_FUNCTIONS_REGION=your_firebase_cloud_function_region
 ```
 
 > **Note:** All Vite environment variables must be prefixed with `VITE_`
 
-## 🏃 Running the Project
 
-### Option 1: Run services separately
+## 🔧 Configuration
+
+### Connecting to Firebase
+
+In your src/index.js:
+
+```javascript
+const app = initializeApp({
+  apiKey: your_firebase_app_api_key,
+  authDomain: your_firebase_app__auth_domain,
+  projectId: your_firebase_app_project_id,
+  storageBucket: your_firebase_app_storage_bucket,
+  messagingSenderId: your_firebase_app_messaging_sender_id,
+  appId: your_firebase_app_id,
+});
+```
+
+Ensure this line is in src/index.js in order to run firebase cloud functions locally:
+
+```javascript
+const FIREBASE_CLOUD_FUNCTIONS_REGION = import.meta.env.VITE_APP_FIREBASE_CLOUD_FUNCTIONS_REGION;
+
+export const functions = getFunctions(app, FIREBASE_CLOUD_FUNCTIONS_REGION);
+
+if (import.meta.env.DEV) {
+  connectFunctionsEmulator(functions, "localhost", 5001);
+}
+```
+
+## 🏃 Running the Project
 
 Open two terminal windows:
 
@@ -96,38 +142,6 @@ Access at: `http://localhost:5173/`
 firebase emulators:start --only functions
 ```
 Functions available at: `http://localhost:5001/<project-id>/<region>/<function-name>`
-
-
-## 🔧 Configuration
-
-### Connecting Frontend to Functions Emulator
-
-In your Firebase initialization file:
-
-```javascript
-import { initializeApp } from "firebase/app";
-import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
-
-const app = initializeApp({
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-});
-
-const functions = getFunctions(app);
-
-// Connect to emulator in development
-if (import.meta.env.DEV) {
-  connectFunctionsEmulator(
-    functions,
-    "localhost",
-    Number(import.meta.env.VITE_FIREBASE_FUNCTIONS_EMULATOR_PORT || 5001)
-  );
-}
-```
 
 ## 📜 Available Scripts
 
