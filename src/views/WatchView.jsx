@@ -5,16 +5,19 @@ import { auth } from "..";
 import NoteSection from "../components/ui/NoteSection";
 import DiscussionForum from "../components/ui/DiscussionForum";
 import Editor from "../components/ui/Editor";
-import { createNote, getVideoById } from "../utils/firestore";
+import { addVideo, createNote, getVideoById } from "../utils/firestore";
+import { VideoAlreadySavedError } from "../utils/errors";
 import { hasMeaningfulText, sanitizeHtmlString } from "../utils/htmlHelpers";
 import {
     CircleCheck,
     CircleX,
+    Loader2,
     Maximize2,
     Minimize2,
     Pause,
     Pencil,
     Play,
+    Plus,
     SkipBack,
     SkipForward,
     Volume2,
@@ -99,6 +102,10 @@ const WatchPage = ({ onTitleChange }) => {
     const [quickNoteTimestamp, setQuickNoteTimestamp] = useState(0);
     const [isSavingQuickNote, setIsSavingQuickNote] = useState(false);
     const [quickNoteError, setQuickNoteError] = useState("");
+    const [isVideoSaved, setIsVideoSaved] = useState(
+        Boolean(initialVideo?.isSaved)
+    );
+    const [isSavingVideo, setIsSavingVideo] = useState(false);
     const [activeMobilePanel, setActiveMobilePanel] = useState("notes");
     const PLAYBACK_RATES = [0.25, 0.5, 1, 1.25, 1.5, 1.75, 2];
     const [playbackRateIndex, setPlaybackRateIndex] = useState(
@@ -115,7 +122,7 @@ const WatchPage = ({ onTitleChange }) => {
     const manualControlsTimeoutRef = useRef(null);
     const skipNextClickRef = useRef(false);
     const isTouchDeviceRef = useRef(false);
- 
+
     const noteSectionRef = useRef(null);
 
     const shouldInterceptOverlay = useMemo(
@@ -191,6 +198,82 @@ const WatchPage = ({ onTitleChange }) => {
         [handleCloseQuickNote]
     );
 
+    const ensureVideoIsSaved = useCallback(async () => {
+        if (isVideoSaved) {
+            return { ok: true };
+        }
+
+        const uid = auth.currentUser?.uid;
+        if (!uid) {
+            const message = "Sign in to save this video before adding notes.";
+            addToast({
+                message,
+                Icon: CircleX,
+                iconColour: "text-red-400",
+            });
+            return { ok: false, message };
+        }
+
+        if (!video || !videoId) {
+            const message =
+                "We couldn't load this video's details yet. Please try again.";
+            addToast({
+                message,
+                Icon: CircleX,
+                iconColour: "text-red-400",
+            });
+            return { ok: false, message };
+        }
+
+        const title = video?.title ?? "Untitled video";
+        const channelTitle = video?.channelTitle ?? "";
+        const thumbnailUrl =
+            video?.thumbnailUrl ??
+            video?.thumbnails?.medium?.url ??
+            video?.thumbnails?.default?.url ??
+            "";
+        const category = video?.category;
+
+        setIsSavingVideo(true);
+
+        try {
+            await addVideo(
+                uid,
+                videoId,
+                title,
+                channelTitle,
+                thumbnailUrl,
+                0,
+                category
+            );
+            setIsVideoSaved(true);
+            addToast({
+                message: "Added to My Videos",
+                Icon: CircleCheck,
+                iconColour: "text-emerald-400",
+            });
+            return { ok: true };
+        } catch (error) {
+            if (
+                error instanceof VideoAlreadySavedError ||
+                error?.name === "VideoAlreadySavedError"
+            ) {
+                setIsVideoSaved(true);
+                return { ok: true };
+            }
+
+            const message = "We couldn't save this video. Please try again.";
+            addToast({
+                message,
+                Icon: CircleX,
+                iconColour: "text-red-400",
+            });
+            return { ok: false, message };
+        } finally {
+            setIsSavingVideo(false);
+        }
+    }, [addToast, isVideoSaved, video, videoId]);
+
     const handleSaveQuickNote = useCallback(async () => {
         if (isSavingQuickNote) return;
 
@@ -214,6 +297,15 @@ const WatchPage = ({ onTitleChange }) => {
         setQuickNoteError("");
 
         try {
+            const ensureResult = await ensureVideoIsSaved();
+            if (ensureResult?.ok === false) {
+                setQuickNoteError(
+                    ensureResult.message ??
+                        "Save the video before adding notes."
+                );
+                return;
+            }
+
             const noteId = await createNote(
                 uid,
                 videoId,
@@ -232,13 +324,14 @@ const WatchPage = ({ onTitleChange }) => {
                 message: "Note saved",
                 Icon: CircleCheck,
                 iconColour: "text-emerald-400",
-            })
+            });
         } catch {
+            setQuickNoteError("Failed to save note. Please try again.");
             addToast({
                 message: "Failed to save note",
                 Icon: CircleX,
                 iconColour: "text-red-400",
-            })
+            });
         } finally {
             setIsSavingQuickNote(false);
             playerInstanceRef.current?.playVideo?.();
@@ -250,6 +343,7 @@ const WatchPage = ({ onTitleChange }) => {
         videoId,
         addToast,
         playerInstanceRef,
+        ensureVideoIsSaved,
     ]);
 
     useEffect(() => {
@@ -427,38 +521,55 @@ const WatchPage = ({ onTitleChange }) => {
     useEffect(() => {
         if (!videoId) return;
 
+        let cancelled = false;
+
         if (initialVideo) {
             setVideo(initialVideo);
             setLoading(false);
             setError(null);
-            return;
+            setIsVideoSaved(Boolean(initialVideo?.isSaved));
+        } else {
+            setVideo(null);
+            setLoading(true);
+            setError(null);
         }
 
         const uid = auth.currentUser?.uid;
         if (!uid) {
-            navigate("/videos", { replace: true });
-            return;
+            if (!initialVideo) {
+                navigate("/videos", { replace: true });
+            }
+            return () => {
+                cancelled = true;
+            };
         }
-
-        let cancelled = false;
-        setLoading(true);
-        setError(null);
 
         const loadVideo = async () => {
             try {
                 const fetched = await getVideoById(uid, videoId);
                 if (cancelled) return;
                 if (fetched) {
-                    setVideo(fetched);
+                    setVideo((prev) => ({
+                        ...(initialVideo ?? {}),
+                        ...fetched,
+                    }));
+                    setIsVideoSaved(true);
+                    setError(null);
                 } else {
-                    setError("We couldn't find this saved video.");
+                    setIsVideoSaved(false);
+                    if (!initialVideo) {
+                        setError("We couldn't find this saved video.");
+                    }
                 }
             } catch {
-                if (!cancelled) {
+                if (cancelled) return;
+                if (!initialVideo) {
                     setError("We couldn't load this video. Please try again.");
                 }
             } finally {
-                if (!cancelled) setLoading(false);
+                if (!cancelled) {
+                    setLoading(false);
+                }
             }
         };
 
@@ -1347,15 +1458,53 @@ const WatchPage = ({ onTitleChange }) => {
                     </div>
                 </div>
 
-                <div className="mt-4">
-                    <h1 className="text-2xl font-semibold text-slate-900">
-                        {video?.title || "YouTube Video"}
-                    </h1>
-                    {video?.channelTitle ? (
-                        <p className="text-sm text-slate-500 mt-1">
-                            {video.channelTitle}
-                        </p>
-                    ) : null}
+                <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div>
+                        <h1 className="text-2xl font-semibold text-slate-900">
+                            {video?.title || "YouTube Video"}
+                        </h1>
+                        {video?.channelTitle ? (
+                            <p className="mt-1 text-sm text-slate-500">
+                                {video.channelTitle}
+                            </p>
+                        ) : null}
+                    </div>
+                    <div className="flex items-center md:justify-end">
+                        {isVideoSaved ? (
+                            <span
+                                title="Saved"
+                                className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-600"
+                            >
+                                <CircleCheck
+                                    className="size-5"
+                                    aria-hidden="true"
+                                />
+                                <span>Saved</span>
+                            </span>
+                        ) : (
+                            <button
+                                title={
+                                    isSavingVideo ? "Saving..." : "Save video"
+                                }
+                                type="button"
+                                onClick={ensureVideoIsSaved}
+                                disabled={isSavingVideo}
+                                className="cursor-pointer inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:text-white/80"
+                            >
+                                {isSavingVideo ? (
+                                    <Loader2
+                                        className="size-4 animate-spin"
+                                        aria-hidden="true"
+                                    />
+                                ) : (
+                                    <Plus
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
+                                )}
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 <div className="mt-6 md:hidden">
@@ -1412,6 +1561,7 @@ const WatchPage = ({ onTitleChange }) => {
                             playerRef={playerInstanceRef}
                             onNotesChange={handleNotesChange}
                             refreshTrigger={notesRefreshTrigger}
+                            ensureVideoSaved={ensureVideoIsSaved}
                             renderNote={(note) => (
                                 <div
                                     key={note.noteId}
@@ -1434,8 +1584,6 @@ const WatchPage = ({ onTitleChange }) => {
                     </div>
                 </div>
             </div>
-
-            
         </div>
     );
 };

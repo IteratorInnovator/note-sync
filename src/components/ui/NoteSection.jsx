@@ -49,6 +49,7 @@ const NoteSection = forwardRef(
             playerRef,
             onNotesChange = () => undefined,
             refreshTrigger = 0,
+            ensureVideoSaved = null,
         },
         ref
     ) => {
@@ -158,6 +159,11 @@ const NoteSection = forwardRef(
             if (!uid) return;
             const htmlContent = sanitizeHtmlString(newNote).trim();
             if (!hasMeaningfulText(htmlContent)) return;
+
+            if (ensureVideoSaved) {
+                const { ok } = await ensureVideoSaved();
+                if (!ok) return;
+            }
 
             const timeSec = playerRef.current?.getCurrentTime?.() || 0;
             const id = await createNote(uid, videoId, htmlContent, timeSec);
