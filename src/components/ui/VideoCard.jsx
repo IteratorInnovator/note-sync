@@ -36,10 +36,10 @@ const VideoCard = ({
                     )}
 
                     <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100">
-                        <div className="rounded-full bg-red-500/90 p-3 md:p-4">
+                        <div className="rounded-full bg-red-500/90 p-4">
                             <Play
                                 aria-hidden
-                                className="size-4 md:size-6 text-white fill-current"
+                                className="size-6 text-white fill-current"
                             />
                         </div>
                     </div>
