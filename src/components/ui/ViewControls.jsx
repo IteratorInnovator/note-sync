@@ -70,7 +70,7 @@ const ViewControls = ({
                             <select
                                 value={sortOption}
                                 onChange={(e) => setSortOption(e.target.value)}
-                                className="appearance-none border border-slate-200 bg-white text-xs md:text-sm text-slate-700 rounded-full px-3 py-1.5 md:px-4 md:py-2 pr-8 md:pr-9 shadow-sm hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+                                className="cursor-pointer appearance-none border border-slate-200 bg-white text-xs md:text-sm text-slate-700 rounded-full px-3 py-1.5 md:px-4 md:py-2 pr-8 md:pr-9 shadow-sm hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
                             >
                                 <option value="recent">Recently Added</option>
                                 <option value="earliest">Earliest Added</option>
@@ -86,7 +86,7 @@ const ViewControls = ({
                     {/* Reset Button */}
                     <Button
                         onClick={onReset}
-                        className="rounded-full bg-gray-400 hover:bg-gray-500 text-white text-xs md:text-sm font-medium shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"
+                        className="cursor-pointer rounded-full bg-gray-400 hover:bg-gray-500 text-white text-xs md:text-sm font-medium shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"
 
 
                     >

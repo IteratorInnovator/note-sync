@@ -319,7 +319,7 @@ const NoteSection = forwardRef(
                                     <button
                                         type="button"
                                         onClick={handleCancelNewNote}
-                                        className="text-sm font-medium text-slate-500 transition-colors hover:text-slate-700"
+                                        className="cursor-pointer text-sm font-medium text-slate-500 transition-colors hover:text-slate-700"
                                     >
                                         Cancel
                                     </button>
@@ -327,7 +327,7 @@ const NoteSection = forwardRef(
                                         type="button"
                                         onClick={handleAddNote}
                                         disabled={!canSaveNew}
-                                        className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-indigo-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+                                        className="cursor-pointer rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-indigo-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
                                     >
                                         Save note
                                     </button>
@@ -365,7 +365,7 @@ const NoteSection = forwardRef(
                                             onClick={() =>
                                                 handleSeek(note.timeSec)
                                             }
-                                            className="flex shrink-0 items-center gap-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 px-3 py-2 shadow-sm transition-all hover:shadow-md hover:scale-105 active:scale-95"
+                                            className="cursor-pointer flex shrink-0 items-center gap-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 px-3 py-2 shadow-sm transition-all hover:shadow-md hover:scale-105 active:scale-95"
                                             title="Seek to timestamp"
                                         >
                                             <Clock className="h-3.5 w-3.5 text-white" />
@@ -419,7 +419,7 @@ const NoteSection = forwardRef(
                                                             disabled={
                                                                 !editingHasContent
                                                             }
-                                                            className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-emerald-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+                                                            className="cursor-pointer inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-emerald-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
                                                             title="Save changes"
                                                         >
                                                             <Save
@@ -432,7 +432,7 @@ const NoteSection = forwardRef(
                                                             onClick={
                                                                 handleCancelEdit
                                                             }
-                                                            className="inline-flex items-center gap-1 rounded-lg bg-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 shadow-md transition-all hover:bg-slate-300 hover:text-slate-700"
+                                                            className="cursor-pointer inline-flex items-center gap-1 rounded-lg bg-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 shadow-md transition-all hover:bg-slate-300 hover:text-slate-700"
                                                             title="Cancel editing"
                                                         >
                                                             <X size={16} />
@@ -467,7 +467,7 @@ const NoteSection = forwardRef(
                                                             note.content
                                                         )
                                                     }
-                                                    className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-blue-100 hover:text-blue-600"
+                                                    className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-blue-100 hover:text-blue-600"
                                                     title="Edit note"
                                                 >
                                                     <Edit3 size={16} />
@@ -478,7 +478,7 @@ const NoteSection = forwardRef(
                                                             note.noteId
                                                         )
                                                     }
-                                                    className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-red-100 hover:text-red-600"
+                                                    className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-red-100 hover:text-red-600"
                                                     title="Delete note"
                                                 >
                                                     <Trash2 size={16} />

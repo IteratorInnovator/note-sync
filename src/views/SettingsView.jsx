@@ -97,7 +97,7 @@ const SelectField = ({
             value={value}
             onChange={onChange}
             disabled={disabled}
-            className="w-full appearance-none rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 shadow-sm transition focus:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-200 disabled:cursor-not-allowed disabled:bg-slate-100"
+            className="cursor-pointer w-full appearance-none rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 shadow-sm transition focus:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-200 disabled:cursor-not-allowed disabled:bg-slate-100"
         >
             {options.map(({ value: optionValue, label }) => (
                 <option key={optionValue} value={optionValue}>
@@ -286,7 +286,7 @@ export default function SettingsView() {
     );
 
     const buttonUnified =
-        "inline-flex min-w-[200px] items-center justify-center rounded-lg border border-red-400 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-200 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400";
+        "cursor-pointer inline-flex min-w-[200px] items-center justify-center rounded-lg border border-red-400 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-200 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400";
 
     const handleReset = async () => {
         setDraftSettings({ ...DEFAULT_SETTINGS });

@@ -22,7 +22,7 @@ const GridLayoutControls = ({ isMdUp, isCondensedLayout, setIsCondensedLayout })
                             aria-label={label}
                             aria-pressed={active}
                             onClick={() => setIsCondensedLayout(condensed)}
-                            className={`flex h-9 w-9 items-center justify-center text-slate-400 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 ${
+                            className={`cursor-pointer flex h-9 w-9 items-center justify-center text-slate-400 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 ${
                                 active ? "bg-slate-100 text-slate-700" : ""
                             } ${index > 0 ? "border-l border-slate-200" : ""}`}
                         >

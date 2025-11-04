@@ -153,7 +153,7 @@ const CommentItem = ({
                         {canReply ? (
                             <button
                                 type="button"
-                                className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-slate-100 to-slate-50 px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200/50 transition-all duration-200 hover:shadow-md hover:ring-indigo-300/50 hover:from-indigo-50 hover:to-purple-50 active:scale-95"
+                                className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-slate-100 to-slate-50 px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200/50 transition-all duration-200 hover:shadow-md hover:ring-indigo-300/50 hover:from-indigo-50 hover:to-purple-50 active:scale-95"
                                 onClick={() => setShowReplyBox((prev) => !prev)}
                             >
                                 <Reply className="h-3.5 w-3.5" /> Reply
@@ -163,7 +163,7 @@ const CommentItem = ({
                         {replyCount > 0 ? (
                             <button
                                 type="button"
-                                className="text-xs text-gray-900 transition-colors duration-150 hover:opacity-80 hover:underline active:scale-95"
+                                className="cursor-pointer text-xs text-gray-900 transition-colors duration-150 hover:opacity-80 hover:underline active:scale-95"
                                 onClick={() => setShowReplies((prev) => !prev)}
                             >
                                 {showReplies
@@ -197,7 +197,7 @@ const CommentItem = ({
                                 <button
                                     type="button"
                                     onClick={() => setShowReplyBox(false)}
-                                    className="
+                                    className="cursor-pointer
             rounded-lg px-4 py-2 text-xs font-semibold text-slate-600
             transition-all duration-200
             hover:bg-slate-100 hover:text-slate-800
@@ -211,7 +211,7 @@ const CommentItem = ({
                                     type="submit"
                                     disabled={isSubmitting}
                                     className="
-            inline-flex items-center gap-1.5 rounded-lg
+            cursor-pointer inline-flex items-center gap-1.5 rounded-lg
             bg-gradient-to-r from-indigo-600 to-indigo-500
             px-4 py-2 text-xs font-bold text-white shadow-md shadow-indigo-500/30
             transition-all duration-200
@@ -398,7 +398,7 @@ const DiscussionForum = ({
                     <button
                         type="submit"
                         disabled={!canComment || isSubmitting}
-                        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-500/30 transition-all duration-200 hover:shadow-xl hover:shadow-indigo-500/40 hover:from-indigo-500 hover:to-indigo-600 disabled:cursor-not-allowed disabled:from-indigo-400 disabled:to-indigo-400 disabled:shadow-none active:scale-95"
+                        className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-500/30 transition-all duration-200 hover:shadow-xl hover:shadow-indigo-500/40 hover:from-indigo-500 hover:to-indigo-600 disabled:cursor-not-allowed disabled:from-indigo-400 disabled:to-indigo-400 disabled:shadow-none active:scale-95"
                     >
                         <Send className="h-4 w-4" />
                         {isSubmitting ? "Posting…" : "Post Comment"}

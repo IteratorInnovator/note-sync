@@ -8,7 +8,7 @@ const MainHeader = ({ title, sidebarVisible, onToggle }) => {
           type="button"
           onClick={onToggle}
           aria-label={sidebarVisible ? "Hide sidebar" : "Show sidebar"}
-          className="rounded-md p-2 group hover:bg-red-500"
+          className="cursor-pointer rounded-md p-2 group hover:bg-red-500"
         >
           {sidebarVisible ? <PanelLeft className="size-5 group-hover:text-white" /> : <PanelRight className="size-5 group-hover:text-white" />}
         </button>

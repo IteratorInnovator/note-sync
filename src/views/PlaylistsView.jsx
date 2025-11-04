@@ -366,7 +366,7 @@ const MyPlaylistView = () => {
                         <div className="flex gap-2 mb-4 flex-wrap">
                             <button
                                 onClick={() => setShowCreatePlaylist(true)}
-                                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+                                className="cursor-pointer px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
                             >
                                 + Create Playlist
                             </button>
@@ -376,7 +376,7 @@ const MyPlaylistView = () => {
                                         setSelectionMode(!selectionMode);
                                         setSelectedVideos(new Set());
                                     }}
-                                    className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+                                    className={`cursor-pointer px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
                                         selectionMode
                                             ? "bg-gray-600 border text-white hover:bg-gray-700"
                                             : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
@@ -390,7 +390,7 @@ const MyPlaylistView = () => {
                             {selectionMode && selectedVideos.size > 0 && (
                                 <button
                                     onClick={() => setShowAddToPlaylist(true)}
-                                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                                    className="cursor-pointer px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
                                 >
                                     Add {selectedVideos.size} to Playlist
                                 </button>
@@ -627,7 +627,7 @@ const MyPlaylistView = () => {
                                                                 playlist.playlistId
                                                             )
                                                         }
-                                                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                                        className="cursor-pointer p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                                                         title="Save"
                                                     >
                                                         <Check className="size-5"/>
@@ -641,7 +641,7 @@ const MyPlaylistView = () => {
                                                                 ""
                                                             );
                                                         }}
-                                                        className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                                                        className="cursor-pointer p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
                                                         title="Cancel"
                                                     >
                                                         <X className="size-5" />
@@ -658,7 +658,7 @@ const MyPlaylistView = () => {
                                                                 playlist.name
                                                             );
                                                         }}
-                                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                        className="cursor-pointer p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                                         title="Rename"
                                                     >
                                                         <svg
@@ -681,7 +681,7 @@ const MyPlaylistView = () => {
                                                                 playlist.playlistId
                                                             )
                                                         }
-                                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                        className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                                         title="Delete"
                                                     >
                                                         <svg
@@ -871,13 +871,13 @@ const MyPlaylistView = () => {
                                     <div className="flex justify-center gap-3">
                                         <button
                                             onClick={cancelDelete}
-                                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                                            className="cursor-pointer px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                                         >
                                             Cancel
                                         </button>
                                         <button
                                             onClick={confirmDelete}
-                                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                            className="cursor-pointer px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                                         >
                                             Yes, Delete
                                         </button>

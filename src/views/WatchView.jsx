@@ -1162,7 +1162,7 @@ const WatchPage = ({ onTitleChange }) => {
                                                         >
                                                             <button
                                                                 type="button"
-                                                                className="relative flex h-3 w-[3px] md:h-4 md:w-[4px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-yellow-200 shadow-[0_0_8px_rgba(234,179,8,0.75)] ring-1 ring-yellow-500 transition hover:scale-110 focus-visible:scale-110 focus-visible:outline-none"
+                                                                className="cursor-pointer relative flex h-3 w-[3px] md:h-4 md:w-[4px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-yellow-200 shadow-[0_0_8px_rgba(234,179,8,0.75)] ring-1 ring-yellow-500 transition hover:scale-110 focus-visible:scale-110 focus-visible:outline-none"
                                                                 onClick={(
                                                                     event
                                                                 ) => {
@@ -1246,7 +1246,7 @@ const WatchPage = ({ onTitleChange }) => {
                                         type="button"
                                         onClick={handleTogglePlay}
                                         title={isPlaying ? "Pause" : "Play"}
-                                        className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="cursor-pointer flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
                                         aria-label={
                                             isPlaying ? "Pause" : "Play"
                                         }
@@ -1263,7 +1263,7 @@ const WatchPage = ({ onTitleChange }) => {
                                         type="button"
                                         onClick={handleSeekBackward}
                                         title="Skip backward 10s"
-                                        className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="cursor-pointer flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
                                         aria-label="Seek backward 10 seconds"
                                         disabled={!isPlayerReady}
                                     >
@@ -1274,7 +1274,7 @@ const WatchPage = ({ onTitleChange }) => {
                                         type="button"
                                         onClick={handleSeekForward}
                                         title="Skip forward 10s"
-                                        className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="cursor-pointer flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
                                         aria-label="Seek forward 10 seconds"
                                         disabled={!isPlayerReady}
                                     >
@@ -1286,7 +1286,7 @@ const WatchPage = ({ onTitleChange }) => {
                                             type="button"
                                             title="Volume"
                                             onClick={handleToggleMute}
-                                            className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                            className="cursor-pointer flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
                                             aria-label={
                                                 volume === 0 ? "Unmute" : "Mute"
                                             }
@@ -1305,7 +1305,7 @@ const WatchPage = ({ onTitleChange }) => {
                                             step={1}
                                             value={volume}
                                             onChange={handleVolume}
-                                            className="w-16 md:w-32 flex-1 accent-indigo-500"
+                                            className="cursor-pointer w-16 md:w-32 flex-1 accent-indigo-500"
                                             disabled={!isPlayerReady}
                                         />
                                     </div>
@@ -1317,7 +1317,7 @@ const WatchPage = ({ onTitleChange }) => {
                                             type="button"
                                             onClick={handleOpenQuickNote}
                                             title="Add quick note"
-                                            className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                            className="cursor-pointer flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
                                             aria-label="Add quick note"
                                             disabled={!isPlayerReady}
                                         >
@@ -1351,7 +1351,7 @@ const WatchPage = ({ onTitleChange }) => {
                                                                 onClick={
                                                                     handleCloseQuickNote
                                                                 }
-                                                                className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700"
+                                                                className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700"
                                                                 aria-label="Close quick note"
                                                             >
                                                                 <X className="h-3.5 w-3.5" />
@@ -1394,7 +1394,7 @@ const WatchPage = ({ onTitleChange }) => {
                                                                     onClick={
                                                                         handleCloseQuickNote
                                                                     }
-                                                                    className="px-3 py-1.5 text-xs font-semibold text-slate-500 transition hover:text-slate-700"
+                                                                    className="cursor-pointer px-3 py-1.5 text-xs font-semibold text-slate-500 transition hover:text-slate-700"
                                                                 >
                                                                     Cancel
                                                                 </button>
@@ -1403,7 +1403,7 @@ const WatchPage = ({ onTitleChange }) => {
                                                                     onClick={
                                                                         handleSaveQuickNote
                                                                     }
-                                                                    className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md transition hover:bg-indigo-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+                                                                    className="cursor-pointer rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md transition hover:bg-indigo-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
                                                                     disabled={
                                                                         !canSaveQuickNote
                                                                     }
@@ -1424,7 +1424,7 @@ const WatchPage = ({ onTitleChange }) => {
                                         type="button"
                                         onClick={handleCyclePlaybackRate}
                                         title="Playback rate"
-                                        className="flex h-7 min-w-[2rem] md:min-w-[2.75rem] items-center justify-center bg-white/15 text-[8px] md:text-xs font-semibold text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="cursor-pointer flex h-7 min-w-[2rem] md:min-w-[2.75rem] items-center justify-center bg-white/15 text-[8px] md:text-xs font-semibold text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
                                         aria-label="Change playback speed"
                                         disabled={!isPlayerReady}
                                     >
@@ -1439,7 +1439,7 @@ const WatchPage = ({ onTitleChange }) => {
                                                 ? "Exit fullscreen"
                                                 : "Enter fullscreen"
                                         }
-                                        className="flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
+                                        className="cursor-pointer flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
                                         aria-label={
                                             isFullscreen
                                                 ? "Exit fullscreen"
