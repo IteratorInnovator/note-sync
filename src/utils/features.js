@@ -4,6 +4,7 @@ import searchVideos from "../assets/videos/search-videos.mp4";
 import organizePlaylists from "../assets/videos/organize-playlists.mp4";
 import manageVideos from "../assets/videos/manage-videos.mp4";
 import settings from "../assets/videos/settings.mp4";
+import takeNotes from "../assets/videos/take-notes.mp4";
 
 export const features = [
     {
@@ -45,7 +46,7 @@ export const features = [
             "View that part of the video again by clicking on the note timestamp",
             "Edit or delete notes anytime by clicking on them"
         ],
-        
+        videoUrl: takeNotes
     },
     {
         id: 4,
