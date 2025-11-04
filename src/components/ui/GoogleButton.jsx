@@ -8,7 +8,7 @@ const GoogleButton = ({ text }) => {
     const signUpOrLoginWithGoogle = async () => {
         try {
             await signInWithPopup(auth, GoogleProvider);
-            navigate("/videos");
+            navigate("/home");
         } catch (err) {
             if (
                 err.code === "auth/popup-closed-by-user" ||

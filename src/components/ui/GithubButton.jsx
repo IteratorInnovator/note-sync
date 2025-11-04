@@ -8,7 +8,7 @@ const GithubButton = ({ text }) => {
     const signUpOrLoginWithGithub = async () => {
         try {
             await signInWithPopup(auth, GithubProvider);
-            navigate("/videos");
+            navigate("/home");
         } catch (err) {
             if (
                 err.code === "auth/popup-closed-by-user" ||

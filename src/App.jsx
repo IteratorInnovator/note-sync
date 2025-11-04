@@ -5,6 +5,7 @@ import { auth } from ".";
 import "./App.css";
 import Index from "./pages/Index";
 import Main from "./pages/Main";
+import Home from "./pages/Home";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import { Loader2 } from "lucide-react";
@@ -70,7 +71,7 @@ function AppContent() {
                     ) : mode === "verifyEmail" ? (
                         <VerifyEmailPage />
                     ) : isVerifiedUser ? (
-                        <Navigate to="/videos" />
+                        <Navigate to="/home" />
                     ) : (
                         <Index />
                     )
@@ -81,6 +82,10 @@ function AppContent() {
             <Route
                 path="/videos"
                 element={isVerifiedUser ? <Main /> : <Navigate to="/" />}
+            />
+            <Route
+                path="/home"
+                element={isVerifiedUser ? <Home /> : <Navigate to="/" />}
             />
             <Route
                 path="/search"
@@ -102,7 +107,7 @@ function AppContent() {
             {/* Catch-all. Redirect unknown paths based on auth state. */}
             <Route
                 path="*"
-                element={<Navigate replace to={isVerifiedUser ? "/videos" : "/"} />}
+                element={<Navigate replace to={isVerifiedUser ? "/home" : "/"} />}
             />
         </Routes>
     );

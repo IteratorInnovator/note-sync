@@ -11,7 +11,13 @@ import PlaylistsView from "../views/PlaylistsView";
 import { useToasts } from "../stores/useToasts";
 import { ToastContainer } from "../components/ui/Toast";
 
-const VALID_PATHS = new Set(["videos", "search", "playlists", "settings", "watch"]);
+const VALID_PATHS = new Set([
+    "videos",
+    "search",
+    "playlists",
+    "settings",
+    "watch",
+]);
 
 export default function Main() {
     const mdUp = useIsMdUp();
