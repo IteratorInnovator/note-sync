@@ -69,7 +69,8 @@ const SignUpModal = ({ switchToLoginView }) => {
             );
             await sendEmailVerification(user);
             addToast({
-                message: "Email verification link sent. Verify to activate your account",
+                message:
+                    "Email verification link sent. Verify to activate your account",
                 Icon: Mail,
                 iconColour: "text-emerald-400",
             });
