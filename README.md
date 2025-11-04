@@ -5,8 +5,8 @@ This guide shows how to install dependencies and run a **Vite** frontend with **
 
 ## Deployed Apps
 
-- https://wad2-44a13.web.app/
-- https://wad2-44a13.firebaseapp.com/
+- [https://wad2-44a13.web.app/](https://wad2-44a13.web.app/)
+- [https://wad2-44a13.firebaseapp.com/](https://wad2-44a13.firebaseapp.com/)
 
 ### Video Demo
 
