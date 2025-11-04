@@ -3,9 +3,9 @@ import { ArrowRight } from "lucide-react";
 const steps = [
     {
         number: "01",
-        title: "Paste a YouTube Link",
+        title: "Find Your Lecture",
         description:
-            "Simply paste any YouTube video URL into NoteSync to get started.",
+            "Search for your desired YouTube lecture — or just paste the link.",
     },
     {
         number: "02",
@@ -17,7 +17,7 @@ const steps = [
         number: "03",
         title: "Review & Share",
         description:
-            "Click any note to jump to that moment. Share your notes with anyone.",
+            "Click any note to jump to that moment. Download your notes as a PDF to share them with friends.",
     },
 ];
 
