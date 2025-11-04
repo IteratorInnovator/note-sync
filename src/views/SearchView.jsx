@@ -51,7 +51,7 @@ const SearchView = ({
         ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2" // condensed
         : "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3"; // default
 
-    const items = useMemo(() => results?.items ?? [], [results]);
+    const items = useMemo(() => (results?.items ?? []).slice(0, 12), [results]);
     const nextPageToken = results?.nextPageToken ?? null;
     const prevPageToken = results?.prevPageToken ?? null;
     const pageBadges = useMemo(() => {
@@ -293,11 +293,10 @@ const SearchView = ({
                                 {pageBadges.map((badge) => (
                                     <span
                                         key={badge.key}
-                                        className={`flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold ${
-                                            badge.variant === "current"
+                                        className={`flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold ${badge.variant === "current"
                                                 ? "border-green-600 bg-green-500 text-white"
                                                 : "border-gray-300 bg-white text-gray-700"
-                                        }`}
+                                            }`}
                                     >
                                         {badge.value}
                                     </span>
