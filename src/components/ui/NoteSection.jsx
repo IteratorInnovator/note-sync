@@ -3,7 +3,8 @@ import {
     getNotesByVideoId,
     createNote,
     updateNote,
-    deleteNote
+    deleteNote,
+    getVideoById
 } from "../../utils/firestore";
 import { auth } from "../..";
 import {
@@ -18,7 +19,7 @@ import {
     CircleX,
     Download
 } from "lucide-react";
-import { ToastContainer } from "./toast";
+import { ToastContainer } from "./Toast";
 import Editor from "./Editor";
 import {
     getPlainTextLength,
@@ -27,6 +28,7 @@ import {
 } from "../../utils/htmlHelpers";
 import Quill from "quill";
 import html2pdf from 'html2pdf.js';
+
 
 const MAX_NOTE_LENGTH = 500;
 let toastId = 0;
@@ -84,6 +86,19 @@ const NoteSection = ({
         onNotesChange(notes);
     }, [notes, onNotesChange]);
 
+    const [videoData, setVideoData] = useState(video);
+
+    useEffect(() => {
+        const uid = auth.currentUser?.uid;
+        if (!uid || !videoId) return;
+        if (!videoData?.title) {
+            (async () => {
+                const data = await getVideoById(uid, videoId);
+                if (data) setVideoData(data);
+            })();
+        }
+    }, [videoData, videoId]);
+
     const handleDownload = async () => {
     if (!notes || notes.length === 0) {
         addToast("No notes available to download", CircleX, "text-red-400");
@@ -99,8 +114,7 @@ const NoteSection = ({
     const quill = new Quill(container, { theme: "snow" });
 
     // Proper video header with title ---
-    const videoTitle =
-        (video?.title && video.title.trim()) || "Untitled Video";
+    const videoTitle = (videoData?.title && videoData.title.trim()) || "Untitled Video";
     const safeTitle = videoTitle.replace(/[\\/:*?"<>|]/g, "_"); // safe for file systems
 
     quill.insertText(0, `${videoTitle}\n`, { bold: true, size: "large" });
