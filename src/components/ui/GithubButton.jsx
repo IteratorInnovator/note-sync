@@ -29,7 +29,7 @@ const GithubButton = ({ text }) => {
             onClick={() => {
                 signUpOrLoginWithGithub();
             }}
-            className="group flex w-full flex-nowrap items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-slate-900 shadow-xs transition-colors duration-300 hover:bg-red-500 hover:text-white sm:gap-3 sm:px-6 md:px-8"
+            className="cursor-pointer group flex w-full flex-nowrap items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-slate-900 shadow-xs transition-colors duration-300 hover:bg-red-500 hover:text-white sm:gap-3 sm:px-6 md:px-8"
         >
             <svg
                 xmlns="http://www.w3.org/2000/svg"

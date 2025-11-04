@@ -40,7 +40,7 @@ const AuthDialog = ({ closeAuthDialog, view, switchAuthView }) => {
                 <button
                     type="button"
                     onClick={closeAnimation}
-                    className="absolute right-3 top-3 inline-grid h-5 w-5 place-items-center rounded-full hover:text-black active:outline-none active:ring-2 active:ring-red-500 group"
+                    className="cursor-pointer absolute right-3 top-3 inline-grid h-5 w-5 place-items-center rounded-full hover:text-black active:outline-none active:ring-2 active:ring-red-500 group"
                 >
                     <X className="h-4 w-4 text-slate-500 group-hover:text-black" />
                 </button>

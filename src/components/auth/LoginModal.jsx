@@ -141,7 +141,7 @@ const LoginModal = ({ switchToSignUpView, switchToForgotPasswordView }) => {
                             <button
                                 type="button"
                                 onClick={togglePassword}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 grid place-items-center"
+                                className="cursor-pointer absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 grid place-items-center"
                             >
                                 <img
                                     src={!showPassword ? EyeOff : EyeShow}
@@ -158,7 +158,7 @@ const LoginModal = ({ switchToSignUpView, switchToForgotPasswordView }) => {
                         {/* Forget Password button */}
                         <button
                             type="button"
-                            className="self-end w-auto text-[0.8rem] text-slate-900 font-medium mt-2 hover:underline"
+                            className="cursor-pointer self-end w-auto text-[0.8rem] text-slate-900 font-medium mt-2 hover:underline"
                             onClick={switchToForgotPasswordView}
                         >
                             Forgot Password?
@@ -179,7 +179,7 @@ const LoginModal = ({ switchToSignUpView, switchToForgotPasswordView }) => {
             <div className="text-sm text-center text-slate-500 mt-2">
                 Don't have an account?{" "}
                 <button
-                    className="text-red-500 hover:underline"
+                    className="cursor-pointer text-red-500 hover:underline"
                     onClick={switchToSignUpView}
                 >
                     Sign up

@@ -162,7 +162,7 @@ const SignUpModal = ({ switchToLoginView }) => {
                             <button
                                 type="button"
                                 onClick={togglePassword}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 grid place-items-center"
+                                className="cursor-pointer absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 grid place-items-center"
                             >
                                 <img
                                     src={!showPassword ? EyeOff : EyeShow}
@@ -246,7 +246,7 @@ const SignUpModal = ({ switchToLoginView }) => {
             <div className="text-sm text-center text-slate-500 mt-2">
                 Already have an account?{" "}
                 <button
-                    className="text-red-500 hover:underline"
+                    className="cursor-pointer text-red-500 hover:underline"
                     onClick={switchToLoginView}
                 >
                     Sign in
