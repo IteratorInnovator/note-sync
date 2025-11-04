@@ -5,7 +5,12 @@ import { auth } from "..";
 import NoteSection from "../components/ui/NoteSection";
 import DiscussionForum from "../components/ui/DiscussionForum";
 import Editor from "../components/ui/Editor";
-import { addVideo, createNote, getVideoById } from "../utils/firestore";
+import {
+    addVideo,
+    createNote,
+    getVideoById,
+    updateVideoProgress,
+} from "../utils/firestore";
 import { VideoAlreadySavedError } from "../utils/errors";
 import { hasMeaningfulText, sanitizeHtmlString } from "../utils/htmlHelpers";
 import {
@@ -116,6 +121,9 @@ const WatchPage = ({ onTitleChange }) => {
     const playerRef = useRef(null);
     const playerInstanceRef = useRef(null);
     const progressIntervalRef = useRef(null);
+    const resumeTimeRef = useRef(0);
+    const hasAppliedResumeRef = useRef(false);
+    const lastKnownProgressRef = useRef(0);
     const lastVolumeRef = useRef(100);
     const videoContainerRef = useRef(null);
     const hideControlsTimeoutRef = useRef(null);
@@ -133,6 +141,71 @@ const WatchPage = ({ onTitleChange }) => {
         [isTouchDevice, isFullscreen, controlsVisible, manualControlsVisible]
     );
 
+    const applyResumeIfAvailable = useCallback(
+        (playerInstance) => {
+            const player = playerInstance ?? playerInstanceRef.current;
+            if (!player || hasAppliedResumeRef.current) {
+                return;
+            }
+
+            const resume = resumeTimeRef.current;
+            if (!Number.isFinite(resume) || resume <= 0) {
+                hasAppliedResumeRef.current = true;
+                return;
+            }
+
+            const totalDuration = player.getDuration?.();
+            const safeResume =
+                Number.isFinite(totalDuration) && totalDuration > 0
+                    ? Math.min(resume, totalDuration)
+                    : resume;
+
+            player.seekTo?.(safeResume, true);
+            setCurrentTime(safeResume);
+            hasAppliedResumeRef.current = true;
+        },
+        []
+    );
+
+    const updateResumeTime = useCallback(
+        (progress) => {
+            const normalized = Number.isFinite(progress)
+                ? Math.max(0, progress)
+                : 0;
+            resumeTimeRef.current = normalized;
+            hasAppliedResumeRef.current = false;
+            setCurrentTime(normalized);
+            lastKnownProgressRef.current = normalized;
+
+            if (isPlayerReady && playerInstanceRef.current) {
+                applyResumeIfAvailable(playerInstanceRef.current);
+            }
+        },
+        [applyResumeIfAvailable, isPlayerReady]
+    );
+
+    const persistProgress = useCallback(() => {
+        const uid = auth.currentUser?.uid;
+        if (!uid || !videoId || !isVideoSaved) return;
+
+        const player = playerInstanceRef.current;
+        const playerTime = player?.getCurrentTime?.();
+        const rawTime = Number.isFinite(playerTime)
+            ? playerTime
+            : lastKnownProgressRef.current;
+        const totalDuration = player?.getDuration?.();
+        const maxDuration =
+            Number.isFinite(totalDuration) && totalDuration > 0
+                ? totalDuration
+                : null;
+
+        const progressToPersist =
+            maxDuration !== null
+                ? Math.min(Math.max(0, rawTime ?? 0), maxDuration)
+                : Math.max(0, rawTime ?? 0);
+
+        updateVideoProgress(uid, videoId, progressToPersist).catch(() => {});
+    }, [isVideoSaved, videoId]);
     const handleNotesChange = useCallback((nextNotes) => {
         setNotes(Array.isArray(nextNotes) ? nextNotes : []);
     }, []);
@@ -519,6 +592,18 @@ const WatchPage = ({ onTitleChange }) => {
     }, [isTouchDevice]);
 
     useEffect(() => {
+        if (!Number.isFinite(currentTime)) return;
+        lastKnownProgressRef.current = currentTime;
+    }, [currentTime]);
+
+    useEffect(() => {
+        resumeTimeRef.current = 0;
+        hasAppliedResumeRef.current = false;
+        lastKnownProgressRef.current = 0;
+        setCurrentTime(0);
+    }, [videoId]);
+
+    useEffect(() => {
         if (!videoId) return;
 
         let cancelled = false;
@@ -528,6 +613,7 @@ const WatchPage = ({ onTitleChange }) => {
             setLoading(false);
             setError(null);
             setIsVideoSaved(Boolean(initialVideo?.isSaved));
+            updateResumeTime(initialVideo?.progressSec);
         } else {
             setVideo(null);
             setLoading(true);
@@ -555,6 +641,7 @@ const WatchPage = ({ onTitleChange }) => {
                     }));
                     setIsVideoSaved(true);
                     setError(null);
+                    updateResumeTime(fetched?.progressSec);
                 } else {
                     setIsVideoSaved(false);
                     if (!initialVideo) {
@@ -645,6 +732,7 @@ const WatchPage = ({ onTitleChange }) => {
                         lastVolumeRef.current = initialVolume || 100;
                         player.setPlaybackRate?.(playbackRate);
                         startProgressTracking();
+                        applyResumeIfAvailable(player);
                     },
                     onStateChange: (event) => {
                         if (cancelled) return;
@@ -690,11 +778,19 @@ const WatchPage = ({ onTitleChange }) => {
         };
     }, [
         videoId,
+        applyResumeIfAvailable,
         startProgressTracking,
         stopProgressTracking,
         clearManualControlsTimeout,
         showManualControls,
     ]);
+
+    useEffect(() => {
+        if (!videoId) return undefined;
+        return () => {
+            persistProgress();
+        };
+    }, [videoId, persistProgress]);
 
     useEffect(() => {
         const handler = () => {
