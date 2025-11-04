@@ -154,7 +154,6 @@ Functions available at: `http://localhost:5001/<project-id>/<region>/<function-n
 - `npm run dev` - Start Vite development server
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
-- 
 
 
 ## 🚢 Deployment
