@@ -2,6 +2,7 @@
 
 This guide shows how to install dependencies and run a **Vite** frontend with **Firebase Cloud Functions** locally.
 
+
 ## Prerequisites
 
 Before you begin, ensure you have the following installed:
@@ -22,12 +23,12 @@ npm install -g firebase-tools
 firebase login
 ```
 
+
 ## 📁 Project Structure
 
 ```
 project-root/
 ├─ .firebase/
-├─ dist/
 ├─ functions/
 │  ├─ package.json
 │  ├─ index.js
@@ -49,6 +50,7 @@ project-root/
 ├─ README.md
 └─ vite.config.js
 ```
+
 
 ## ⚙️ Installation
 
@@ -127,6 +129,7 @@ if (import.meta.env.DEV) {
 }
 ```
 
+
 ## 🏃 Running the Project
 
 Open two terminal windows:
@@ -143,6 +146,7 @@ firebase emulators:start --only functions
 ```
 Functions available at: `http://localhost:5001/<project-id>/<region>/<function-name>`
 
+
 ## 📜 Available Scripts
 
 ### Root Directory
@@ -151,6 +155,7 @@ Functions available at: `http://localhost:5001/<project-id>/<region>/<function-n
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
 - 
+
 
 ## 🚢 Deployment
 
@@ -171,20 +176,33 @@ Or deploy everything:
 firebase deploy
 ```
 
+
 ## 📚 Tech Stack
 
+- [React 19](https://react.dev/) - Frontend Javascript Library
+- [Tailwind CSS 4.0](https://tailwindcss.com/) - CSS Framework
 - [Vite](https://vitejs.dev/) - Frontend build tool
 - [Firebase](https://firebase.google.com/) - Backend platform
+- [Firebase Authentication](https://firebase.google.com/docs/auth) - User authentication and authorization
+- [Firebase Firestore](https://firebase.google.com/docs/firestore) - NoSQL cloud database
 - [Firebase Cloud Functions](https://firebase.google.com/docs/functions) - Serverless functions
 
 
 ## 👥 Authors
 
-[Your Name/Team]
-Harry Ng Kok Jing 
-Jael Gek
-Xiang Ying
-Christy Gan
+## Authors
+
+- **Harry Ng Kok Jing** — Maintainer  
+  GitHub: https://github.com/IteratorInnovator · LinkedIn: https://www.linkedin.com/in/ng-kok-jing
+
+- **Jael Tay Gek Teng** — Developer  
+  GitHub: https://github.com/jaeltay
+
+- **Sim Xiang Ying** — Developer  
+  GitHub: https://github.com/xiangyingg
+
+- **Christy Gan Tze Qi** — Developer  
+  GitHub: https://github.com/christygann
 
 
 
