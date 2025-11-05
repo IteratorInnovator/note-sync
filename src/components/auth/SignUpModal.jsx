@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import GoogleButton from "../ui/GoogleButton";
 import GithubButton from "../ui/GithubButton";
 import Separator from "../ui/Separator";

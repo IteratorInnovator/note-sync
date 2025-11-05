@@ -1,4 +1,3 @@
-// NoteSection.jsx
 import {
     forwardRef,
     useCallback,
@@ -25,7 +24,6 @@ import {
     Sparkles,
     CircleCheck,
 } from "lucide-react";
-import { ToastContainer } from "./Toast";
 import Editor from "./Editor";
 import {
     getPlainTextLength,

@@ -1,4 +1,3 @@
-import React from "react";
 import { signInWithPopup, signInWithRedirect } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { auth, GoogleProvider } from "../..";

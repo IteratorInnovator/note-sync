@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "../../index.js";
 import User from "../../assets/user.svg";

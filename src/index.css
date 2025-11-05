@@ -10,20 +10,24 @@
     --font-jetbrains: "JetBrains Mono", monospace;
 }
 
+/* Note content lists */
 .note-content li[data-list="bullet"] {
     list-style-type: disc;
+    margin-left: 1rem;
 }
 
 .note-content li[data-list="ordered"] {
     list-style-type: decimal;
+    margin-left: 1rem;
 }
 
+/* Note marker lists */
 .note-marker-content li[data-list="bullet"] {
     list-style-type: disc;
-    @apply ml-4;
+    margin-left: 1rem;
 }
 
 .note-marker-content li[data-list="ordered"] {
     list-style-type: decimal;
-    @apply ml-4;
+    margin-left: 1rem;
 }
