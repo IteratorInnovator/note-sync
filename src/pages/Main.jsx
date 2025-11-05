@@ -6,7 +6,7 @@ import MyVideosView from "../views/MyVideosView";
 import SearchView from "../views/SearchView";
 import SettingsView from "../views/SettingsView";
 import WatchView from "../views/WatchView";
-import { useIsMdUp } from "../utils/breakpoint";
+import { useIsMdUp } from "../hooks/useIsMdUp";
 import PlaylistsView from "../views/PlaylistsView";
 import { useToasts } from "../stores/useToasts";
 import { ToastContainer } from "../components/ui/Toast";
