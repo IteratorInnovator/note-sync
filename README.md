@@ -191,7 +191,7 @@ firebase deploy
 - [React 19](https://react.dev/) - Frontend Javascript Library
 - [Tailwind CSS 4.0](https://tailwindcss.com/) - CSS Framework
 - [Vite](https://vitejs.dev/) - Frontend build tool
-- [Firebase](https://firebase.google.com/) - Backend platform
+- [Firebase](https://firebase.google.com/) - Backend as a Service platform
 - [Firebase Authentication](https://firebase.google.com/docs/auth) - User authentication and authorization
 - [Firebase Firestore](https://firebase.google.com/docs/firestore) - NoSQL cloud database
 - [Firebase Cloud Functions](https://firebase.google.com/docs/functions) - Serverless functions
