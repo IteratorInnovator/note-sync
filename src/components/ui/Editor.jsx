@@ -40,7 +40,6 @@ const Editor = forwardRef(({
     );
 
     const { quill, quillRef } = useQuill(options);
-    const toolbarRef = useRef(null);
     const prevHtmlRef = useRef("");
     const didInitRef = useRef(false);
     const resetSignalRef = useRef(resetSignal);
