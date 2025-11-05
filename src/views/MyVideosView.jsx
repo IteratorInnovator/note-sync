@@ -5,7 +5,6 @@ import { getVideosByUserId } from "../utils/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../";
 import ViewControls from "../components/ui/ViewControls";
-import { ToastContainer } from "../components/ui/Toast";
 
 const highlightMatch = (text, query) => {
     if (!query) return text;

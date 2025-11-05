@@ -1,4 +1,4 @@
-import { Play, X } from "lucide-react";
+import { Play} from "lucide-react";
 import PlusButton from "./PlusButton";
 import { Link } from "react-router-dom";
 

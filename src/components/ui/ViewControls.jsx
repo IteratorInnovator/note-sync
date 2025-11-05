@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { Grid2x2, Grid3x3, Rows } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Button } from "./button";
 import LibrarySearchbar from "./LibrarySeachbar";
 import GridLayoutControls from "./GridLayoutControls";
