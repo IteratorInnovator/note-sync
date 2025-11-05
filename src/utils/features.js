@@ -1,10 +1,11 @@
-import { Search, Video, FileText, List, Settings, Download } from "lucide-react";
+import { Search, Video, FileText, List, Settings, Users } from "lucide-react";
 
 import searchVideos from "../assets/videos/search-videos.mp4"; 
 import organizePlaylists from "../assets/videos/organize-playlists.mp4";
 import manageVideos from "../assets/videos/manage-videos.mp4";
 import settings from "../assets/videos/settings.mp4";
 import takeNotes from "../assets/videos/take-notes.mp4";
+import discussionForum from "../assets/videos/discussion-forum.mp4";
 
 export const features = [
     {
@@ -64,6 +65,18 @@ export const features = [
     },
     {
         id: 5,
+        icon: Users,
+        title: "Discussion Forum",
+        description: "Join discussions and share insights with other users on a video lectures.",
+        steps: [
+            "Open the video lecture you want to discuss",
+            "Post your questions or thoughts in the discussion section",
+            "Reply to others and build meaningful conversations"
+        ],
+        videoUrl: discussionForum
+    },
+    {
+        id: 6,
         icon: Settings,
         title: "Settings",
         description: "Customize and reset your preferences",
@@ -74,17 +87,5 @@ export const features = [
             "Use 'Reset' to restore default settings"
         ],
         videoUrl: settings
-    },
-    {
-        id: 6,
-        icon: Download,
-        title: "Export Notes",
-        description: "Download your notes as PDF",
-        steps: [
-            "Select the video with notes you want to export",
-            "Click the 'Download Notes' button",
-            "Download the generated PDF file"
-        ],
-        
     }
 ];
