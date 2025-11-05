@@ -29,7 +29,6 @@ import {
 import Quill from "quill";
 import html2pdf from 'html2pdf.js';
 
-
 const MAX_NOTE_LENGTH = 500;
 let toastId = 0;
 
@@ -47,22 +46,20 @@ const NoteSection = ({
 }) => {
     const [notes, setNotes] = useState([]);
     const [loading, setLoading] = useState(true);
-
     const [currentTimestamp, setCurrentTimestamp] = useState(0);
 
-    // New note state
     const [newNote, setNewNote] = useState("");
     const [newNoteLength, setNewNoteLength] = useState(0);
     const canSaveNew = newNoteLength > 0;
     const [newEditorResetSignal, setNewEditorResetSignal] = useState(0);
 
-    // Edit state
     const [editingId, setEditingId] = useState(null);
     const [editedContent, setEditedContent] = useState("");
     const [editedContentLength, setEditedContentLength] = useState(0);
     const editingHasContent = editedContentLength > 0;
 
     const [toasts, setToasts] = useState([]);
+    const [videoData, setVideoData] = useState(video);
 
     // Fetch notes
     useEffect(() => {
@@ -86,8 +83,6 @@ const NoteSection = ({
         onNotesChange(notes);
     }, [notes, onNotesChange]);
 
-    const [videoData, setVideoData] = useState(video);
-
     useEffect(() => {
         const uid = auth.currentUser?.uid;
         if (!uid || !videoId) return;
@@ -99,81 +94,6 @@ const NoteSection = ({
         }
     }, [videoData, videoId]);
 
-    const handleDownload = async () => {
-    if (!notes || notes.length === 0) {
-        addToast("No notes available to download", CircleX, "text-red-400");
-        return;
-    }
-
-    // Create hidden Quill container
-    const container = document.createElement("div");
-    container.style.position = "absolute";
-    container.style.left = "-9999px";
-    document.body.appendChild(container);
-
-    const quill = new Quill(container, { theme: "snow" });
-
-    // Proper video header with title ---
-    const videoTitle = (videoData?.title && videoData.title.trim()) || "Untitled Video";
-    const safeTitle = videoTitle.replace(/[\\/:*?"<>|]/g, "_"); // safe for file systems
-
-    quill.insertText(0, `${videoTitle}\n`, { bold: true, size: "large" });
-    const currentLength = quill.getLength();
-    quill.insertText(
-        currentLength,
-        `Channel: ${video?.channelTitle || "Unknown"}\n\n`
-    );
-
-    // Notes section header
-    quill.insertText(quill.getLength(), "Notes:\n", { bold: true, size: "large" });
-    quill.insertText(quill.getLength(), "\n");
-
-    const sortedNotes = [...notes].sort((a, b) => a.timeSec - b.timeSec);
-
-    for (let i = 0; i < sortedNotes.length; i++) {
-        const note = sortedNotes[i];
-        const minutes = Math.floor(note.timeSec / 60);
-        const seconds = Math.floor(note.timeSec % 60)
-            .toString()
-            .padStart(2, "0");
-
-        quill.insertText(quill.getLength(), `${i + 1}. [${minutes}:${seconds}]\n`, {
-            bold: true,
-        });
-
-        // Add indentation for <ul> and <ol> items
-        const tempDiv = document.createElement("div");
-        tempDiv.innerHTML = note.content;
-        tempDiv.querySelectorAll("ul, ol").forEach((el) => {
-            el.style.marginLeft = "20px";
-        });
-
-        quill.clipboard.dangerouslyPasteHTML(
-            quill.getLength(),
-            tempDiv.innerHTML
-        );
-
-        quill.insertText(quill.getLength(), "\n\n");
-    }
-
-    // Use the actual video title as PDF name
-    const opt = {
-        margin: 16,
-        filename: `${safeTitle}.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    };
-
-    try {
-        await html2pdf().set(opt).from(quill.root).save();
-    } finally {
-        document.body.removeChild(container);
-    }
-
-    addToast(`Downloaded notes for "${videoTitle}"`);
-};
-
     // Track current player time
     useEffect(() => {
         const id = setInterval(() => {
@@ -184,11 +104,7 @@ const NoteSection = ({
         return () => clearInterval(id);
     }, [playerRef]);
 
-    const addToast = (
-        message,
-        Icon = CircleCheck,
-        iconColour = "text-emerald-400"
-    ) => {
+    const addToast = (message, Icon = CircleCheck, iconColour = "text-emerald-400") => {
         const id = toastId++;
         setToasts((prev) => [...prev, { id, message, Icon, iconColour }]);
         setTimeout(() => removeToast(id), 3000);
@@ -274,6 +190,91 @@ const NoteSection = ({
         [notes]
     );
 
+    // Download PDF
+    const handleDownload = async () => {
+        if (!notes || notes.length === 0) {
+            addToast("No notes available to download", CircleX, "text-red-400");
+            return;
+        }
+
+        const container = document.createElement("div");
+        container.style.position = "absolute";
+        container.style.left = "-9999px";
+        document.body.appendChild(container);
+
+        const quill = new Quill(container, { theme: "snow" });
+
+        const videoTitle = (videoData?.title && videoData.title.trim()) || "Untitled Video";
+        const safeTitle = videoTitle.replace(/[\\/:*?"<>|]/g, "_");
+
+        quill.insertText(0, `${videoTitle}\n`, { bold: true, size: "large" });
+
+        quill.insertText(quill.getLength(), "Notes:\n", { bold: true, size: "large" });
+        quill.insertText(quill.getLength(), "\n");
+
+        const sortedNotes = [...notes].sort((a, b) => a.timeSec - b.timeSec);
+
+        for (let i = 0; i < sortedNotes.length; i++) {
+            const note = sortedNotes[i];
+            const minutes = Math.floor(note.timeSec / 60);
+            const seconds = Math.floor(note.timeSec % 60).toString().padStart(2, "0");
+
+            // Insert timestamp
+            quill.insertText(quill.getLength(), `[${minutes}:${seconds}]\n`, { bold: true });
+
+            // Parse note content
+            const tempDiv = document.createElement("div");
+            tempDiv.innerHTML = note.content;
+
+            // Reset <ol> numbering per note, but leave <ul> as-is
+            tempDiv.querySelectorAll("ol").forEach((ol) => {
+                const items = ol.querySelectorAll("li");
+                const numberedLines = Array.from(items)
+                    .map((li, idx) => `&nbsp;&nbsp;&nbsp;${idx + 1}. ${li.textContent}<br>`)
+                    .join("");
+                const olWrapper = document.createElement("div");
+                olWrapper.innerHTML = numberedLines;
+                ol.parentNode.replaceChild(olWrapper, ol);
+            });
+
+            // Preserve <ul> bullets without converting
+            tempDiv.querySelectorAll("ul").forEach((ul) => {
+                const items = ul.querySelectorAll("li");
+                const bulletLines = Array.from(items)
+                    .map((li) => `&nbsp;&nbsp;&nbsp;• ${li.textContent}<br>`)
+                    .join("");
+                const ulWrapper = document.createElement("div");
+                ulWrapper.innerHTML = bulletLines;
+                ul.parentNode.replaceChild(ulWrapper, ul);
+            });
+
+            // Wrap the note and paste
+            const noteWrapper = document.createElement("div");
+            noteWrapper.appendChild(tempDiv);
+            quill.clipboard.dangerouslyPasteHTML(quill.getLength(), noteWrapper.innerHTML);
+            quill.insertText(quill.getLength(), "\n"); // extra spacing between notes
+
+        }
+
+
+        const opt = {
+            margin: 16,
+            filename: `${safeTitle}.pdf`,
+            image: { type: "jpeg", quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        };
+
+        try {
+            await html2pdf().set(opt).from(quill.root).save();
+        } finally {
+            document.body.removeChild(container);
+        }
+
+        addToast(`Downloaded notes for "${videoTitle}"`);
+    };
+
+
     return (
         <>
             <div className="mt-6 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 p-6 shadow-lg border border-blue-100">
@@ -283,15 +284,12 @@ const NoteSection = ({
                         <BookOpen className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold text-slate-800">
-                            Study Notes
-                        </h2>
+                        <h2 className="text-xl font-bold text-slate-800">Study Notes</h2>
                         <div className="flex items-center gap-2 mt-1">
                             <div className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1 shadow-sm border border-slate-200">
                                 <Sparkles className="h-3 w-3 text-amber-500" />
                                 <span className="text-xs font-semibold text-slate-600">
-                                    {notes.length}{" "}
-                                    {notes.length === 1 ? "note" : "notes"}
+                                    {notes.length} {notes.length === 1 ? "note" : "notes"}
                                 </span>
                             </div>
                         </div>
@@ -312,7 +310,6 @@ const NoteSection = ({
                             {formatTime(currentTimestamp)}
                         </div>
 
-                        {/* Right column */}
                         <div className="flex-1 w-full min-w-0 flex flex-col gap-4">
                             <Editor
                                 className="w-full"
@@ -325,12 +322,7 @@ const NoteSection = ({
                                 }}
                             />
                             <div className="text-left text-xs font-medium text-slate-500">
-                                {Math.max(
-                                    0,
-                                    MAX_NOTE_LENGTH -
-                                        Math.min(newNoteLength, MAX_NOTE_LENGTH)
-                                )}{" "}
-                                characters remaining
+                                {Math.max(0, MAX_NOTE_LENGTH - Math.min(newNoteLength, MAX_NOTE_LENGTH))} characters remaining
                             </div>
 
                             <div className="mt-1 flex items-center justify-end gap-3">
@@ -357,19 +349,13 @@ const NoteSection = ({
                 {loading ? (
                     <div className="rounded-xl bg-white p-8 text-center shadow-sm">
                         <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600" />
-                        <p className="mt-3 text-sm text-slate-500">
-                            Loading your notes...
-                        </p>
+                        <p className="mt-3 text-sm text-slate-500">Loading your notes...</p>
                     </div>
                 ) : notes.length === 0 ? (
                     <div className="rounded-xl bg-white p-8 text-center shadow-sm border border-slate-200">
                         <Clock className="mx-auto h-12 w-12 text-slate-300" />
-                        <p className="mt-3 text-sm font-medium text-slate-600">
-                            No notes yet
-                        </p>
-                        <p className="mt-1 text-xs text-slate-400">
-                            Add your first note to start studying!
-                        </p>
+                        <p className="mt-3 text-sm font-medium text-slate-600">No notes yet</p>
+                        <p className="mt-1 text-xs text-slate-400">Add your first note to start studying!</p>
                     </div>
                 ) : (
                     <ul className="space-y-6">
@@ -398,50 +384,26 @@ const NoteSection = ({
                                                     initialHtml={editedContent}
                                                     placeholder="Update your note..."
                                                     maxLength={MAX_NOTE_LENGTH}
-                                                    onChange={({
-                                                        html,
-                                                        plainTextLength = 0,
-                                                    }) => {
+                                                    onChange={({ html, plainTextLength = 0 }) => {
                                                         setEditedContent(html);
-                                                        setEditedContentLength(
-                                                            plainTextLength
-                                                        );
+                                                        setEditedContentLength(plainTextLength);
                                                     }}
                                                 />
                                                 <div className="text-left text-xs font-medium text-slate-500">
-                                                    {Math.max(
-                                                        0,
-                                                        MAX_NOTE_LENGTH -
-                                                            Math.min(
-                                                                editedContentLength,
-                                                                MAX_NOTE_LENGTH
-                                                            )
-                                                    )}{" "}
-                                                    characters remaining
+                                                    {Math.max(0, MAX_NOTE_LENGTH - Math.min(editedContentLength, MAX_NOTE_LENGTH))} characters remaining
                                                 </div>
                                                 <div className="mt-2 flex items-center justify-end gap-2">
                                                     <button
-                                                        onClick={() =>
-                                                            handleSave(
-                                                                note.noteId
-                                                            )
-                                                        }
-                                                        disabled={
-                                                            !editingHasContent
-                                                        }
+                                                        onClick={() => handleSave(note.noteId)}
+                                                        disabled={!editingHasContent}
                                                         className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-emerald-700 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
                                                         title="Save changes"
                                                     >
-                                                        <Save
-                                                            size={16}
-                                                            strokeWidth={2}
-                                                        />
+                                                        <Save size={16} strokeWidth={2} />
                                                         Save
                                                     </button>
                                                     <button
-                                                        onClick={
-                                                            handleCancelEdit
-                                                        }
+                                                        onClick={handleCancelEdit}
                                                         className="inline-flex items-center gap-1 rounded-lg bg-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 shadow-md transition-all hover:bg-slate-300 hover:text-slate-700"
                                                         title="Cancel editing"
                                                     >
@@ -454,19 +416,13 @@ const NoteSection = ({
                                             <div className="relative rounded-lg bg-white/40">
                                                 <div
                                                     className="note-content break-words [overflow-wrap:anywhere] bg-gray-100/90 p-6 text-sm leading-relaxed text-slate-700
-    [&_ol]:ml-4 [&_ol]:list-decimal [&_ol]:reset-counter
-    [&_ul]:ml-4 [&_ul]:list-disc [&_ul]:reset-counter
-    [&_.ql-syntax]:whitespace-pre-wrap [&_.ql-syntax]:font-mono
+      [&_ol]:ml-4 [&_ul]:ml-4
   "
-                                                    style={{
-                                                        counterReset: 'list-0 list-1 list-2 list-3 list-4 list-5 list-6 list-7 list-8 list-9'
-                                                    }}
                                                     dangerouslySetInnerHTML={{
-                                                        __html: sanitizeHtmlString(
-                                                            note.content
-                                                        ),
+                                                        __html: sanitizeHtmlString(note.content),
                                                     }}
                                                 />
+
                                             </div>
                                         )}
                                     </div>
@@ -474,21 +430,14 @@ const NoteSection = ({
                                     {editingId !== note.noteId && (
                                         <div className="flex w-full justify-end shrink-0 gap-1 opacity-100 md:w-auto md:justify-start md:opacity-0 md:transition-opacity md:group-hover:opacity-100">
                                             <button
-                                                onClick={() =>
-                                                    handleEdit(
-                                                        note.noteId,
-                                                        note.content
-                                                    )
-                                                }
+                                                onClick={() => handleEdit(note.noteId, note.content)}
                                                 className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-blue-100 hover:text-blue-600"
                                                 title="Edit note"
                                             >
                                                 <Edit3 size={16} />
                                             </button>
                                             <button
-                                                onClick={() =>
-                                                    handleDelete(note.noteId)
-                                                }
+                                                onClick={() => handleDelete(note.noteId)}
                                                 className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-red-100 hover:text-red-600"
                                                 title="Delete note"
                                             >
