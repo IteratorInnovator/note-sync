@@ -184,7 +184,7 @@ const Searchbar = ({ value = "", onChange, onResults, placeholder = "Search vide
                         clearSuggestions();  // clear any suggestions
                         setIsFocused(true);  // keep focus on input
                     }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-slate-500 hover:text-slate-700"
+                    className="cursor-pointer absolute right-3 top-1/2 -translate-y-1/2 size-4 text-slate-500 hover:text-slate-700"
                     aria-label="Clear search"
                 >
                     <X className="size-4" />
