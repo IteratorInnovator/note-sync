@@ -140,10 +140,21 @@ const MyPlaylistView = () => {
         };
     }, [auth, fetchUserData]);
 
+    const [errorMessage, setErrorMessage] = useState("");
+
     const handleCreatePlaylist = async () => {
         const name = newPlaylistName.trim();
         const uid = user?.uid;
         if (!name || !uid) return;
+
+        // Check for duplicate playlist name
+        const duplicate = playlists.some(
+            (playlist) => playlist.name.toLowerCase() === name.toLowerCase()
+        );
+        if (duplicate) {
+            setErrorMessage(`Playlist name "${name}" already exists. Please choose a different name.`);
+            return;
+        }
 
         try {
             setLoading(true);
@@ -151,6 +162,7 @@ const MyPlaylistView = () => {
             await refreshData(uid);
             setNewPlaylistName("");
             setShowCreatePlaylist(false);
+            setErrorMessage(""); // clear error
         } catch (error) {
             console.error("Failed to create playlist:", error);
         } finally {
@@ -164,18 +176,31 @@ const MyPlaylistView = () => {
         const uid = user?.uid;
         if (!nextName || !uid) return;
 
+        // Check for duplicate name excluding the current playlist
+        const duplicate = playlists.some(
+            (playlist) =>
+                playlist.playlistId !== playlistId &&
+                playlist.name.toLowerCase() === nextName.toLowerCase()
+        );
+        if (duplicate) {
+            setErrorMessage(`Playlist name "${nextName}" already exists. Please choose a different name.`);
+            return;
+        }
+
         try {
             setLoading(true);
             await renamePlaylist(uid, playlistId, nextName);
             await refreshData(uid);
             setEditingPlaylistId(null);
             setEditingPlaylistName("");
+            setErrorMessage(""); // clear error if rename succeeds
         } catch (error) {
             console.error("Failed to rename playlist:", error);
         } finally {
             setLoading(false);
         }
     };
+
 
     // Delete playlist
     const handleDeletePlaylist = (playlistId) => {
@@ -209,17 +234,35 @@ const MyPlaylistView = () => {
         const uid = user?.uid;
         if (!uid || !playlistId || selectedVideos.size === 0) return;
 
+        // Find the target playlist
+        const targetPlaylist = playlists.find(
+            (playlist) => playlist.playlistId === playlistId
+        );
+
+        if (!targetPlaylist) return;
+
+        // Get IDs of videos already in the playlist
+        const existingVideoIds = new Set(targetPlaylist.videoIds || []);
+
+        // Filter out videos that are already added
+        const newVideosToAdd = Array.from(selectedVideos).filter(
+            (id) => !existingVideoIds.has(id)
+        );
+
+        if (newVideosToAdd.length === 0) {
+            // All selected videos already exist
+            setErrorMessage("Videos already added previously in this playlist.");
+            return;
+        }
+
         try {
             setLoading(true);
-            await addVideosToPlaylist(
-                uid,
-                playlistId,
-                Array.from(selectedVideos)
-            );
+            await addVideosToPlaylist(uid, playlistId, newVideosToAdd);
             await refreshData(uid);
             setSelectedVideos(new Set());
             setSelectionMode(false);
             setShowAddToPlaylist(false);
+            setErrorMessage(""); // Clear any previous errors
         } catch (error) {
             console.error("Failed to add videos to playlist:", error);
         } finally {
@@ -376,11 +419,10 @@ const MyPlaylistView = () => {
                                         setSelectionMode(!selectionMode);
                                         setSelectedVideos(new Set());
                                     }}
-                                    className={`cursor-pointer px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
-                                        selectionMode
-                                            ? "bg-gray-600 border text-white hover:bg-gray-700"
-                                            : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                                    }`}
+                                    className={`cursor-pointer px-4 py-2 rounded-lg transition-colors text-sm font-medium ${selectionMode
+                                        ? "bg-gray-600 border text-white hover:bg-gray-700"
+                                        : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                                        }`}
                                 >
                                     {selectionMode
                                         ? "Cancel Selection"
@@ -421,28 +463,32 @@ const MyPlaylistView = () => {
                 {showCreatePlaylist && (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
                         <div className="bg-white rounded-xl p-6 max-w-md w-full">
-                            <h3 className="text-xl font-bold mb-4">
-                                Create New Playlist
-                            </h3>
+                            <h3 className="text-xl font-bold mb-4">Create New Playlist</h3>
                             <input
                                 type="text"
                                 value={newPlaylistName}
                                 onChange={(e) => {
                                     setNewPlaylistName(e.target.value);
+                                    setErrorMessage(""); // Clear error while typing
                                 }}
                                 placeholder="Enter playlist name..."
-                                className="w-full px-4 py-2 mb-2 rounded-lg focus:outline-none focus:ring-2 border-gray-300 focus:ring-purple-500"
+                                className="w-full px-4 py-2 mb-2 rounded-lg focus:outline-none focus:ring-2 border border-gray-300 focus:ring-purple-500"
                                 onKeyPress={(e) =>
                                     e.key === "Enter" && handleCreatePlaylist()
                                 }
                                 autoFocus
                             />
+                            {/* Display error if playlist name is duplicate */}
+                            {errorMessage && (
+                                <p className="text-red-600 text-sm mb-2">{errorMessage}</p>
+                            )}
 
                             <div className="flex gap-2 justify-end">
                                 <button
                                     onClick={() => {
                                         setShowCreatePlaylist(false);
                                         setNewPlaylistName("");
+                                        setErrorMessage(""); // Clear error on cancel
                                     }}
                                     className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                                 >
@@ -467,6 +513,12 @@ const MyPlaylistView = () => {
                             <h3 className="text-xl font-bold mb-4">
                                 Add to Playlist
                             </h3>
+
+                            {/* Error Message */}
+                            {errorMessage && (
+                                <p className="text-red-600 text-sm mb-2">{errorMessage}</p>
+                            )}
+
                             {playlists.length === 0 ? (
                                 <p className="text-gray-600 mb-4">
                                     No playlists yet. Create one first!
@@ -477,9 +529,7 @@ const MyPlaylistView = () => {
                                         <button
                                             key={playlist.playlistId}
                                             onClick={() =>
-                                                handleAddToPlaylist(
-                                                    playlist.playlistId
-                                                )
+                                                handleAddToPlaylist(playlist.playlistId)
                                             }
                                             className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
                                         >
@@ -494,7 +544,10 @@ const MyPlaylistView = () => {
                                 </div>
                             )}
                             <button
-                                onClick={() => setShowAddToPlaylist(false)}
+                                onClick={() => {
+                                    setShowAddToPlaylist(false);
+                                    setErrorMessage(""); // Clear error when cancel
+                                }}
                                 className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                             >
                                 Cancel
@@ -502,6 +555,7 @@ const MyPlaylistView = () => {
                         </div>
                     </div>
                 )}
+
 
                 {/* Loading State */}
                 {loading && (
@@ -588,25 +642,30 @@ const MyPlaylistView = () => {
                                 >
                                     {/* Playlist Header */}
                                     <div className="flex items-center justify-between gap-2 mb-4">
-                                        {editingPlaylistId ===
-                                        playlist.playlistId ? (
-                                            <input
-                                                type="text"
-                                                value={editingPlaylistName}
-                                                onChange={(e) =>
-                                                    setEditingPlaylistName(
-                                                        e.target.value
-                                                    )
-                                                }
-                                                onKeyPress={(e) =>
-                                                    e.key === "Enter" &&
-                                                    handleRenamePlaylist(
-                                                        playlist.playlistId
-                                                    )
-                                                }
-                                                className="max-sm:max-w-40 text-xl font-bold px-2 py-1 border border-purple-500 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                                autoFocus
-                                            />
+                                        {editingPlaylistId === playlist.playlistId ? (
+                                            <div className="flex flex-col">
+                                                <input
+                                                    type="text"
+                                                    value={editingPlaylistName}
+                                                    onChange={(e) => {
+                                                        setEditingPlaylistName(e.target.value);
+                                                        setErrorMessage(""); // clear error while typing
+                                                    }}
+                                                    onKeyPress={(e) =>
+                                                        e.key === "Enter" &&
+                                                        handleRenamePlaylist(
+                                                            playlist.playlistId
+                                                        )
+                                                    }
+                                                    className="max-sm:max-w-40 text-xl font-bold px-2 py-1 border border-purple-500 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                                    autoFocus
+                                                />
+                                                {errorMessage && (
+                                                    <p className="text-red-600 text-sm mt-1">
+                                                        {errorMessage}
+                                                    </p>
+                                                )}
+                                            </div>
                                         ) : (
                                             <div className="flex items-center gap-3">
                                                 <h3 className="text-xl font-bold text-gray-900">
@@ -617,9 +676,10 @@ const MyPlaylistView = () => {
                                                 </span>
                                             </div>
                                         )}
+
                                         <div className="flex gap-2">
                                             {editingPlaylistId ===
-                                            playlist.playlistId ? (
+                                                playlist.playlistId ? (
                                                 <>
                                                     <button
                                                         onClick={() =>
@@ -630,7 +690,7 @@ const MyPlaylistView = () => {
                                                         className="cursor-pointer p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                                                         title="Save"
                                                     >
-                                                        <Check className="size-5"/>
+                                                        <Check className="size-5" />
                                                     </button>
                                                     <button
                                                         onClick={() => {
@@ -768,13 +828,12 @@ const MyPlaylistView = () => {
                                                             video.videoId
                                                         )
                                                     }
-                                                    className={`relative cursor-pointer rounded-xl overflow-hidden border-2 transition-all duration-200 ${
-                                                        selectedVideos.has(
-                                                            video.videoId
-                                                        )
-                                                            ? "border-purple-500 ring-2 ring-purple-300"
-                                                            : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
-                                                    }`}
+                                                    className={`relative cursor-pointer rounded-xl overflow-hidden border-2 transition-all duration-200 ${selectedVideos.has(
+                                                        video.videoId
+                                                    )
+                                                        ? "border-purple-500 ring-2 ring-purple-300"
+                                                        : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
+                                                        }`}
                                                 >
                                                     {/* Thumbnail */}
                                                     <div className="relative w-full aspect-video overflow-hidden bg-gray-100">
@@ -797,24 +856,24 @@ const MyPlaylistView = () => {
                                                         {selectedVideos.has(
                                                             video.videoId
                                                         ) && (
-                                                            <div className="absolute top-3 right-3 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center shadow-lg">
-                                                                <svg
-                                                                    className="w-5 h-5 text-white"
-                                                                    fill="none"
-                                                                    stroke="currentColor"
-                                                                    strokeWidth={
-                                                                        2.5
-                                                                    }
-                                                                    viewBox="0 0 24 24"
-                                                                >
-                                                                    <path
-                                                                        strokeLinecap="round"
-                                                                        strokeLinejoin="round"
-                                                                        d="M5 13l4 4L19 7"
-                                                                    />
-                                                                </svg>
-                                                            </div>
-                                                        )}
+                                                                <div className="absolute top-3 right-3 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                                                                    <svg
+                                                                        className="w-5 h-5 text-white"
+                                                                        fill="none"
+                                                                        stroke="currentColor"
+                                                                        strokeWidth={
+                                                                            2.5
+                                                                        }
+                                                                        viewBox="0 0 24 24"
+                                                                    >
+                                                                        <path
+                                                                            strokeLinecap="round"
+                                                                            strokeLinejoin="round"
+                                                                            d="M5 13l4 4L19 7"
+                                                                        />
+                                                                    </svg>
+                                                                </div>
+                                                            )}
                                                     </div>
 
                                                     {/* Video info */}
@@ -822,17 +881,17 @@ const MyPlaylistView = () => {
                                                         <h3 className="line-clamp-2 truncate text-xs font-semibold md:text-sm">
                                                             {highlightMatch
                                                                 ? highlightMatch(
-                                                                      video.title,
-                                                                      searchQuery
-                                                                  )
+                                                                    video.title,
+                                                                    searchQuery
+                                                                )
                                                                 : video.title}
                                                         </h3>
                                                         <p className="mt-1 truncate text-[10px] text-slate-600">
                                                             {highlightMatch
                                                                 ? highlightMatch(
-                                                                      video.channelTitle,
-                                                                      searchQuery
-                                                                  )
+                                                                    video.channelTitle,
+                                                                    searchQuery
+                                                                )
                                                                 : video.channelTitle}
                                                         </p>
                                                     </div>
