@@ -207,7 +207,11 @@ const NoteSection = ({
         const videoTitle = (videoData?.title && videoData.title.trim()) || "Untitled Video";
         const safeTitle = videoTitle.replace(/[\\/:*?"<>|]/g, "_");
 
-        quill.insertText(0, `${videoTitle}\n`, { bold: true, size: "large" });
+        quill.clipboard.dangerouslyPasteHTML(
+            0,
+            `<div style="font-weight:bold; font-size:18px; white-space: pre;">${videoTitle}</div><br>`
+        );
+
 
         quill.insertText(quill.getLength(), "Notes:\n", { bold: true, size: "large" });
         quill.insertText(quill.getLength(), "\n");
