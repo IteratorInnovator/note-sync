@@ -27,14 +27,13 @@
      cancelled to avoid React Strict Mode warnings.
  */
 
-
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, X } from "lucide-react";
 import { searchVideos } from "../../utils/youtube.js";
 import { useDebounce } from "../../hooks/useDebounce.js";
 import { useSearchSuggestions } from "../../stores/useSearchSuggestions.js";
 
-const Searchbar = ({ value = "", onChange, onResults, placeholder="Search videos..."  }) => {
+const Searchbar = ({ value = "", onChange, onResults, placeholder = "Search videos..." }) => {
     const [searchLoading, setSearchLoading] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
 
@@ -176,6 +175,22 @@ const Searchbar = ({ value = "", onChange, onResults, placeholder="Search videos
                 Search
             </button>
 
+            {/* Clear X button */}
+            {value && !searchLoading && (
+                <button
+                    type="button"
+                    onClick={() => {
+                        onChange?.("");      // clear input value
+                        clearSuggestions();  // clear any suggestions
+                        setIsFocused(true);  // keep focus on input
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-slate-500 hover:text-slate-700"
+                    aria-label="Clear search"
+                >
+                    <X className="size-4" />
+                </button>
+            )}
+
             {searchLoading && (
                 <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-4 animate-spin text-slate-500" />
             )}
@@ -199,8 +214,8 @@ const Searchbar = ({ value = "", onChange, onResults, placeholder="Search videos
                     ) : null}
 
                     {!suggestionsLoading &&
-                    !error &&
-                    suggestions.length === 0 ? (
+                        !error &&
+                        suggestions.length === 0 ? (
                         <div className="px-4 py-3 text-sm text-slate-500">
                             No suggestions yet.
                         </div>
