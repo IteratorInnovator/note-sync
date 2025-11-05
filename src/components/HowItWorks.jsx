@@ -15,9 +15,9 @@ const steps = [
     },
     {
         number: "03",
-        title: "Review & Share",
+        title: "Review Key Points",
         description:
-            "Click any note to jump to that moment. Download your notes as a PDF to share them with friends.",
+            "Access all your notes in one place and revisit key moments anytime.",
     },
 ];
 
