@@ -7,11 +7,12 @@ import {
     addVideosToPlaylist,
     renamePlaylist,
 } from "../utils/firestore";
-import { Check, X, ListVideo } from "lucide-react";
+import { Check, CheckCircle, X, ListVideo } from "lucide-react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import ViewControls from "../components/ui/ViewControls";
 import SavedVideoList from "../components/SavedVideoList";
 import { useNavigate } from "react-router-dom";
+import { useToasts } from "../stores/useToasts";
 
 const highlightMatch = (text, query) => {
     if (!query) return text;
@@ -51,49 +52,46 @@ const MyPlaylistView = () => {
     const auth = getAuth();
     const navigate = useNavigate();
 
-    const fetchUserData = useCallback(
-        async (uid) => {
-            if (!uid) {
-                return { videos: [], playlists: [] };
-            }
+    const { addToast } = useToasts();
 
-            const result = await getUserVideosAndPlaylists(uid);
-            const { playlists } = result;
+    const fetchUserData = useCallback(async (uid) => {
+        if (!uid) {
+            return { videos: [], playlists: [] };
+        }
 
-            const playlistsNeedingCleanup = playlists.filter(
-                (playlist) => playlist.missingVideoIds?.length
+        const result = await getUserVideosAndPlaylists(uid);
+        const { playlists } = result;
+
+        const playlistsNeedingCleanup = playlists.filter(
+            (playlist) => playlist.missingVideoIds?.length
+        );
+
+        if (playlistsNeedingCleanup.length) {
+            await Promise.all(
+                playlistsNeedingCleanup.map((playlist) =>
+                    removeVideoIdsFromPlaylist(
+                        uid,
+                        playlist.playlistId,
+                        playlist.missingVideoIds
+                    ).catch((error) => {
+                        console.error(
+                            "Failed to prune playlist entries",
+                            playlist.playlistId,
+                            error
+                        );
+                    })
+                )
             );
 
-            if (playlistsNeedingCleanup.length) {
-                await Promise.all(
-                    playlistsNeedingCleanup.map((playlist) =>
-                        removeVideoIdsFromPlaylist(
-                            uid,
-                            playlist.playlistId,
-                            playlist.missingVideoIds
-                        ).catch((error) => {
-                            console.error(
-                                "Failed to prune playlist entries",
-                                playlist.playlistId,
-                                error
-                            );
-                        })
-                    )
-                );
+            return await getUserVideosAndPlaylists(uid);
+        }
 
-                return await getUserVideosAndPlaylists(uid);
-            }
-
-            return result;
-        },
-        []
-    );
+        return result;
+    }, []);
 
     const refreshData = useCallback(
         async (uid) => {
-            const { videos, playlists } = await fetchUserData(
-                uid
-            );
+            const { videos, playlists } = await fetchUserData(uid);
             setVideos(videos);
             setPlaylists(playlists);
         },
@@ -140,7 +138,9 @@ const MyPlaylistView = () => {
         };
     }, [auth, fetchUserData]);
 
-    const [errorMessage, setErrorMessage] = useState("");
+    const [createErrorMessage, setCreateErrorMessage] = useState("");
+    const [renameErrorMessage, setRenameErrorMessage] = useState("");
+    const [addVideosErrorMessage, setAddVideosErrorMessage] = useState("");
 
     const handleCreatePlaylist = async () => {
         const name = newPlaylistName.trim();
@@ -148,11 +148,11 @@ const MyPlaylistView = () => {
         if (!name || !uid) return;
 
         // Check for duplicate playlist name
-        const duplicate = playlists.some(
-            (playlist) => playlist.name.toLowerCase() === name.toLowerCase()
-        );
+        const duplicate = playlists.some((playlist) => playlist.name === name);
         if (duplicate) {
-            setErrorMessage(`Playlist name "${name}" already exists. Please choose a different name.`);
+            setCreateErrorMessage(
+                `Playlist name "${name}" already exists. Please choose a different name.`
+            );
             return;
         }
 
@@ -162,9 +162,18 @@ const MyPlaylistView = () => {
             await refreshData(uid);
             setNewPlaylistName("");
             setShowCreatePlaylist(false);
-            setErrorMessage(""); // clear error
-        } catch (error) {
-            console.error("Failed to create playlist:", error);
+            setCreateErrorMessage(""); // clear error
+            addToast({
+                message: "Playlist created successfully",
+                Icon: CheckCircle,
+                iconColour: "text-emerald-400",
+            });
+        } catch {
+            addToast({
+                message: "Failed to create playlist",
+                Icon: X,
+                iconColour: "text-emerald-400",
+            });
         } finally {
             setLoading(false);
         }
@@ -179,11 +188,12 @@ const MyPlaylistView = () => {
         // Check for duplicate name excluding the current playlist
         const duplicate = playlists.some(
             (playlist) =>
-                playlist.playlistId !== playlistId &&
-                playlist.name.toLowerCase() === nextName.toLowerCase()
+                playlist.playlistId !== playlistId && playlist.name === nextName
         );
         if (duplicate) {
-            setErrorMessage(`Playlist name "${nextName}" already exists. Please choose a different name.`);
+            setRenameErrorMessage(
+                `Playlist name "${nextName}" already exists. Please choose a different name.`
+            );
             return;
         }
 
@@ -193,14 +203,22 @@ const MyPlaylistView = () => {
             await refreshData(uid);
             setEditingPlaylistId(null);
             setEditingPlaylistName("");
-            setErrorMessage(""); // clear error if rename succeeds
-        } catch (error) {
-            console.error("Failed to rename playlist:", error);
+            setRenameErrorMessage(""); // clear error if rename succeeds
+            addToast({
+                message: "Playlist renamed successfully",
+                Icon: CheckCircle,
+                iconColour: "text-emerald-400",
+            });
+        } catch {
+            addToast({
+                message: "Failed to rename playlist",
+                Icon: X,
+                iconColour: "text-red-400",
+            });
         } finally {
             setLoading(false);
         }
     };
-
 
     // Delete playlist
     const handleDeletePlaylist = (playlistId) => {
@@ -215,8 +233,17 @@ const MyPlaylistView = () => {
             setLoading(true);
             await deletePlaylist(uid, playlistToDelete);
             await refreshData(uid);
-        } catch (error) {
-            console.error("Failed to delete playlist:", error);
+            addToast({
+                message: "Playlist deleted successfully",
+                Icon: CheckCircle,
+                iconColour: "text-emerald-400",
+            });
+        } catch {
+            addToast({
+                message: "Failed to delete playlist",
+                Icon: X,
+                iconColour: "text-red-400",
+            });
         } finally {
             setShowConfirmDelete(false);
             setPlaylistToDelete(null);
@@ -251,7 +278,9 @@ const MyPlaylistView = () => {
 
         if (newVideosToAdd.length === 0) {
             // All selected videos already exist
-            setErrorMessage("Videos already added previously in this playlist.");
+            setAddVideosErrorMessage(
+                "All selected videos already added to this playlist."
+            );
             return;
         }
 
@@ -262,9 +291,18 @@ const MyPlaylistView = () => {
             setSelectedVideos(new Set());
             setSelectionMode(false);
             setShowAddToPlaylist(false);
-            setErrorMessage(""); // Clear any previous errors
-        } catch (error) {
-            console.error("Failed to add videos to playlist:", error);
+            setAddVideosErrorMessage(""); // Clear any previous errors
+            addToast({
+                message: "Videos added to playlist successfully",
+                Icon: CheckCircle,
+                iconColour: "text-emerald-400",
+            });
+        } catch {
+            addToast({
+                message: "Failed to add videos to playlist",
+                Icon: X,
+                iconColour: "text-red-400",
+            });
         } finally {
             setLoading(false);
         }
@@ -293,9 +331,12 @@ const MyPlaylistView = () => {
                     };
                 })
             );
-        } catch (error) {
-            console.error("Failed to remove video from playlist:", error);
-            throw error;
+        } catch {
+            addToast({
+                message: "Failed to remove video from playlist",
+                Icon: X,
+                iconColour: "text-red-400",
+            });
         }
     };
 
@@ -419,10 +460,11 @@ const MyPlaylistView = () => {
                                         setSelectionMode(!selectionMode);
                                         setSelectedVideos(new Set());
                                     }}
-                                    className={`cursor-pointer px-4 py-2 rounded-lg transition-colors text-sm font-medium ${selectionMode
-                                        ? "bg-gray-600 border text-white hover:bg-gray-700"
-                                        : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                                        }`}
+                                    className={`cursor-pointer px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+                                        selectionMode
+                                            ? "bg-gray-600 border text-white hover:bg-gray-700"
+                                            : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                                    }`}
                                 >
                                     {selectionMode
                                         ? "Cancel Selection"
@@ -463,13 +505,15 @@ const MyPlaylistView = () => {
                 {showCreatePlaylist && (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
                         <div className="bg-white rounded-xl p-6 max-w-md w-full">
-                            <h3 className="text-xl font-bold mb-4">Create New Playlist</h3>
+                            <h3 className="text-xl font-bold mb-4">
+                                Create New Playlist
+                            </h3>
                             <input
                                 type="text"
                                 value={newPlaylistName}
                                 onChange={(e) => {
                                     setNewPlaylistName(e.target.value);
-                                    setErrorMessage(""); // Clear error while typing
+                                    setCreateErrorMessage(""); // Clear error while typing
                                 }}
                                 placeholder="Enter playlist name..."
                                 className="w-full px-4 py-2 mb-2 rounded-lg focus:outline-none focus:ring-2 border border-gray-300 focus:ring-purple-500"
@@ -479,8 +523,10 @@ const MyPlaylistView = () => {
                                 autoFocus
                             />
                             {/* Display error if playlist name is duplicate */}
-                            {errorMessage && (
-                                <p className="text-red-600 text-sm mb-2">{errorMessage}</p>
+                            {createErrorMessage && (
+                                <p className="text-red-600 text-sm mb-2">
+                                    {createErrorMessage}
+                                </p>
                             )}
 
                             <div className="flex gap-2 justify-end">
@@ -488,7 +534,7 @@ const MyPlaylistView = () => {
                                     onClick={() => {
                                         setShowCreatePlaylist(false);
                                         setNewPlaylistName("");
-                                        setErrorMessage(""); // Clear error on cancel
+                                        setCreateErrorMessage(""); // Clear error on cancel
                                     }}
                                     className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                                 >
@@ -515,8 +561,10 @@ const MyPlaylistView = () => {
                             </h3>
 
                             {/* Error Message */}
-                            {errorMessage && (
-                                <p className="text-red-600 text-sm mb-2">{errorMessage}</p>
+                            {addVideosErrorMessage && (
+                                <p className="text-red-600 text-sm mb-2">
+                                    {addVideosErrorMessage}
+                                </p>
                             )}
 
                             {playlists.length === 0 ? (
@@ -529,7 +577,9 @@ const MyPlaylistView = () => {
                                         <button
                                             key={playlist.playlistId}
                                             onClick={() =>
-                                                handleAddToPlaylist(playlist.playlistId)
+                                                handleAddToPlaylist(
+                                                    playlist.playlistId
+                                                )
                                             }
                                             className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
                                         >
@@ -546,7 +596,7 @@ const MyPlaylistView = () => {
                             <button
                                 onClick={() => {
                                     setShowAddToPlaylist(false);
-                                    setErrorMessage(""); // Clear error when cancel
+                                    setAddVideosErrorMessage(""); // Clear error when cancel
                                 }}
                                 className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                             >
@@ -555,7 +605,6 @@ const MyPlaylistView = () => {
                         </div>
                     </div>
                 )}
-
 
                 {/* Loading State */}
                 {loading && (
@@ -642,14 +691,16 @@ const MyPlaylistView = () => {
                                 >
                                     {/* Playlist Header */}
                                     <div className="flex items-center justify-between gap-2 mb-4">
-                                        {editingPlaylistId === playlist.playlistId ? (
+                                        {editingPlaylistId ===
+                                        playlist.playlistId ? (
                                             <div className="flex flex-col">
                                                 <input
                                                     type="text"
                                                     value={editingPlaylistName}
                                                     onChange={(e) => {
-                                                        setEditingPlaylistName(e.target.value);
-                                                        setErrorMessage(""); // clear error while typing
+                                                        setEditingPlaylistName(
+                                                            e.target.value
+                                                        );
                                                     }}
                                                     onKeyPress={(e) =>
                                                         e.key === "Enter" &&
@@ -660,9 +711,9 @@ const MyPlaylistView = () => {
                                                     className="max-sm:max-w-40 text-xl font-bold px-2 py-1 border border-purple-500 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
                                                     autoFocus
                                                 />
-                                                {errorMessage && (
+                                                {renameErrorMessage && (
                                                     <p className="text-red-600 text-sm mt-1">
-                                                        {errorMessage}
+                                                        {renameErrorMessage}
                                                     </p>
                                                 )}
                                             </div>
@@ -679,7 +730,7 @@ const MyPlaylistView = () => {
 
                                         <div className="flex gap-2">
                                             {editingPlaylistId ===
-                                                playlist.playlistId ? (
+                                            playlist.playlistId ? (
                                                 <>
                                                     <button
                                                         onClick={() =>
@@ -698,6 +749,9 @@ const MyPlaylistView = () => {
                                                                 null
                                                             );
                                                             setEditingPlaylistName(
+                                                                ""
+                                                            );
+                                                            setRenameErrorMessage(
                                                                 ""
                                                             );
                                                         }}
@@ -828,12 +882,13 @@ const MyPlaylistView = () => {
                                                             video.videoId
                                                         )
                                                     }
-                                                    className={`relative cursor-pointer rounded-xl overflow-hidden border-2 transition-all duration-200 ${selectedVideos.has(
-                                                        video.videoId
-                                                    )
-                                                        ? "border-purple-500 ring-2 ring-purple-300"
-                                                        : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
-                                                        }`}
+                                                    className={`relative cursor-pointer rounded-xl overflow-hidden border-2 transition-all duration-200 ${
+                                                        selectedVideos.has(
+                                                            video.videoId
+                                                        )
+                                                            ? "border-purple-500 ring-2 ring-purple-300"
+                                                            : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
+                                                    }`}
                                                 >
                                                     {/* Thumbnail */}
                                                     <div className="relative w-full aspect-video overflow-hidden bg-gray-100">
@@ -856,24 +911,24 @@ const MyPlaylistView = () => {
                                                         {selectedVideos.has(
                                                             video.videoId
                                                         ) && (
-                                                                <div className="absolute top-3 right-3 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center shadow-lg">
-                                                                    <svg
-                                                                        className="w-5 h-5 text-white"
-                                                                        fill="none"
-                                                                        stroke="currentColor"
-                                                                        strokeWidth={
-                                                                            2.5
-                                                                        }
-                                                                        viewBox="0 0 24 24"
-                                                                    >
-                                                                        <path
-                                                                            strokeLinecap="round"
-                                                                            strokeLinejoin="round"
-                                                                            d="M5 13l4 4L19 7"
-                                                                        />
-                                                                    </svg>
-                                                                </div>
-                                                            )}
+                                                            <div className="absolute top-3 right-3 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                                                                <svg
+                                                                    className="w-5 h-5 text-white"
+                                                                    fill="none"
+                                                                    stroke="currentColor"
+                                                                    strokeWidth={
+                                                                        2.5
+                                                                    }
+                                                                    viewBox="0 0 24 24"
+                                                                >
+                                                                    <path
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                        d="M5 13l4 4L19 7"
+                                                                    />
+                                                                </svg>
+                                                            </div>
+                                                        )}
                                                     </div>
 
                                                     {/* Video info */}
@@ -881,17 +936,17 @@ const MyPlaylistView = () => {
                                                         <h3 className="line-clamp-2 truncate text-xs font-semibold md:text-sm">
                                                             {highlightMatch
                                                                 ? highlightMatch(
-                                                                    video.title,
-                                                                    searchQuery
-                                                                )
+                                                                      video.title,
+                                                                      searchQuery
+                                                                  )
                                                                 : video.title}
                                                         </h3>
                                                         <p className="mt-1 truncate text-[10px] text-slate-600">
                                                             {highlightMatch
                                                                 ? highlightMatch(
-                                                                    video.channelTitle,
-                                                                    searchQuery
-                                                                )
+                                                                      video.channelTitle,
+                                                                      searchQuery
+                                                                  )
                                                                 : video.channelTitle}
                                                         </p>
                                                     </div>
