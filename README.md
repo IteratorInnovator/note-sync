@@ -9,7 +9,7 @@ This guide shows how to install dependencies and run a **Vite** frontend with **
 
 ### Video Demo
 
-- YouTube demo: coming soon
+- YouTube demo: [https://youtu.be/Bmmdfy6yyX0](https://youtu.be/Bmmdfy6yyX0)
 
 
 ## Prerequisites

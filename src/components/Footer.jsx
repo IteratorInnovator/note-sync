@@ -33,7 +33,7 @@ const Footer = () => {
                         How it works
                     </a>
                     <a
-                        href="https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1&pp=ygUjbmV2ZXIgZ29ubmEgZ2l2ZSB5b3UgdXAgcmljayBhc3RsZXmgBwE%3D"
+                        href="https://youtu.be/Bmmdfy6yyX0"
                         target="_blank"
                         className="text-sm text-slate-600 hover:text-slate-900"
                     >

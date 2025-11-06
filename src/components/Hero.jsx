@@ -37,7 +37,7 @@ const Hero = ({ openAuthDialog }) => {
                                 <span className="ml-2">→</span>
                             </button>
                             <a
-                                href="https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1&pp=ygUjbmV2ZXIgZ29ubmEgZ2l2ZSB5b3UgdXAgcmljayBhc3RsZXmgBwE%3D"
+                                href="https://youtu.be/Bmmdfy6yyX0"
                                 target="_blank"
                                 className="inline-flex items-center justify-center rounded-xl px-6 py-3 font-semibold text-slate-900 bg-white ring-1 ring-slate-200 hover:text-white hover:bg-red-500 transition-colors duration-200 ease-out"
                             >
