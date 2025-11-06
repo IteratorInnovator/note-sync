@@ -33,6 +33,15 @@ npm install -g firebase-tools
 firebase login
 ```
 
+### Local videos setup
+
+If you do not have the videos for the homepage, you need to download them locally.
+
+1. Download the videos from the shared (Google Drive folder)[https://drive.google.com/drive/folders/1hXAYEnPDvfaJJllPa_aHqQ0hLI1GmdL_?usp=sharing]
+2. Create the folder if it does not exist:
+   - `mkdir src/assets/videos`
+3. Place the downloaded files in `src/assets/videos/` 
+
 
 ## 📁 Project Structure
 
