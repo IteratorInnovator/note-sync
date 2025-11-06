@@ -8,6 +8,10 @@ import {
 } from "firebase/auth";
 import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 
+
+/* Firebase API keys, particularly those used to initialize client-side applications (like web, iOS, or Android apps),
+ * are not considered secrets and can be safely embedded in client code.
+ */
 const firebaseConfig = {
     apiKey: "AIzaSyC0XvKd14qKqDFrrgXsSraIf1biANk5geA",
     authDomain: "wad2-44a13.firebaseapp.com",
