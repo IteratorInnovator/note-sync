@@ -92,6 +92,26 @@ const WatchPage = ({ onTitleChange }) => {
     const [duration, setDuration] = useState(0);
     const [currentTime, setCurrentTime] = useState(0);
     const [volume, setVolume] = useState(100);
+    const [captionsOn, setCaptionsOn] = useState(true);
+
+    const toggleCaptions = () => {
+        const player = playerInstanceRef.current;
+        if (!player) return;
+
+        const trackList = player.getOption("captions", "tracklist");
+        if (!trackList || trackList.length === 0) return;
+
+        if (captionsOn) {
+            // Hide captions
+            player.setOption("captions", "track", {});
+        } else {
+            // Show captions (select first track)
+            player.setOption("captions", "track", trackList[0]);
+        }
+
+        setCaptionsOn(!captionsOn);
+    };
+
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [controlsVisible, setControlsVisible] = useState(false);
     const [manualControlsVisible, setManualControlsVisible] = useState(false);
@@ -203,7 +223,7 @@ const WatchPage = ({ onTitleChange }) => {
                 ? Math.min(Math.max(0, rawTime ?? 0), maxDuration)
                 : Math.max(0, rawTime ?? 0);
 
-        updateVideoProgress(uid, videoId, progressToPersist).catch(() => {});
+        updateVideoProgress(uid, videoId, progressToPersist).catch(() => { });
     }, [isVideoSaved, videoId]);
     const handleNotesChange = useCallback((nextNotes) => {
         setNotes(Array.isArray(nextNotes) ? nextNotes : []);
@@ -373,7 +393,7 @@ const WatchPage = ({ onTitleChange }) => {
             if (ensureResult?.ok === false) {
                 setQuickNoteError(
                     ensureResult.message ??
-                        "Save the video before adding notes."
+                    "Save the video before adding notes."
                 );
                 return;
             }
@@ -535,7 +555,7 @@ const WatchPage = ({ onTitleChange }) => {
             const stillFullscreen =
                 document.fullscreenElement === videoContainerRef.current ||
                 document.webkitFullscreenElement ===
-                    videoContainerRef.current ||
+                videoContainerRef.current ||
                 document.mozFullScreenElement === videoContainerRef.current ||
                 document.msFullscreenElement === videoContainerRef.current;
 
@@ -717,7 +737,8 @@ const WatchPage = ({ onTitleChange }) => {
                     rel: 0,
                     modestbranding: 1,
                     disablekb: 1,
-                    enablejsapi: 0,
+                    enablejsapi: 1,
+                    cc_load_policy: 1,
 
                 },
                 events: {
@@ -756,7 +777,7 @@ const WatchPage = ({ onTitleChange }) => {
                             if (state === window.YT.PlayerState.ENDED) {
                                 setCurrentTime(
                                     playerInstanceRef.current?.getDuration() ??
-                                        0
+                                    0
                                 );
                             }
                             stopProgressTracking();
@@ -1121,21 +1142,19 @@ const WatchPage = ({ onTitleChange }) => {
                     }}
                 >
                     <div
-                        className={`relative w-full ${
-                            isFullscreen ? "h-full" : "aspect-video"
-                        }`}
+                        className={`relative w-full ${isFullscreen ? "h-full" : "aspect-video"
+                            }`}
                         role="presentation"
                     >
                         <div
-                            className={`absolute inset-0 z-10 ${
-                                isFullscreen
-                                    ? controlsVisible || isQuickNoteOpen
-                                        ? "pointer-events-none"
-                                        : "pointer-events-auto cursor-pointer"
-                                    : shouldInterceptOverlay
+                            className={`absolute inset-0 z-10 ${isFullscreen
+                                ? controlsVisible || isQuickNoteOpen
+                                    ? "pointer-events-none"
+                                    : "pointer-events-auto cursor-pointer"
+                                : shouldInterceptOverlay
                                     ? "pointer-events-auto cursor-pointer"
                                     : "pointer-events-none"
-                            }`}
+                                }`}
                             onPointerDown={handleOverlayPointerDown}
                             onTouchStart={handleOverlayTouchStart}
                             onClick={handleVideoClick}
@@ -1148,13 +1167,12 @@ const WatchPage = ({ onTitleChange }) => {
                     </div>
 
                     <div
-                        className={`absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/60 via-black/40 to-transparent px-3 pb-3 pt-6 transition-opacity duration-200 sm:px-6 sm:pb-5 ${
-                            isFullscreen
-                                ? controlsVisible
-                                    ? "pointer-events-auto opacity-100"
-                                    : "pointer-events-none opacity-0"
-                                : inlineControlsVisibilityClass
-                        }`}
+                        className={`absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/60 via-black/40 to-transparent px-3 pb-3 pt-6 transition-opacity duration-200 sm:px-6 sm:pb-5 ${isFullscreen
+                            ? controlsVisible
+                                ? "pointer-events-auto opacity-100"
+                                : "pointer-events-none opacity-0"
+                            : inlineControlsVisibilityClass
+                            }`}
                         onClick={(event) => {
                             refreshManualControls();
                             event.stopPropagation();
@@ -1204,15 +1222,15 @@ const WatchPage = ({ onTitleChange }) => {
                                                     marker.anchor === "left"
                                                         ? `${tooltipAlignmentBase} items-start translate-x-[-5%]`
                                                         : marker.anchor ===
-                                                          "center-left"
-                                                        ? `${tooltipAlignmentBase} items-start -translate-x-[40%]`
-                                                        : marker.anchor ===
-                                                          "center-right"
-                                                        ? `${tooltipAlignmentBase} items-end -translate-x-[60%]`
-                                                        : marker.anchor ===
-                                                          "right"
-                                                        ? `${tooltipAlignmentBase} items-end -translate-x-[90%]`
-                                                        : `${tooltipAlignmentBase} items-center`;
+                                                            "center-left"
+                                                            ? `${tooltipAlignmentBase} items-start -translate-x-[40%]`
+                                                            : marker.anchor ===
+                                                                "center-right"
+                                                                ? `${tooltipAlignmentBase} items-end -translate-x-[60%]`
+                                                                : marker.anchor ===
+                                                                    "right"
+                                                                    ? `${tooltipAlignmentBase} items-end -translate-x-[90%]`
+                                                                    : `${tooltipAlignmentBase} items-center`;
                                                 return (
                                                     <div
                                                         key={marker.id}
@@ -1272,9 +1290,9 @@ const WatchPage = ({ onTitleChange }) => {
                                                                 ) => {
                                                                     if (
                                                                         event.key ===
-                                                                            "Enter" ||
+                                                                        "Enter" ||
                                                                         event.key ===
-                                                                            " "
+                                                                        " "
                                                                     ) {
                                                                         event.preventDefault();
                                                                         handleJumpToNote(
@@ -1376,6 +1394,22 @@ const WatchPage = ({ onTitleChange }) => {
                                     >
                                         <SkipForward className="size-3 md:size-4 lg:size-5" />
                                     </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={toggleCaptions}
+                                        title={captionsOn ? "Hide captions" : "Show captions"}
+                                        className="cursor-pointer flex w-6 h-6 md:w-7 md:h-7 lg:w-9 lg:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                        aria-label={captionsOn ? "Hide captions" : "Show captions"}
+                                        disabled={!isPlayerReady}
+                                    >
+                                        {captionsOn ? (
+                                            <span className="text-[10px] md:text-xs font-semibold">CC</span>
+                                        ) : (
+                                            <span className="text-[10px] md:text-xs opacity-50 font-semibold">CC</span>
+                                        )}
+                                    </button>
+
 
                                     <div className="flex items-center gap-2 sm:w-auto sm:gap-3">
                                         <button
@@ -1608,22 +1642,20 @@ const WatchPage = ({ onTitleChange }) => {
                         <button
                             type="button"
                             onClick={() => setActiveMobilePanel("notes")}
-                            className={`rounded-full px-4 py-1.5 transition ${
-                                activeMobilePanel === "notes"
-                                    ? "bg-white text-slate-900 shadow"
-                                    : "text-slate-500"
-                            }`}
+                            className={`rounded-full px-4 py-1.5 transition ${activeMobilePanel === "notes"
+                                ? "bg-white text-slate-900 shadow"
+                                : "text-slate-500"
+                                }`}
                         >
                             Notes
                         </button>
                         <button
                             type="button"
                             onClick={() => setActiveMobilePanel("discussion")}
-                            className={`rounded-full px-4 py-1.5 transition ${
-                                activeMobilePanel === "discussion"
-                                    ? "bg-white text-slate-900 shadow"
-                                    : "text-slate-500"
-                            }`}
+                            className={`rounded-full px-4 py-1.5 transition ${activeMobilePanel === "discussion"
+                                ? "bg-white text-slate-900 shadow"
+                                : "text-slate-500"
+                                }`}
                         >
                             Discussion
                         </button>
@@ -1631,9 +1663,8 @@ const WatchPage = ({ onTitleChange }) => {
                 </div>
 
                 <div
-                    className={`mt-3 ${
-                        activeMobilePanel === "discussion" ? "block" : "hidden"
-                    } md:block`}
+                    className={`mt-3 ${activeMobilePanel === "discussion" ? "block" : "hidden"
+                        } md:block`}
                 >
                     <DiscussionForum
                         videoId={videoId}
@@ -1644,9 +1675,8 @@ const WatchPage = ({ onTitleChange }) => {
 
             {/* Notes */}
             <div
-                className={`${
-                    activeMobilePanel === "notes" ? "block" : "hidden"
-                } md:block md:w-[35%]`}
+                className={`${activeMobilePanel === "notes" ? "block" : "hidden"
+                    } md:block md:w-[35%]`}
             >
                 <div className="flex flex-col gap-6">
                     {/* Notes content */}
