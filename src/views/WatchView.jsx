@@ -718,6 +718,7 @@ const WatchPage = ({ onTitleChange }) => {
                     modestbranding: 1,
                     disablekb: 1,
                     enablejsapi: 0,
+
                 },
                 events: {
                     onReady: (event) => {
@@ -1341,16 +1342,16 @@ const WatchPage = ({ onTitleChange }) => {
                                         type="button"
                                         onClick={handleTogglePlay}
                                         title={isPlaying ? "Pause" : "Play"}
-                                        className="cursor-pointer flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="cursor-pointer flex w-6 h-6 md:w-7 md:h-7 lg:w-9 lg:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
                                         aria-label={
                                             isPlaying ? "Pause" : "Play"
                                         }
                                         disabled={!isPlayerReady}
                                     >
                                         {isPlaying ? (
-                                            <Pause className="size-3 md:size-5" />
+                                            <Pause className="size-3 md:size-4 lg:size-5" />
                                         ) : (
-                                            <Play className="size-3 md:size-5" />
+                                            <Play className="size-3 md:size-4 lg:size-5" />
                                         )}
                                     </button>
 
@@ -1358,22 +1359,22 @@ const WatchPage = ({ onTitleChange }) => {
                                         type="button"
                                         onClick={handleSeekBackward}
                                         title="Skip backward 10s"
-                                        className="cursor-pointer flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="cursor-pointer flex w-6 h-6 md:w-7 md:h-7 lg:w-9 lg:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
                                         aria-label="Seek backward 10 seconds"
                                         disabled={!isPlayerReady}
                                     >
-                                        <SkipBack className="size-3 md:size-5" />
+                                        <SkipBack className="size-3 md:size-4 lg:size-5" />
                                     </button>
 
                                     <button
                                         type="button"
                                         onClick={handleSeekForward}
                                         title="Skip forward 10s"
-                                        className="cursor-pointer flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="cursor-pointer flex w-6 h-6 md:w-7 md:h-7 lg:w-9 lg:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
                                         aria-label="Seek forward 10 seconds"
                                         disabled={!isPlayerReady}
                                     >
-                                        <SkipForward className="size-3 md:size-5" />
+                                        <SkipForward className="size-3 md:size-4 lg:size-5" />
                                     </button>
 
                                     <div className="flex items-center gap-2 sm:w-auto sm:gap-3">
@@ -1381,16 +1382,16 @@ const WatchPage = ({ onTitleChange }) => {
                                             type="button"
                                             title="Volume"
                                             onClick={handleToggleMute}
-                                            className="cursor-pointer flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                            className="cursor-pointer flex w-6 h-6 md:w-7 md:h-7 lg:w-9 lg:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
                                             aria-label={
                                                 volume === 0 ? "Unmute" : "Mute"
                                             }
                                             disabled={!isPlayerReady}
                                         >
                                             {volume === 0 ? (
-                                                <VolumeX className="size-3 md:size-5" />
+                                                <VolumeX className="size-3 md:size-4 lg:size-5" />
                                             ) : (
-                                                <Volume2 className="size-3 md:size-5" />
+                                                <Volume2 className="size-3 md:size-4 lg:size-5" />
                                             )}
                                         </button>
                                         <input
@@ -1400,7 +1401,7 @@ const WatchPage = ({ onTitleChange }) => {
                                             step={1}
                                             value={volume}
                                             onChange={handleVolume}
-                                            className="cursor-pointer w-16 md:w-32 flex-1 accent-indigo-500"
+                                            className="cursor-pointer w-16 md:w-24 lg:w-32 flex-1 accent-indigo-500"
                                             disabled={!isPlayerReady}
                                         />
                                     </div>
@@ -1416,7 +1417,7 @@ const WatchPage = ({ onTitleChange }) => {
                                             aria-label="Add quick note"
                                             disabled={!isPlayerReady}
                                         >
-                                            <Pencil className="size-3 md:size-5" />
+                                            <Pencil className="size-3 md:size-4 lg:size-5" />
                                         </button>
 
                                         {isQuickNoteOpen && isFullscreen ? (
@@ -1519,7 +1520,7 @@ const WatchPage = ({ onTitleChange }) => {
                                         type="button"
                                         onClick={handleCyclePlaybackRate}
                                         title="Playback rate"
-                                        className="cursor-pointer flex h-7 min-w-[2rem] md:min-w-[2.75rem] items-center justify-center bg-white/15 text-[8px] md:text-xs font-semibold text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="cursor-pointer flex  h-5 md:h-7 min-w-[2rem] md:min-w-[2.5rem] lg:min-w-[2.75rem] items-center justify-center bg-white/15 text-[8px] md:text-xs font-semibold text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
                                         aria-label="Change playback speed"
                                         disabled={!isPlayerReady}
                                     >
@@ -1534,7 +1535,7 @@ const WatchPage = ({ onTitleChange }) => {
                                                 ? "Exit fullscreen"
                                                 : "Enter fullscreen"
                                         }
-                                        className="cursor-pointer flex w-6 h-6 md:w-9 md:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
+                                        className="cursor-pointer flex w-6 h-6 md:w-7 md:h-7 lg:w-9 lg:h-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
                                         aria-label={
                                             isFullscreen
                                                 ? "Exit fullscreen"
@@ -1542,9 +1543,9 @@ const WatchPage = ({ onTitleChange }) => {
                                         }
                                     >
                                         {isFullscreen ? (
-                                            <Minimize2 className="size-3 md:size-5" />
+                                            <Minimize2 className="size-3 md:size-4 lg:size-5" />
                                         ) : (
-                                            <Maximize2 className="size-3 md:size-5" />
+                                            <Maximize2 className="size-3 md:size-4 lg:size-5" />
                                         )}
                                     </button>
                                 </div>
